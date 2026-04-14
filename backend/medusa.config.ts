@@ -30,15 +30,6 @@ export default defineConfig({
               webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
             },
           },
-          {
-            resolve: "@alphabite/medusa-paypal",
-            id: "paypal",
-            options: {
-              clientId: process.env.PAYPAL_CLIENT_ID,
-              clientSecret: process.env.PAYPAL_CLIENT_SECRET,
-              sandbox: process.env.NODE_ENV !== "production",
-            },
-          },
         ],
       },
     },
