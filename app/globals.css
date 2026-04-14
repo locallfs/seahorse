@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "BlackChancery";
+  src: url("/fonts/BlackChancery.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --color-ocean-950: #04080f;
+  --color-ocean-900: #070f1e;
+  --color-ocean-800: #0c1a30;
+  --color-ocean-700: #112244;
+  --color-ocean-600: #1a3a6b;
+  --color-blue-accent: #003DA5;
+  --color-blue-light: #1a56c4;
+  --color-blue-dim: #002d7a;
+  --color-muted: #64748b;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.font-blackchancery {
+  font-family: "BlackChancery", serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html.splash-active {
+  background: black;
+  overflow: hidden;
+}
+
+html.splash-active body {
+  visibility: hidden;
+}
+
+html.splash-active #splash-screen {
+  visibility: visible;
+}
+
+body {
+  background-color: #04080f;
+  color: #f1f5f9;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.gallery-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.gallery-scroll::-webkit-scrollbar {
+  display: none;
+}
