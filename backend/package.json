@@ -6,10 +6,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "npx medusa build",
-    "dev": "npx medusa develop",
-    "start": "npx medusa start",
-    "seed": "npx medusa exec ./src/scripts/seed.ts"
+    "build": "./node_modules/.bin/medusa build",
+    "dev": "./node_modules/.bin/medusa develop",
+    "start": "./node_modules/.bin/medusa start",
+    "seed": "./node_modules/.bin/medusa exec ./src/scripts/seed.ts"
   },
   "dependencies": {
     "@medusajs/medusa": "^2.13.6",
