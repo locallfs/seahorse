@@ -15,6 +15,20 @@ Claude Code to behave the way I want. Each feature does one thing, the code is e
 
 
 
+# Context7
+
+Always use Context7 (via `npx ctx7`) automatically — without being asked — whenever the task involves:
+- Library or API documentation (e.g. Medusa, Stripe, Supabase, Next.js)
+- Code generation based on a framework or package
+- Setup or configuration steps for any tool or service
+- Any time an up-to-date reference would improve accuracy
+
+Do not wait for the user to ask. If Context7 would help, use it.
+
+
+---
+
+
 # Development Rules
 
 
