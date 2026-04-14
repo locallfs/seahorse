@@ -6,7 +6,7 @@ export default function HeroVideo() {
   return (
     <section className="relative w-full h-screen min-h-[600px] flex items-center justify-center">
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
-        <p className="text-blue-light text-xs tracking-[0.3em] uppercase font-medium mb-6 drop-shadow-lg">
+        <p className="text-white text-xs tracking-[0.3em] uppercase font-medium mb-6 drop-shadow-lg">
           Est. 1996 — Pacific Northwest
         </p>
         <h1 className="font-blackchancery text-blue-accent leading-tight mb-6 drop-shadow-xl" style={{ fontSize: "clamp(2rem, 6vw, 5.5rem)" }}>
