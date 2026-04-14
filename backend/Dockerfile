@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN npm install --production=false
+RUN npm install --production=false && ls node_modules/.bin/ | grep medusa
 
 RUN node_modules/.bin/medusa build
 
