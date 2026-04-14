@@ -49,6 +49,21 @@ const plans = [
   },
 ];
 
+const serviceTypes = [
+  {
+    title: "Residential Maintenance",
+    img: "/images/saltwater.jpg",
+  },
+  {
+    title: "Commercial Maintenance",
+    img: "/images/resttank.jpg",
+  },
+  {
+    title: "High-End Aquarium Maintenance",
+    img: "/images/salt.jpg",
+  },
+];
+
 export default function MaintenancePage() {
   return (
     <>
@@ -65,7 +80,25 @@ export default function MaintenancePage() {
           </div>
         </div>
 
-        <div className="max-w-screen-xl mx-auto px-6 py-16">
+        <div className="max-w-screen-xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            {serviceTypes.map((service) => (
+              <div key={service.title} className="relative overflow-hidden rounded-xl aspect-video">
+                <img
+                  src={service.img}
+                  alt={service.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <h3 className="text-white font-bold text-lg">{service.title}</h3>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="max-w-screen-xl mx-auto px-6 pb-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {plans.map((plan) => (
               <div
