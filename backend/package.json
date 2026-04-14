@@ -2,11 +2,14 @@
   "name": "seahorse-backend",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "build": "medusa build",
-    "dev": "medusa develop",
-    "start": "medusa start",
-    "seed": "medusa exec ./src/scripts/seed.ts"
+    "build": "npx medusa build",
+    "dev": "npx medusa develop",
+    "start": "npx medusa start",
+    "seed": "npx medusa exec ./src/scripts/seed.ts"
   },
   "dependencies": {
     "@medusajs/medusa": "^2.13.6",
