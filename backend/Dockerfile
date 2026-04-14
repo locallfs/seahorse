@@ -12,4 +12,4 @@ COPY . .
 
 EXPOSE 9000
 
-CMD ["sh", "-c", "timeout 30 node_modules/.bin/medusa db:migrate; exec node_modules/.bin/medusa start"]
+CMD ["node_modules/.bin/medusa", "start"]
