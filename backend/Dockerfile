@@ -10,8 +10,9 @@ RUN npm install --production=false
 
 COPY . .
 
+RUN node_modules/.bin/medusa build
+
 ENV NODE_ENV=production
-ENV NODE_OPTIONS="--trace-warnings --unhandled-rejections=throw"
 
 EXPOSE 9000
 
