@@ -12,6 +12,4 @@ COPY . .
 
 EXPOSE 9000
 
-ENV NODE_OPTIONS="--max-old-space-size=1024"
-
-CMD ["sh", "-c", "echo '=== MEDUSA START BEGIN ===' && echo 'PORT='$PORT && node_modules/.bin/medusa start; echo '=== MEDUSA EXITED code='$?"]
+CMD ["sh", "-c", "timeout 90 node_modules/.bin/medusa db:migrate; exec node_modules/.bin/medusa start"]
