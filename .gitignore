@@ -29,7 +29,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Large media files in root (moved to web/public when needed)
-*.mp4
-*.mov
-*.avi
+# Large media files in root only (public/videos are allowed)
+/*.mp4
+/*.mov
+/*.avi
