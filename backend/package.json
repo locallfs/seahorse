@@ -1,0 +1,21 @@
+{
+  "name": "seahorse-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "medusa build",
+    "dev": "medusa develop",
+    "start": "medusa start",
+    "seed": "medusa exec ./src/scripts/seed.ts"
+  },
+  "dependencies": {
+    "@medusajs/medusa": "^2.13.6",
+    "@medusajs/payment-stripe": "^2.13.6",
+    "@alphabite/medusa-paypal": "^0.2.5",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}
