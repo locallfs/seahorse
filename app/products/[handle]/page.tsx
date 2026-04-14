@@ -37,7 +37,7 @@ export default function ProductPage({
   return (
     <>
       <Header />
-      <main className="pt-16 min-h-screen bg-ocean-950">
+      <main className="pt-16 min-h-screen bg-black">
         <div className="max-w-screen-xl mx-auto px-6 py-12">
           <nav className="text-xs text-slate-500 mb-8 flex items-center gap-2">
             <a href="/store" className="hover:text-slate-300 transition-colors">

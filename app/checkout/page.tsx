@@ -29,7 +29,7 @@ export default function CheckoutPage() {
     return (
       <>
         <Header />
-        <main className="pt-16 min-h-screen bg-ocean-950 flex items-center justify-center">
+        <main className="pt-16 min-h-screen bg-black flex items-center justify-center">
           <div className="text-center">
             <p className="text-slate-400 mb-4">Your cart is empty.</p>
             <Link href="/store" className="text-blue-accent hover:text-blue-light text-sm transition-colors">

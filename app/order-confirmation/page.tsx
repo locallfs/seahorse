@@ -10,7 +10,7 @@ export default function OrderConfirmationPage() {
   return (
     <>
       <Header />
-      <main className="pt-16 min-h-screen bg-ocean-950 flex items-center justify-center">
+      <main className="pt-16 min-h-screen bg-black flex items-center justify-center">
         <div className="max-w-lg mx-auto px-6 py-20 text-center">
           <div className="w-16 h-16 rounded-full bg-blue-accent/20 border border-blue-accent/40 flex items-center justify-center mx-auto mb-6">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" strokeWidth="2">

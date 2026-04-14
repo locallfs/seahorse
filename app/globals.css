@@ -43,7 +43,7 @@ html.splash-active #splash-screen {
 }
 
 body {
-  background-color: #04080f;
+  background-color: #000000;
   color: #f1f5f9;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
