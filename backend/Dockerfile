@@ -10,8 +10,6 @@ RUN npm install --production=false
 
 COPY . .
 
-ENV NODE_ENV=production
-
 EXPOSE 9000
 
 CMD ["sh", "-c", "node_modules/.bin/medusa db:migrate && node_modules/.bin/medusa start"]
