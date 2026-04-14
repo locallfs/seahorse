@@ -29,7 +29,7 @@ const plans = [
       "Guidance for between-visit maintenance",
       "Custom care instructions for your specific setup",
     ],
-    note: "For optimal aquarium health, you will need to supplement our bi-weekly service with basic maintenance between visits. We'll provide detailed instructions and support to help you maintain perfect conditions.",
+    note: "For the absolute best quality water and happy aquatic life, you will need to supplement our bi-weekly service with thorough maintenance between visits. Please use our detailed instruction guide we left with you for the appropriate way to keep perfect parameters. Please contact us immediately if you need assistance.",
   },
   {
     name: "Woody's Weekly Maintenance",
