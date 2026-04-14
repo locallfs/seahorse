@@ -2,11 +2,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json .npmrc ./
+COPY . .
 
 RUN npm install --production=false
-
-COPY . .
 
 RUN node_modules/.bin/medusa build
 
