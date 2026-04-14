@@ -12,4 +12,6 @@ COPY . .
 
 EXPOSE 9000
 
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
 CMD ["node_modules/.bin/medusa", "start"]
