@@ -2,11 +2,13 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY . .
+RUN apk add --no-cache python3 make g++
+
+COPY package*.json .npmrc ./
 
 RUN npm install --production=false
 
-RUN node_modules/.bin/medusa build
+COPY . .
 
 EXPOSE 9000
 
