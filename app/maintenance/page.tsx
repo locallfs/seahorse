@@ -90,8 +90,14 @@ export default function MaintenancePage() {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-5">
+                <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
                   <h3 className="text-white font-bold text-lg">{service.title}</h3>
+                  <a
+                    href="mailto:info@seahorseaquariumsupply.com?subject=Maintenance Quote Request"
+                    className="flex-shrink-0 px-4 py-2 bg-blue-accent hover:bg-blue-light text-white text-sm font-medium rounded transition-colors duration-200"
+                  >
+                    Get a Quote
+                  </a>
                 </div>
               </div>
             ))}
@@ -132,10 +138,16 @@ export default function MaintenancePage() {
                 </div>
 
                 {plan.note && (
-                  <p className="text-xs text-slate-500 leading-relaxed border-t border-white/10 pt-4">
+                  <p className="text-xs text-slate-500 leading-relaxed border-t border-white/10 pt-4 mb-4">
                     * {plan.note}
                   </p>
                 )}
+                <a
+                  href="mailto:info@seahorseaquariumsupply.com?subject=Maintenance Quote Request"
+                  className="mt-auto block text-center px-4 py-3 bg-blue-accent hover:bg-blue-light text-white text-sm font-medium rounded transition-colors duration-200"
+                >
+                  Get a Quote
+                </a>
               </div>
             ))}
           </div>
