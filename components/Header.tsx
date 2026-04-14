@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/components/CartContext";
 
-const navLinks = [
-  { label: "New Arrivals", href: "/new-arrivals" },
+const navLinks: { label: string; href: string; flash?: boolean }[] = [
+  { label: "New Arrivals", href: "/new-arrivals", flash: true },
   { label: "Saltwater Fish", href: "/fish" },
   { label: "Inverts", href: "/inverts" },
   { label: "Corals", href: "/corals" },
@@ -51,7 +51,11 @@ export default function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm text-blue-dim hover:text-blue-accent transition-colors duration-200 tracking-wide font-medium whitespace-nowrap"
+              className={`text-sm tracking-wide font-medium whitespace-nowrap transition-colors duration-200 ${
+                link.flash
+                  ? "text-blue-accent animate-pulse hover:text-blue-light"
+                  : "text-blue-dim hover:text-blue-accent"
+              }`}
             >
               {link.label}
             </Link>
