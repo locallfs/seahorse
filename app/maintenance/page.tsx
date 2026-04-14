@@ -15,7 +15,7 @@ const plans = [
       "Interim consultations",
       "Controller monitoring",
     ],
-    note: "For optimal aquarium health, you will need to supplement our monthly service with thorough maintenance between visits. We'll provide detailed instructions and support to help you maintain the perfect parameters.",
+    note: "For the absolute best quality water and happy aquatic life, you will need to supplement our monthly service with thorough maintenance between visits. Please use our detailed instruction guide we left with you for the appropriate way to keep perfect parameters. Please contact us immediately if you need assistance.",
   },
   {
     name: "Woody's Bi-Weekly Maintenance",
