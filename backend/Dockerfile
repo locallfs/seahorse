@@ -4,11 +4,13 @@ WORKDIR /app
 
 RUN apk add --no-cache python3 make g++
 
-COPY package*.json .npmrc ./
+COPY package*.json .npmrc tsconfig.json ./
 
 RUN npm install --production=false
 
 COPY . .
+
+RUN node_modules/.bin/tsc --outDir . --rootDir . --module commonjs medusa.config.ts
 
 EXPOSE 9000
 
