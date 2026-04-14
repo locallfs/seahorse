@@ -6,10 +6,10 @@ export default function HeroVideo() {
   return (
     <section className="relative w-full h-screen min-h-[600px] flex items-center justify-center">
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
-        <p className="text-white text-xs tracking-[0.3em] uppercase font-medium mb-6 drop-shadow-lg">
+        <p className="text-white uppercase font-medium mb-6 drop-shadow-lg" style={{ fontSize: "clamp(0.85rem, 1.5vw, 1.1rem)", letterSpacing: "0.25em" }}>
           Est. 1996 — Pacific Northwest
         </p>
-        <h1 className="font-blackchancery leading-tight mb-6 drop-shadow-xl" style={{ fontSize: "clamp(2rem, 6vw, 5.5rem)", color: "#4a90d9", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
+        <h1 className="font-blackchancery leading-tight mb-6" style={{ fontSize: "clamp(2rem, 6vw, 5.5rem)", color: "#1a56c4", textShadow: "0 2px 20px rgba(0,0,0,1), 0 0 40px rgba(0,0,0,0.9)" }}>
           Woody&apos;s Seahorse
           <br />
           Aquarium & Supply
