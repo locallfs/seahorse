@@ -49,6 +49,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+@keyframes nav-grow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.nav-grow {
+  display: inline-block;
+  animation: nav-grow 2s ease-in-out infinite;
+}
+
 .gallery-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;

@@ -34,7 +34,7 @@ export default function Header() {
         scrolled ? "shadow-md shadow-black/10" : ""
       }`}
     >
-      <div className="max-w-screen-2xl mx-auto px-8 h-16 flex items-center justify-between">
+      <div className="w-full mx-auto px-12 h-16 flex items-center justify-between">
         <Link href="/" className="flex-shrink-0">
           <Image
             src="/images/logo.png"
@@ -46,16 +46,16 @@ export default function Header() {
           />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-5">
+        <nav className="hidden lg:flex items-center gap-7">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm tracking-wide font-medium whitespace-nowrap transition-colors duration-200 ${
+              className={`text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 ${
                 link.flash
-                  ? "text-blue-accent animate-pulse hover:text-blue-light"
+                  ? "text-blue-accent hover:text-blue-light"
                   : "text-blue-dim hover:text-blue-accent"
-              }`}
+              } ${link.flash ? "nav-grow" : ""}`}
             >
               {link.label}
             </Link>
