@@ -34,7 +34,7 @@ export default function Header() {
         scrolled ? "shadow-md shadow-black/10" : ""
       }`}
     >
-      <div className="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-screen-xl mx-auto px-8 h-20 flex items-center justify-between">
         <Link href="/" className="flex-shrink-0">
           <Image
             src="/images/logo.png"
@@ -46,12 +46,12 @@ export default function Header() {
           />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-2">
+        <nav className="hidden lg:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="px-3 py-2 text-sm text-blue-dim hover:text-blue-accent transition-colors duration-200 rounded hover:bg-blue-accent/5 tracking-wide font-medium"
+              className="px-2.5 py-2 text-xs text-blue-dim hover:text-blue-accent transition-colors duration-200 rounded hover:bg-blue-accent/5 tracking-wider font-medium uppercase"
             >
               {link.label}
             </Link>
