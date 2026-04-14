@@ -10,7 +10,7 @@ RUN npm install --production=false
 
 COPY . .
 
-RUN node_modules/.bin/medusa build
+RUN NODE_OPTIONS="--max-old-space-size=4096" node_modules/.bin/medusa build
 
 ENV NODE_ENV=production
 
