@@ -12,7 +12,7 @@ export default function HeroVideo() {
         </p>
         <div className="mb-8 flex justify-center">
           <Image
-            src="/images/logo-full.png"
+            src="/LogoFullNameOnly.png"
             alt="Woody's Seahorse Aquarium & Supply"
             width={900}
             height={450}
