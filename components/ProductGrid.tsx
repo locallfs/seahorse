@@ -32,18 +32,23 @@ export default function ProductGrid({ category }: { category: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    medusa.store.product
-      .list({ fields: "id,handle,title,thumbnail,*variants.calculated_price" })
-      .then((res) => {
+    (async () => {
+      try {
+        const regionsRes = await medusa.store.region.list();
+        const regionId = regionsRes.regions?.[0]?.id;
+        const res = await medusa.store.product.list({
+          fields: "id,handle,title,thumbnail,*variants.calculated_price",
+          region_id: regionId,
+        });
         if (cancelled) return;
         setProducts(res.products as StoreProduct[]);
         setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancelled) return;
-        setError(err?.message ?? "Failed to load products");
+        setError((err as Error)?.message ?? "Failed to load products");
         setLoading(false);
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };

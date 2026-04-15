@@ -44,22 +44,25 @@ export default function ProductPage({
 
   useEffect(() => {
     let cancelled = false;
-    medusa.store.product
-      .list({
-        handle,
-        fields: "id,handle,title,description,thumbnail,*variants.calculated_price",
-      })
-      .then((res) => {
+    (async () => {
+      try {
+        const regionsRes = await medusa.store.region.list();
+        const regionId = regionsRes.regions?.[0]?.id;
+        const res = await medusa.store.product.list({
+          handle,
+          fields: "id,handle,title,description,thumbnail,*variants.calculated_price",
+          region_id: regionId,
+        });
         if (cancelled) return;
         const found = (res.products as StoreProduct[])[0] ?? null;
         setProduct(found);
         setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancelled) return;
-        setError(err?.message ?? "Failed to load product");
+        setError((err as Error)?.message ?? "Failed to load product");
         setLoading(false);
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };

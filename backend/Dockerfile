@@ -1,10 +1,11 @@
-FROM node:20
+# syntax=docker/dockerfile:1.6
+FROM node:20-slim
 
 WORKDIR /app
 
 COPY package*.json .npmrc ./
 
-RUN npm install --production=false
+RUN --mount=type=cache,target=/root/.npm npm ci --production=false
 
 COPY . .
 
@@ -19,6 +20,8 @@ RUN cp medusa-config.js .medusa/server/medusa-config.js && \
 
 WORKDIR /app/.medusa/server
 
-RUN npm install --production=false
+RUN --mount=type=cache,target=/root/.npm npm ci --production=false
 
 EXPOSE 9000
+
+CMD ["node_modules/.bin/medusa", "start"]
