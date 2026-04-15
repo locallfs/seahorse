@@ -29,7 +29,12 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Large media files in root only (public/videos are allowed)
+# Large media files — videos live on Bunny CDN, not in git
 /*.mp4
 /*.mov
 /*.avi
+public/*.mp4
+public/*.mov
+public/*.avi
+public/videos/
+assets-raw/
