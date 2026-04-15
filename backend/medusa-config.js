@@ -40,6 +40,23 @@ module.exports = defineConfig({
         },
       },
     },
+    file: {
+      resolve: "@medusajs/file",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/file-bunny",
+            id: "bunny",
+            options: {
+              storage_zone: process.env.BUNNY_STORAGE_ZONE,
+              storage_password: process.env.BUNNY_STORAGE_PASSWORD,
+              storage_endpoint: process.env.BUNNY_STORAGE_ENDPOINT,
+              cdn_url: process.env.BUNNY_CDN_URL,
+            },
+          },
+        ],
+      },
+    },
     payment: {
       resolve: "@medusajs/payment",
       options: {
