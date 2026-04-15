@@ -8,7 +8,7 @@ export default function InvertsPage() {
   return (
     <>
       <Header />
-      <main className="pt-16 min-h-screen bg-black">
+      <main className="pt-16 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">
           <div className="max-w-screen-xl mx-auto px-6 py-12">
             <p className="text-xs tracking-[0.25em] uppercase font-medium text-blue-accent mb-2">

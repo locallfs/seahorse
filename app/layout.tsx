@@ -29,7 +29,7 @@ export default function RootLayout({
           }
         `}} />
       </head>
-      <body className="min-h-full flex flex-col bg-ocean-950 text-slate-100 antialiased">
+      <body className="min-h-full flex flex-col bg-gradient-to-b from-ocean-950 to-white text-slate-100 antialiased">
         <CartProvider>
           <SplashScreen />
           {children}
