@@ -15,10 +15,11 @@ RUN DATABASE_URL=postgresql://localhost/dummy \
     node_modules/.bin/medusa build 2>&1
 
 RUN cp medusa-config.js .medusa/server/medusa-config.js && \
-    cp package.json .medusa/server/package.json
+    cp package.json .medusa/server/package.json && \
+    mkdir -p .medusa/server/src/modules && \
+    cp -r src/modules/file-bunny .medusa/server/src/modules/file-bunny && \
+    ln -s /app/node_modules /app/.medusa/server/node_modules
 
 WORKDIR /app/.medusa/server
-
-RUN npm install --production=false
 
 EXPOSE 9000
