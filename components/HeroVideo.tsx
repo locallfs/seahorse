@@ -11,7 +11,7 @@ export default function HeroVideo() {
           Est. 1996 — Pacific Northwest
         </p>
         <div className="mb-8 flex justify-center">
-          <div className="inline-block rounded-2xl bg-black/40 backdrop-blur-sm px-6 py-4 shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
+          <div className="inline-block rounded-2xl bg-black/65 backdrop-blur-sm px-6 py-4 shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
             <Image
               src="/Logo Full Name Only.svg"
               alt="Woody's Seahorse Aquarium & Supply"
