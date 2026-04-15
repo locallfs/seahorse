@@ -41,7 +41,7 @@ export default function SplashScreen() {
     >
       <video
         ref={videoRef}
-        src={cdn("/videos/Seahorse Logo Splashing.mp4")}
+        src={cdn("/Seahorse Logo Splashing.mp4")}
         autoPlay
         muted
         playsInline

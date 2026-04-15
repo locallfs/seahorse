@@ -16,7 +16,7 @@ export default function VideoBackground() {
     <div className="fixed inset-0 -z-10">
       <video
         ref={videoRef}
-        src={cdn("/videos/seedance2_Video_saltwater.mp4")}
+        src={cdn("/seedance2_Video_saltwater.mp4")}
         autoPlay
         muted
         loop
