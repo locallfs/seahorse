@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.6
-FROM node:20-slim
+FROM node:20
 
 WORKDIR /app
 
