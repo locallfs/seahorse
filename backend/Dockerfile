@@ -1,11 +1,10 @@
-# syntax=docker/dockerfile:1.6
 FROM node:20
 
 WORKDIR /app
 
 COPY package*.json .npmrc ./
 
-RUN npm ci --production=false
+RUN npm install --production=false
 
 COPY . .
 
@@ -23,5 +22,3 @@ WORKDIR /app/.medusa/server
 RUN npm install --production=false
 
 EXPOSE 9000
-
-CMD ["node_modules/.bin/medusa", "start"]
