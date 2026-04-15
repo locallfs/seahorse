@@ -11,7 +11,11 @@ RUN npm install --production=false
 COPY . .
 
 ENV ADMIN_ENABLED=true
-RUN NODE_OPTIONS=--max-old-space-size=4096 node_modules/.bin/medusa build
+RUN DATABASE_URL=postgresql://localhost/dummy \
+    JWT_SECRET=build \
+    COOKIE_SECRET=build \
+    NODE_OPTIONS=--max-old-space-size=4096 \
+    node_modules/.bin/medusa build 2>&1
 
 EXPOSE 9000
 
