@@ -16,7 +16,8 @@ RUN DATABASE_URL=postgresql://localhost/dummy \
     node_modules/.bin/medusa build 2>&1
 
 RUN cp medusa-config.js .medusa/server/medusa-config.js && \
-    cp package.json .medusa/server/package.json
+    cp package.json .medusa/server/package.json && \
+    cp package-lock.json .medusa/server/package-lock.json
 
 WORKDIR /app/.medusa/server
 
