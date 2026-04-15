@@ -14,6 +14,9 @@ RUN DISABLE_MEDUSA_ADMIN=true \
     COOKIE_SECRET=build \
     node_modules/.bin/medusa build 2>&1
 
+RUN cp medusa-config.js .medusa/server/medusa-config.js && \
+    cp package.json .medusa/server/package.json
+
 WORKDIR /app/.medusa/server
 
 RUN npm install --production=false

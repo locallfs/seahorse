@@ -9,6 +9,7 @@
     "build": "./node_modules/.bin/medusa build",
     "dev": "./node_modules/.bin/medusa develop",
     "start": "./node_modules/.bin/medusa start",
+    "predeploy": "./node_modules/.bin/medusa db:migrate",
     "seed": "./node_modules/.bin/medusa exec ./src/scripts/seed.ts"
   },
   "dependencies": {
