@@ -1,38 +1,72 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
+import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AddToCartButton from "@/components/AddToCartButton";
+import { medusa } from "@/lib/medusa";
 
-export const metadata = {
-  title: "Product — Woody's Seahorse Aquarium & Supply",
+type Variant = {
+  id: string;
+  title: string;
+  calculated_price?: {
+    calculated_amount: number;
+    currency_code: string;
+  };
 };
 
-const getProduct = (handle: string) => ({
-  id: handle,
-  handle,
-  title: handle
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" "),
-  price: 4999,
-  description:
-    "This is a placeholder product description. Once the Medusa backend is connected, full product details, care information, and real photos will appear here.",
-  category: "fish",
-  gradient: "linear-gradient(135deg, #0c1a30 0%, #0a2a4a 100%)",
-  variants: [{ id: `${handle}-default`, title: "Default", price: 4999 }],
-  tag: null as string | null,
-});
+type StoreProduct = {
+  id: string;
+  handle: string;
+  title: string;
+  description: string | null;
+  thumbnail: string | null;
+  variants: Variant[];
+};
 
-function formatPrice(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
+function formatPrice(amount: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(amount);
 }
 
-export default async function ProductPage({
+export default function ProductPage({
   params,
 }: {
   params: Promise<{ handle: string }>;
 }) {
-  const { handle } = await params;
-  const product = getProduct(handle);
+  const { handle } = use(params);
+  const [product, setProduct] = useState<StoreProduct | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    medusa.store.product
+      .list({
+        handle,
+        fields: "id,handle,title,description,thumbnail,*variants.calculated_price",
+      })
+      .then((res) => {
+        if (cancelled) return;
+        const found = (res.products as StoreProduct[])[0] ?? null;
+        setProduct(found);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err?.message ?? "Failed to load product");
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [handle]);
+
+  const variant = product?.variants?.[0];
+  const price = variant?.calculated_price;
 
   return (
     <>
@@ -44,56 +78,91 @@ export default async function ProductPage({
               Store
             </a>
             <span>/</span>
-            <span className="text-slate-300">{product.title}</span>
+            <span className="text-slate-300">
+              {product?.title ?? (loading ? "Loading…" : "Not found")}
+            </span>
           </nav>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div
-              className="w-full aspect-square rounded-xl border border-white/10 flex items-center justify-center"
-              style={{ background: product.gradient }}
-            >
-              {product.tag && (
-                <span className="absolute top-4 left-4 text-xs font-medium tracking-widest uppercase bg-blue-accent/90 text-white px-3 py-1.5 rounded">
-                  {product.tag}
-                </span>
-              )}
+          {loading ? (
+            <div className="text-center py-32">
+              <p className="text-slate-400 text-sm">Loading product…</p>
             </div>
-
-            <div className="flex flex-col">
-              <p className="text-xs tracking-[0.2em] uppercase text-blue-accent font-medium mb-3">
-                {product.category}
-              </p>
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">
-                {product.title}
-              </h1>
-              <p className="text-3xl font-bold text-blue-light mb-6">
-                {formatPrice(product.price)}
-              </p>
-
-              <div className="border-t border-white/10 pt-6 mb-6">
-                <p className="text-slate-400 leading-relaxed text-sm">
-                  {product.description}
-                </p>
+          ) : error || !product ? (
+            <div className="text-center py-32">
+              <p className="text-red-400 text-sm mb-2">Could not load product.</p>
+              {error && <p className="text-slate-500 text-xs">{error}</p>}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="w-full aspect-square rounded-xl border border-white/10 overflow-hidden relative bg-ocean-800">
+                {product.thumbnail ? (
+                  <Image
+                    src={product.thumbnail}
+                    alt={product.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">
+                    No image
+                  </div>
+                )}
               </div>
 
-              <div className="bg-ocean-800/60 rounded-lg border border-white/10 p-4 mb-6 text-sm text-slate-400 space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
-                  Ships 2-day or faster — live arrival guaranteed
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
-                  Held and fed before shipping
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
-                  Local pickup available
-                </div>
-              </div>
+              <div className="flex flex-col">
+                <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">
+                  {product.title}
+                </h1>
+                {price && (
+                  <p className="text-3xl font-bold text-blue-light mb-6">
+                    {formatPrice(price.calculated_amount, price.currency_code)}
+                  </p>
+                )}
 
-              <AddToCartButton product={product} />
+                {product.description && (
+                  <div className="border-t border-white/10 pt-6 mb-6">
+                    <p className="text-slate-400 leading-relaxed text-sm whitespace-pre-line">
+                      {product.description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="bg-ocean-800/60 rounded-lg border border-white/10 p-4 mb-6 text-sm text-slate-400 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
+                    Ships 2-day or faster — live arrival guaranteed
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
+                    Held and fed before shipping
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
+                    Local pickup available
+                  </div>
+                </div>
+
+                {variant && price && (
+                  <AddToCartButton
+                    product={{
+                      id: product.id,
+                      title: product.title,
+                      price: Math.round(price.calculated_amount * 100),
+                      variants: [
+                        {
+                          id: variant.id,
+                          title: variant.title,
+                          price: Math.round(price.calculated_amount * 100),
+                        },
+                      ],
+                    }}
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
       <Footer />
