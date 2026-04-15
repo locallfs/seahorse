@@ -5,6 +5,7 @@ loadEnv(process.env.NODE_ENV || "development", process.cwd());
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    redisUrl: process.env.REDIS_URL,
     workerMode: process.env.MEDUSA_WORKER_MODE || "server",
     http: {
       storeCors: process.env.STORE_CORS,
@@ -34,9 +35,7 @@ module.exports = defineConfig({
     workflows: {
       resolve: "@medusajs/workflow-engine-redis",
       options: {
-        redis: {
-          url: process.env.REDIS_URL,
-        },
+        redisUrl: process.env.REDIS_URL,
       },
     },
   },
