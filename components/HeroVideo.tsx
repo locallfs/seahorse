@@ -9,7 +9,7 @@ export default function HeroVideo() {
         <p className="text-white uppercase font-medium mb-6 drop-shadow-lg" style={{ fontSize: "clamp(0.85rem, 1.5vw, 1.1rem)", letterSpacing: "0.25em" }}>
           Est. 1996 — Pacific Northwest
         </p>
-        <h1 className="font-blackchancery leading-tight mb-6" style={{ fontSize: "clamp(2rem, 6vw, 5.5rem)", color: "#D44500", textShadow: "0 2px 20px rgba(0,0,0,1), 0 0 40px rgba(0,0,0,0.9)" }}>
+        <h1 className="font-blackchancery leading-tight mb-6" style={{ fontSize: "clamp(2rem, 6vw, 5.5rem)", color: "#003DA5", textShadow: "0 2px 20px rgba(0,0,0,1), 0 0 40px rgba(0,0,0,0.9)" }}>
           Woody&apos;s Seahorse
           <br />
           Aquarium & Supply

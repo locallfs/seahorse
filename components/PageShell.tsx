@@ -17,7 +17,7 @@ export default function PageShell({
   return (
     <>
       <Header />
-      <main className="pt-16 min-h-screen bg-ocean-950">
+      <main className="pt-16 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">
           <div className="max-w-screen-xl mx-auto px-6 py-16">
             <p
@@ -32,19 +32,21 @@ export default function PageShell({
           </div>
         </div>
 
-        <div className="max-w-screen-xl mx-auto px-6 py-20">
-          {children ?? (
-            <div className="flex items-center justify-center py-32">
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-full border border-white/10 flex items-center justify-center mx-auto mb-6">
-                  <div className="w-2 h-2 rounded-full bg-blue-accent animate-pulse" />
+        <div className="bg-gradient-to-b from-ocean-950 to-white">
+          <div className="max-w-screen-xl mx-auto px-6 py-20">
+            {children ?? (
+              <div className="flex items-center justify-center py-32">
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-full border border-white/10 flex items-center justify-center mx-auto mb-6">
+                    <div className="w-2 h-2 rounded-full bg-blue-accent animate-pulse" />
+                  </div>
+                  <p className="text-slate-400 text-sm">
+                    Products loading soon — check back shortly.
+                  </p>
                 </div>
-                <p className="text-slate-400 text-sm">
-                  Products loading soon — check back shortly.
-                </p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </main>
       <Footer />
