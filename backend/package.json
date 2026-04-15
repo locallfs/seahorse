@@ -13,9 +13,10 @@
     "seed": "./node_modules/.bin/medusa exec ./src/scripts/seed.ts"
   },
   "dependencies": {
-    "@medusajs/medusa": "^2.13.6",
+    "@medusajs/admin-sdk": "^2.13.6",
     "@medusajs/cli": "^2.13.6",
     "@medusajs/framework": "^2.13.6",
+    "@medusajs/medusa": "^2.13.6",
     "@medusajs/payment-stripe": "^2.13.6",
     "pg": "^8.11.0"
   },
