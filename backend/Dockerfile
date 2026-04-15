@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY package*.json .npmrc ./
 
-RUN --mount=type=cache,id=npm,target=/root/.npm npm ci --production=false
+RUN npm ci --production=false
 
 COPY . .
 
@@ -20,7 +20,7 @@ RUN cp medusa-config.js .medusa/server/medusa-config.js && \
 
 WORKDIR /app/.medusa/server
 
-RUN --mount=type=cache,id=npm,target=/root/.npm npm ci --production=false
+RUN npm ci --production=false
 
 EXPOSE 9000
 
