@@ -18,4 +18,26 @@ module.exports = defineConfig({
     disable: false,
     backendUrl: process.env.MEDUSA_BACKEND_URL || "https://seahorse-production.up.railway.app",
   },
+  modules: {
+    cache: {
+      resolve: "@medusajs/cache-redis",
+      options: {
+        redisUrl: process.env.REDIS_URL,
+      },
+    },
+    eventBus: {
+      resolve: "@medusajs/event-bus-redis",
+      options: {
+        redisUrl: process.env.REDIS_URL,
+      },
+    },
+    workflows: {
+      resolve: "@medusajs/workflow-engine-redis",
+      options: {
+        redis: {
+          url: process.env.REDIS_URL,
+        },
+      },
+    },
+  },
 });
