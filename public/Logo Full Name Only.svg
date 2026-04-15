@@ -502,7 +502,7 @@
      transform="translate(1304.8332,669.68094)" />
   <text
      xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:323.89968872px;line-height:42.45000076;font-family:BlackChancery;-inkscape-font-specification:'BlackChancery Bold';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#373e48;fill-opacity:1;stroke:none;stroke-width:2.80766487"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:323.89968872px;line-height:42.45000076;font-family:BlackChancery;-inkscape-font-specification:'BlackChancery Bold';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#003DA5;fill-opacity:1;stroke:none;stroke-width:2.80766487"
      x="3928.7288"
      y="679.7276"
      id="text6151"
@@ -511,7 +511,7 @@
        id="tspan6149"
        x="3928.7288"
        y="7608.3955"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:323.89968872px;font-family:BlackChancery;-inkscape-font-specification:'BlackChancery Bold';fill:#373e48;stroke-width:2.80766487" /></text>
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:323.89968872px;font-family:BlackChancery;-inkscape-font-specification:'BlackChancery Bold';fill:#003DA5;stroke-width:2.80766487" /></text>
   <text
      xml:space="preserve"
      style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-size:19.0733242px;line-height:39.45000076;font-family:'Bookman Old Style';-inkscape-font-specification:'Bookman Old Style Light';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#003380;fill-opacity:1;stroke:none;stroke-width:0.79472184"
@@ -546,7 +546,7 @@
   </g>
   <text
      xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:363.20724487px;line-height:39.45000076;font-family:BlackChancery;-inkscape-font-specification:'BlackChancery Medium';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#002255;fill-opacity:1;stroke:none;stroke-width:1.89170456;filter:url(#filter6879)"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:363.20724487px;line-height:39.45000076;font-family:BlackChancery;-inkscape-font-specification:'BlackChancery Medium';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#003DA5;fill-opacity:1;stroke:none;stroke-width:1.89170456;filter:url(#filter6879)"
      x="-726.94727"
      y="228.40317"
      id="text4515"
@@ -555,10 +555,10 @@
        id="tspan4513"
        x="-726.94727"
        y="228.40317"
-       style="fill:#002255;stroke-width:1.89170456">Seahorse Aquarium &amp; Supply</tspan></text>
+       style="fill:#003DA5;stroke-width:1.89170456">Seahorse Aquarium &amp; Supply</tspan></text>
   <text
      xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:196.59973145px;line-height:39.45000076;font-family:BlackChancery;-inkscape-font-specification:BlackChancery;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#003380;fill-opacity:1;stroke:none;stroke-width:1.02395689;filter:url(#filter7228);"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:196.59973145px;line-height:39.45000076;font-family:BlackChancery;-inkscape-font-specification:BlackChancery;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#003DA5;fill-opacity:1;stroke:none;stroke-width:1.02395689;filter:url(#filter7228);"
      x="455.46454"
      y="-115.07743"
      id="text7210"
@@ -567,5 +567,5 @@
        id="tspan7208"
        x="455.46454"
        y="-115.07743"
-       style="stroke-width:1.02395689;fill:#003380;">Woody's</tspan></text>
+       style="stroke-width:1.02395689;fill:#003DA5;">Woody's</tspan></text>
 </svg>
