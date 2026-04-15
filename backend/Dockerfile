@@ -11,7 +11,7 @@ RUN npm install --production=false
 COPY . .
 
 ENV ADMIN_ENABLED=true
-RUN node_modules/.bin/medusa build
+RUN NODE_OPTIONS=--max-old-space-size=4096 node_modules/.bin/medusa build
 
 EXPOSE 9000
 
