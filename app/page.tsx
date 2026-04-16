@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import HeroVideo from "@/components/HeroVideo";
 import VideoBackground from "@/components/VideoBackground";
 import SideScrollGallery from "@/components/SideScrollGallery";
+import GoogleReviews from "@/components/GoogleReviews";
 import Footer from "@/components/Footer";
 import type { GalleryItem } from "@/components/SideScrollGallery";
 
@@ -125,6 +126,10 @@ export default function HomePage() {
             viewAllHref="/supplies"
             accentColor="#34d399"
           />
+        </div>
+
+        <div className="bg-ocean-950/80 backdrop-blur-sm border-t border-white/10">
+          <GoogleReviews />
         </div>
 
         <section className="py-24 bg-ocean-900/80 backdrop-blur-sm border-t border-white/10">

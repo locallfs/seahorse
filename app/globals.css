@@ -63,6 +63,16 @@ body {
   animation: trust-scroll 30s linear infinite;
 }
 
+.gallery-auto-scroll {
+  animation: trust-scroll 40s linear infinite;
+  width: max-content;
+}
+
+.reviews-auto-scroll {
+  animation: trust-scroll 45s linear infinite;
+  width: max-content;
+}
+
 .nav-grow {
   display: inline-block;
   animation: nav-grow 2s ease-in-out infinite;
