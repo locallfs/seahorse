@@ -175,7 +175,6 @@ export default function WhoWeArePage() {
               {[
                 "Interviewed by National Geographic and Pet Age Magazine",
                 "Supplier of Crystal Sea Salt for the Newport Aquarium when ocean water is unavailable",
-                "Consultant for European users of Crystal Sea",
                 "Supplier of Crystal Sea to the University of Portland",
                 "Supplier of Crystal Sea to OHSU",
                 "Aquarium equipment insurance claims adjuster",
