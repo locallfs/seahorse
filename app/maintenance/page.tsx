@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import QuoteForm from "@/components/QuoteForm";
 
 export const metadata = { title: "Aquarium Maintenance — Woody's Seahorse Aquarium & Supply" };
 
@@ -139,12 +140,10 @@ export default function MaintenancePage() {
                     * {plan.note}
                   </p>
                 )}
-                <a
-                  href="mailto:info@seahorseaquariumsupply.com?subject=Maintenance Quote Request"
-                  className="mt-auto block text-center px-4 py-3 bg-blue-accent hover:bg-blue-light text-white text-sm font-medium rounded transition-colors duration-200"
-                >
-                  Get a Quote
-                </a>
+                <QuoteForm
+                  service={`Maintenance — ${plan.name}`}
+                  buttonClassName="mt-auto block text-center px-4 py-3 bg-blue-accent hover:bg-blue-light text-white text-sm font-medium rounded transition-colors duration-200 w-full"
+                />
               </div>
             ))}
           </div>

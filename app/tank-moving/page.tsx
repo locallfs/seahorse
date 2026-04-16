@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import QuoteForm from "@/components/QuoteForm";
 
 export const metadata = {
   title: "Tank Moving Services — Woody's Seahorse Aquarium & Supply",
@@ -88,12 +89,7 @@ export default function TankMovingPage() {
               Pricing depends on tank size, distance, and livestock. Contact us
               for a free estimate.
             </p>
-            <a
-              href="mailto:Terry@seahorse-nw.com?subject=Tank Moving Quote Request"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-accent hover:bg-blue-light text-white font-medium rounded transition-colors duration-200 text-sm tracking-wide"
-            >
-              Get a Quote
-            </a>
+            <QuoteForm service="Tank Moving" />
           </div>
         </div>
       </main>

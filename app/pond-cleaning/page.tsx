@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import QuoteForm from "@/components/QuoteForm";
 
 export const metadata = {
   title: "Pond Cleaning Services — Woody's Seahorse Aquarium & Supply",
@@ -89,12 +90,7 @@ export default function PondCleaningPage() {
               Every pond is different. Contact us for a free estimate based on
               your pond&apos;s size and condition.
             </p>
-            <a
-              href="mailto:Terry@seahorse-nw.com?subject=Pond Cleaning Quote Request"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-accent hover:bg-blue-light text-white font-medium rounded transition-colors duration-200 text-sm tracking-wide"
-            >
-              Get a Quote
-            </a>
+            <QuoteForm service="Pond Cleaning" />
           </div>
         </div>
       </main>

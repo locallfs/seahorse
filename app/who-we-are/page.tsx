@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import QuoteForm from "@/components/QuoteForm";
 
 export const metadata = {
   title: "Who We Are — Woody's Seahorse Aquarium & Supply",
@@ -220,12 +221,7 @@ export default function WhoWeArePage() {
             <p className="text-slate-400 text-base max-w-xl mx-auto mb-8 leading-relaxed">
               Have questions or want to learn more? We&apos;d love to hear from you.
             </p>
-            <a
-              href="mailto:Terry@seahorse-nw.com"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-accent hover:bg-blue-light text-white font-medium rounded transition-colors duration-200 text-sm tracking-wide"
-            >
-              Get In Touch
-            </a>
+            <QuoteForm service="General Inquiry" buttonLabel="Get In Touch" />
           </div>
         </div>
       </main>

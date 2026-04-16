@@ -92,8 +92,8 @@ export default function Footer() {
               </li>
               <li>
                 <span className="text-white/60 text-xs">Email:</span>{" "}
-                <a href="mailto:Terry@seahorse-nw.com" className="hover:text-[#FFD700] transition-colors">
-                  Terry@seahorse-nw.com
+                <a href="mailto:info@seahorseaquariumsupply.com" className="hover:text-[#FFD700] transition-colors">
+                  info@seahorseaquariumsupply.com
                 </a>
               </li>
             </ul>

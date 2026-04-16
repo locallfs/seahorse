@@ -44,10 +44,10 @@ function OrderConfirmationContent() {
       <p className="text-slate-500 text-sm mb-10">
         Questions? Email us at{" "}
         <a
-          href="mailto:Terry@seahorse-nw.com"
+          href="mailto:info@seahorseaquariumsupply.com"
           className="text-white hover:text-blue-light transition-colors"
         >
-          Terry@seahorse-nw.com
+          info@seahorseaquariumsupply.com
         </a>
       </p>
 
