@@ -20,6 +20,7 @@ const serviceLinks = [
 
 const rightLinks = [
   { label: "Who We Are", href: "/who-we-are" },
+  { label: "Care", href: "/care" },
 ];
 
 export default function Header() {

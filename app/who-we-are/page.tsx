@@ -5,39 +5,27 @@ export const metadata = {
   title: "Who We Are — Woody's Seahorse Aquarium & Supply",
 };
 
-const products = [
-  "Purified fresh water TDS=0",
-  "Premixed saltwater with Crystal Sea Salt 1.023–1.024",
-  "5 Gallon Jugs",
-  "Saltwater fish",
-  "Inverts",
-  "Live rock from Fiji and Haiti",
-  "Buy, sell and trade Coral",
-  "Buy, sell and trade new and used equipment",
-  "Dry base rock",
-  "Aquarium related plumbing supplies (bulk heads, plastic clamps, etc.)",
-  "Aragonite, bright white sand",
-  "VHO, Metal Halide, LED, Power Compact, T5 Lighting & Bulbs",
-  "Tank maintenance and cleaning services",
-  "Custom acrylic work and repairs",
-  "Fish and coral food and supplements",
-  "Coconut carbon",
-  "Pumps and skimmers",
-  "Filtration socks and pads",
-  "Custom made plenums",
-  "Equipment and lighting repairs",
-  "Crystal Sea Salt Mix",
-  "Acrylic hole drilling — free",
-  "Glass hole drilling coming soon — ask",
-];
-
-const achievements = [
-  "Interviewed by National Geographic and Pet Age Magazine",
-  "Supplier of Crystal Sea Salt for the Newport Aquarium when ocean water is unavailable",
-  "Consultant for European users of Crystal Sea",
-  "Supplier of Crystal Sea to the University of Portland",
-  "Supplier of Crystal Sea to OHSU",
-  "Aquarium equipment insurance claims adjuster",
+const values = [
+  {
+    title: "Creature\u2011First Care",
+    description:
+      "Every fish, coral, and invertebrate in our store receives attentive, evidence\u2011based care. We prioritize stable systems, proper nutrition, and stress\u2011free acclimation so our animals arrive healthy and stay healthy.",
+  },
+  {
+    title: "Sustainable Reefkeeping",
+    description:
+      "We support responsible collection, aquaculture, and long\u2011term reef stewardship. Our livestock selection emphasizes captive\u2011bred fish, aquacultured corals, and suppliers who share our commitment to ethical practices.",
+  },
+  {
+    title: "Education & Support",
+    description:
+      "Whether you\u2019re setting up your first nano tank or fine\u2011tuning a mature reef, we\u2019re here to help you succeed. We offer clear, practical guidance rooted in real experience \u2014 not sales pressure.",
+  },
+  {
+    title: "A Community Hub",
+    description:
+      "Seahorse Aquarium & Supply has always been more than a store. It\u2019s a place where hobbyists connect, learn, troubleshoot, and celebrate the beauty of marine life together.",
+  },
 ];
 
 export default function WhoWeArePage() {
@@ -57,24 +45,21 @@ export default function WhoWeArePage() {
         </div>
 
         <div className="max-w-screen-xl mx-auto px-6 py-20">
-          <div className="max-w-3xl space-y-6 text-slate-300 leading-relaxed text-base">
+          <div className="max-w-3xl space-y-6 text-white leading-relaxed text-base">
             <p>
-              Woody&apos;s Seahorse Aquarium & Supply was started in 1996 with
-              the specific goal of providing the best of all your saltwater needs
-              at the best prices.
+              Woody&apos;s Seahorse Aquarium &amp; Supply has been Portland&apos;s
+              trusted saltwater aquarium store since 1996. Built on a foundation of
+              responsible reefkeeping, exceptional animal care, and honest guidance,
+              our family&#8209;run business continues to grow thoughtfully as the
+              next generation carries the mission forward.
             </p>
             <p>
-              We offer our customers advice to the best of our knowledge and we
-              are willing to spend time to personally teach you the hobby.
-            </p>
-            <p>
-              We test all products and we sell only those that truly work.
-            </p>
-            <p>
-              We hold livestock until it&apos;s eating and ready to move into
-              your aquarium. We also do not import species that have little or no
-              survival rate. Our livestock is kept under the best possible
-              conditions and our corals under the best lighting for each species.
+              What started as Woody&apos;s passion for saltwater aquariums has grown
+              into a modern, community&#8209;focused marine specialty shop. Today,
+              the next generation leads the store with updated systems, advanced
+              reef&#8209;keeping knowledge, and a continued dedication to ethical
+              practices. Our long history in the hobby allows us to blend decades of
+              experience with the latest innovations in aquarium care.
             </p>
           </div>
         </div>
@@ -82,52 +67,59 @@ export default function WhoWeArePage() {
         <div className="border-t border-white/10 bg-ocean-900/60">
           <div className="max-w-screen-xl mx-auto px-6 py-20">
             <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
-              What We Offer
+              Our Values
             </p>
-            <h2 className="text-3xl font-bold text-white mb-10">
-              Our Many Products & Services
+            <h2 className="text-3xl font-bold text-white mb-12">
+              What We Stand For
             </h2>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {products.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-slate-300"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {values.map((item) => (
+                <div
+                  key={item.title}
+                  className="p-8 rounded-xl border border-white/10 bg-ocean-900"
                 >
-                  <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-accent" />
-                  {item}
-                </li>
+                  <h3 className="text-xl font-bold text-white mb-4">
+                    {item.title}
+                  </h3>
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
 
         <div className="border-t border-white/10">
           <div className="max-w-screen-xl mx-auto px-6 py-20">
             <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
-              Recognition
+              Our Promise
             </p>
-            <h2 className="text-3xl font-bold text-white mb-10">
-              Over Our Many Years We Have Been
+            <h2 className="text-3xl font-bold text-white mb-8">
+              Expert Advice &amp; Proven Products
             </h2>
-            <ul className="space-y-4 max-w-3xl">
-              {achievements.map((item) => (
-                <li key={item} className="flex items-start gap-4 text-slate-300">
-                  <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-accent" />
-                  <span className="leading-relaxed">{item}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="max-w-3xl space-y-6 text-white leading-relaxed text-base">
+              <p>
+                At Woody&apos;s, we believe in teaching the hobby &mdash; not just
+                selling it.
+              </p>
+              <p>
+                We test the products we carry and recommend only equipment that truly
+                works. Whether you&apos;re setting up your first saltwater tank or
+                maintaining a mature reef system, our team provides clear, practical
+                guidance based on real&#8209;world experience.
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="border-t border-white/10 bg-ocean-900/60">
           <div className="max-w-screen-xl mx-auto px-6 py-20 text-center">
             <p className="text-slate-400 text-base max-w-xl mx-auto mb-8 leading-relaxed">
-              If you have suggestions or information to share, by all means,
-              please send it to us. We like to learn as much as teach.
+              Have questions or want to learn more? We&apos;d love to hear from you.
             </p>
             <a
-              href="mailto:info@seahorseaquariumsupply.com"
+              href="mailto:Terry@seahorse-nw.com"
               className="inline-flex items-center gap-2 px-8 py-4 bg-blue-accent hover:bg-blue-light text-white font-medium rounded transition-colors duration-200 text-sm tracking-wide"
             >
               Get In Touch
