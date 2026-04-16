@@ -21,7 +21,9 @@
     "@medusajs/medusa": "^2.13.6",
     "@medusajs/payment-stripe": "^2.13.6",
     "@medusajs/workflow-engine-redis": "^2.13.6",
-    "pg": "^8.11.0"
+    "multer": "^2.1.1",
+    "pg": "^8.11.0",
+    "stripe": "^22.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",
