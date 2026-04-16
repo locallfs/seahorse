@@ -126,9 +126,9 @@ export default function Header() {
             </svg>
           </Link>
           <Link
-            href="/cart"
+            href={customer ? "/cart" : "/login"}
             className="relative p-2 text-blue-dim hover:text-blue-accent transition-colors"
-            aria-label="Cart"
+            aria-label={customer ? "Cart" : "Sign in"}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M6 2L3 6v12a2 2 0 002 2h10a2 2 0 002-2V6l-3-4z" />

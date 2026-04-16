@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/AuthContext";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -85,6 +86,13 @@ function StripePaymentForm({
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, refreshCart, clearCart, loading: cartLoading } = useCart();
+  const { customer, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && !customer) {
+      router.replace("/login");
+    }
+  }, [authLoading, customer, router]);
 
   const [form, setForm] = useState({
     email: "",
@@ -235,7 +243,7 @@ export default function CheckoutPage() {
 
   const items = cart?.items ?? [];
 
-  if (cartLoading) {
+  if (cartLoading || authLoading || !customer) {
     return (
       <>
         <Header />

@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartContext";
+import { useAuth } from "@/components/AuthContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Image from "next/image";
@@ -15,9 +18,29 @@ function formatPrice(amount: number) {
 
 export default function CartPage() {
   const { cart, loading, removeItem, updateQuantity } = useCart();
+  const { customer, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !customer) {
+      router.replace("/login");
+    }
+  }, [authLoading, customer, router]);
 
   const items = cart?.items ?? [];
   const subtotal = cart?.subtotal ?? 0;
+
+  if (authLoading || !customer) {
+    return (
+      <>
+        <Header />
+        <main className="pt-24 min-h-screen flex items-center justify-center">
+          <p className="text-slate-400">Loading...</p>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>

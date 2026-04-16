@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartContext";
+import { useAuth } from "@/components/AuthContext";
 
 interface Product {
   id: string;
@@ -11,9 +13,15 @@ interface Product {
 
 export default function AddToCartButton({ product }: { product: Product }) {
   const { addItem, adding } = useCart();
+  const { customer } = useAuth();
+  const router = useRouter();
   const [added, setAdded] = useState(false);
 
   const handleAdd = async () => {
+    if (!customer) {
+      router.push("/login");
+      return;
+    }
     try {
       await addItem(product.variants[0].id, 1);
       setAdded(true);
@@ -36,7 +44,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
               : "bg-blue-accent hover:bg-blue-light text-white"
         }`}
       >
-        {added ? "Added to Cart" : adding ? "Adding..." : "Add to Cart"}
+        {added ? "Added to Cart" : adding ? "Adding..." : customer ? "Add to Cart" : "Sign in to Add to Cart"}
       </button>
       <a
         href="/cart"
