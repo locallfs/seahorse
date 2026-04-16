@@ -87,10 +87,6 @@ export default function Footer() {
                 <a href="tel:5032834788" className="hover:text-[#FFD700] transition-colors">503-283-4788</a>
               </li>
               <li>
-                <span className="text-white/60 text-xs">Fax:</span>{" "}
-                503-289-6310
-              </li>
-              <li>
                 <span className="text-white/60 text-xs">Email:</span>{" "}
                 <a href="mailto:info@seahorseaquariumsupply.com" className="hover:text-[#FFD700] transition-colors">
                   info@seahorseaquariumsupply.com
