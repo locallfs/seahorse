@@ -172,7 +172,22 @@ export default function WhoWeArePage() {
               Over Our Many Years We Have Been
             </h2>
 
-            <blockquote className="max-w-3xl mb-12 p-8 rounded-xl border border-white/10 bg-ocean-900">
+            <ul className="space-y-4 max-w-3xl mb-12">
+              {[
+                "Interviewed by National Geographic and Pet Age Magazine",
+                "Supplier of Crystal Sea Salt for the Newport Aquarium when ocean water is unavailable",
+                "Supplier of Crystal Sea to the University of Portland",
+                "Supplier of Crystal Sea to OHSU",
+                "Aquarium equipment insurance claims adjuster",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-4 text-slate-300">
+                  <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
+                  <span className="leading-relaxed">{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            <blockquote className="max-w-3xl p-8 rounded-xl border border-white/10 bg-ocean-900">
               <p className="text-slate-300 text-sm leading-relaxed mb-4">
                 &ldquo;We are a large scientific research lab here in Portland using
                 freshwater zebrafish (Danio rerio) as a model organism to study
@@ -197,21 +212,6 @@ export default function WhoWeArePage() {
                 &mdash; OHSU Brehm Lab
               </cite>
             </blockquote>
-
-            <ul className="space-y-4 max-w-3xl">
-              {[
-                "Interviewed by National Geographic and Pet Age Magazine",
-                "Supplier of Crystal Sea Salt for the Newport Aquarium when ocean water is unavailable",
-                "Supplier of Crystal Sea to the University of Portland",
-                "Supplier of Crystal Sea to OHSU",
-                "Aquarium equipment insurance claims adjuster",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-4 text-slate-300">
-                  <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
-                  <span className="leading-relaxed">{item}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
 
