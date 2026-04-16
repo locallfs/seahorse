@@ -3,6 +3,7 @@
 import { useCart } from "@/components/CartContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Image from "next/image";
 import Link from "next/link";
 
 function formatPrice(cents: number) {
@@ -39,7 +40,18 @@ export default function CartPage() {
                     key={item.id}
                     className="flex gap-4 p-4 rounded-lg border border-white/10 bg-ocean-900"
                   >
-                    <div className="w-20 h-20 rounded flex-shrink-0 bg-ocean-800 border border-white/10" />
+                    <div className="w-20 h-20 rounded flex-shrink-0 bg-ocean-800 border border-white/10 overflow-hidden relative">
+                      {item.thumbnail && (
+                        <Image
+                          src={item.thumbnail}
+                          alt={item.title}
+                          fill
+                          className="object-cover"
+                          sizes="80px"
+                          unoptimized
+                        />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-medium text-sm mb-1">
                         {item.title}

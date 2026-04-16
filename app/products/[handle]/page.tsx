@@ -152,6 +152,7 @@ export default function ProductPage({
                     product={{
                       id: product.id,
                       title: product.title,
+                      thumbnail: product.thumbnail,
                       price: Math.round(price.calculated_amount * 100),
                       variants: [
                         {

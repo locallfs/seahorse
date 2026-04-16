@@ -7,6 +7,7 @@ interface Product {
   id: string;
   title: string;
   price: number;
+  thumbnail?: string | null;
   variants: { id: string; title: string; price: number }[];
 }
 
@@ -21,6 +22,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
       title: product.title,
       price: product.price,
       quantity: 1,
+      thumbnail: product.thumbnail ?? undefined,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
