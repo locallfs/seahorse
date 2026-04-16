@@ -77,6 +77,18 @@ class BunnyFileService extends AbstractFileProviderService {
   async getPresignedDownloadUrl(file) {
     return this.publicUrl(file.fileKey);
   }
+
+  async getPresignedUploadUrl(fileData) {
+    const fileKey = this.buildFileKey(fileData.filename);
+    return {
+      url: this.storageUrl(fileKey),
+      key: fileKey,
+      headers: {
+        AccessKey: this.storagePassword,
+        "Content-Type": fileData.mimeType || "application/octet-stream",
+      },
+    };
+  }
 }
 
 BunnyFileService.identifier = "bunny";
