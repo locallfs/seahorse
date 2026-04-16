@@ -34,31 +34,29 @@ export default function TankMovingPage() {
         </div>
 
         <div className="max-w-screen-xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12 items-start mb-16">
-            <div className="space-y-6 text-white leading-relaxed text-base">
-              <p>
-                Moving an aquarium is one of the most stressful things a hobbyist
-                can face. A single mistake can mean lost livestock, cracked glass,
-                or a crashed cycle. Let our team handle it so your tank arrives
-                safe and your animals stay healthy.
-              </p>
-              <p>
-                We&apos;ve moved everything from nano tanks to 300+ gallon reef
-                systems. Our process is designed to keep water parameters stable,
-                minimize stress on your fish and corals, and get your tank back up
-                and running as quickly as possible at your new location.
-              </p>
-            </div>
-            <div className="rounded-xl overflow-hidden border border-white/10">
-              <Image
-                src="/images/large-tank-moves.jpg"
-                alt=""
-                width={800}
-                height={600}
-                className="w-full h-auto object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-            </div>
+          <div className="max-w-3xl space-y-6 text-white leading-relaxed text-base mb-16">
+            <p>
+              Moving an aquarium is one of the most stressful things a hobbyist
+              can face. A single mistake can mean lost livestock, cracked glass,
+              or a crashed cycle. Let our team handle it so your tank arrives
+              safe and your animals stay healthy.
+            </p>
+            <p>
+              We&apos;ve moved everything from nano tanks to 300+ gallon reef
+              systems. Our process is designed to keep water parameters stable,
+              minimize stress on your fish and corals, and get your tank back up
+              and running as quickly as possible at your new location.
+            </p>
+          </div>
+
+          <div className="hidden lg:block fixed right-8 top-32 w-[420px] rounded-xl overflow-hidden border border-white/10">
+            <Image
+              src="/images/large-tank-moves.jpg"
+              alt=""
+              width={800}
+              height={600}
+              className="w-full h-auto object-cover"
+            />
           </div>
 
           <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
