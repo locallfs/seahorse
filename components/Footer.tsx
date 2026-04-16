@@ -44,7 +44,7 @@ export default function Footer() {
             </p>
           </div>
 
-          <div className="max-w-screen-xl w-full">
+          <div className="max-w-screen-xl ml-auto mr-auto lg:ml-0 lg:mr-auto lg:pl-[10%] w-full">
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[auto_auto_auto_auto_auto] gap-x-10 gap-y-8 lg:justify-between">
               <div>
                 <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
