@@ -33,7 +33,7 @@ export default function TankMovingPage() {
           </div>
         </div>
 
-        <div className="max-w-screen-xl mx-auto px-6 py-16">
+        <div className="max-w-screen-xl mx-auto px-6 py-16 relative">
           <div className="max-w-3xl space-y-6 text-white leading-relaxed text-base mb-16">
             <p>
               Moving an aquarium is one of the most stressful things a hobbyist
@@ -49,22 +49,23 @@ export default function TankMovingPage() {
             </p>
           </div>
 
-          <div className="hidden lg:block fixed right-8 top-32 w-[420px] rounded-xl overflow-hidden border border-white/10">
-            <Image
-              src="/images/large-tank-moves.jpg"
-              alt=""
-              width={800}
-              height={600}
-              className="w-full h-auto object-cover"
-            />
-          </div>
+          <div className="relative">
+            <div className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 w-[420px] rounded-xl overflow-hidden border border-white/10">
+              <Image
+                src="/images/large-tank-moves.jpg"
+                alt=""
+                width={800}
+                height={600}
+                className="w-full h-auto object-cover"
+              />
+            </div>
 
-          <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
-            What We Offer
-          </p>
-          <h2 className="text-3xl font-bold text-white mb-10">
-            Our Tank Moving Services
-          </h2>
+            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
+              What We Offer
+            </p>
+            <h2 className="text-3xl font-bold text-white mb-10">
+              Our Tank Moving Services
+            </h2>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl mb-16">
             {services.map((item) => (
               <li
@@ -76,6 +77,8 @@ export default function TankMovingPage() {
               </li>
             ))}
           </ul>
+
+          </div>
 
           <div className="rounded-xl border border-white/10 bg-ocean-900 p-10 max-w-xl">
             <h3 className="text-xl font-bold text-white mb-3">
