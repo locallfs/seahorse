@@ -8,6 +8,7 @@ import {
   useCallback,
 } from "react";
 import { medusa } from "@/lib/medusa";
+import { useAuth } from "@/components/AuthContext";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -31,6 +32,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const { customer, loading: authLoading } = useAuth();
 
   const getOrCreateCart = useCallback(async (): Promise<any> => {
     const stored =
@@ -63,6 +65,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!customer) {
+      setCart(null);
+      setLoading(false);
+      return;
+    }
+
     if (typeof window === "undefined") {
       setLoading(false);
       return;
@@ -83,7 +93,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [customer, authLoading]);
 
   const refreshCart = useCallback(async () => {
     if (typeof window === "undefined") return;
