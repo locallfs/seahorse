@@ -57,6 +57,20 @@ module.exports = defineConfig({
         ],
       },
     },
+    tax: {
+      resolve: "@medusajs/tax",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/tax-stripe",
+            id: "stripe-tax",
+            options: {
+              api_key: process.env.STRIPE_API_KEY,
+            },
+          },
+        ],
+      },
+    },
     payment: {
       resolve: "@medusajs/payment",
       options: {
