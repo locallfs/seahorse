@@ -51,7 +51,7 @@ export default function PondCleaningPage() {
           </div>
 
           <div className="relative">
-            <div className="hidden lg:block absolute -right-[10%] top-1/2 -translate-y-1/2 w-[420px] rounded-xl overflow-hidden border border-white/10">
+            <div className="hidden lg:block absolute -right-[25%] top-1/2 -translate-y-1/2 w-[600px] rounded-xl overflow-hidden border border-white/10">
               <Image
                 src="/images/pond-cleaning-filter.webp"
                 alt=""
