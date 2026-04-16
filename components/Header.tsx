@@ -54,11 +54,11 @@ export default function Header() {
       <div className="w-full mx-auto px-12 h-16 flex items-center justify-between">
         <Link href="/" className="flex-shrink-0 ml-24">
           <Image
-            src="/images/logo.png"
+            src="/images/LogoFullNameOnly.png"
             alt="Woody's Seahorse Aquarium & Supply"
-            width={140}
-            height={48}
-            className="h-10 w-auto object-contain"
+            width={220}
+            height={60}
+            className="h-14 w-auto object-contain"
             priority
           />
         </Link>
