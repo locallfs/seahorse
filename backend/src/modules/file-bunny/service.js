@@ -37,7 +37,10 @@ class BunnyFileService extends AbstractFileProviderService {
       throw new MedusaError(MedusaError.Types.INVALID_DATA, "No filename provided");
     }
     const fileKey = this.buildFileKey(file.filename);
-    const body = Buffer.from(file.content, "base64");
+    const decoded = Buffer.from(file.content, "base64");
+    const body = decoded.toString("base64") === file.content
+      ? decoded
+      : Buffer.from(file.content);
     const res = await fetch(this.storageUrl(fileKey), {
       method: "PUT",
       headers: {
