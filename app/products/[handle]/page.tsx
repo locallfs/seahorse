@@ -126,26 +126,11 @@ export default function ProductPage({
 
                 {product.description && (
                   <div className="border-t border-white/10 pt-6 mb-6">
-                    <p className="text-slate-400 leading-relaxed text-sm whitespace-pre-line">
+                    <p className="text-white leading-relaxed text-sm whitespace-pre-line">
                       {product.description}
                     </p>
                   </div>
                 )}
-
-                <div className="bg-ocean-800/60 rounded-lg border border-white/10 p-4 mb-6 text-sm text-slate-400 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
-                    Ships 2-day or faster — live arrival guaranteed
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
-                    Held and fed before shipping
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
-                    Local pickup available
-                  </div>
-                </div>
 
                 {variant && price && (
                   <AddToCartButton
