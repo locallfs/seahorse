@@ -28,8 +28,8 @@ const hours = [
 export default function Footer() {
   return (
     <footer className="bg-ocean-900 border-t border-white/10 mt-auto">
-      <div className="px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[auto_auto_auto_auto_auto_auto] gap-x-10 gap-y-8 lg:justify-start">
+      <div className="max-w-screen-xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[auto_auto_auto_auto_auto_auto] gap-x-10 gap-y-8 lg:justify-between">
           <div className="lg:col-span-1">
             <Image
               src="/images/LogoFullNameOnly.png"
@@ -167,7 +167,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-screen-xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-white">
             &copy; {new Date().getFullYear()} Secret Reef LLC — All rights reserved.
           </p>
