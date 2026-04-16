@@ -11,7 +11,10 @@ function formatPrice(cents: number) {
 }
 
 export default function CartPage() {
-  const { items, total, removeItem, updateQuantity } = useCart();
+  const { cart, loading, removeItem, updateQuantity } = useCart();
+
+  const items = cart?.items ?? [];
+  const subtotal = cart?.subtotal ?? 0;
 
   return (
     <>
@@ -22,7 +25,11 @@ export default function CartPage() {
             Your Cart
           </h1>
 
-          {items.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-32">
+              <p className="text-slate-400">Loading cart...</p>
+            </div>
+          ) : items.length === 0 ? (
             <div className="text-center py-32">
               <p className="text-slate-400 mb-6">Your cart is empty.</p>
               <Link
@@ -35,7 +42,7 @@ export default function CartPage() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
               <div className="lg:col-span-2 space-y-4">
-                {items.map((item) => (
+                {items.map((item: any) => (
                   <div
                     key={item.id}
                     className="flex gap-4 p-4 rounded-lg border border-white/10 bg-ocean-900"
@@ -54,10 +61,15 @@ export default function CartPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-medium text-sm mb-1">
-                        {item.title}
+                        {item.product_title || item.title}
                       </p>
+                      {item.variant_title && item.variant_title !== "Default" && (
+                        <p className="text-slate-400 text-xs mb-1">
+                          {item.variant_title}
+                        </p>
+                      )}
                       <p className="text-white text-sm font-semibold">
-                        {formatPrice(item.price)}
+                        {formatPrice(item.unit_price)}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -69,7 +81,9 @@ export default function CartPage() {
                       </button>
                       <div className="flex items-center gap-2 border border-white/15 rounded">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity - 1)
+                          }
                           className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
                         >
                           −
@@ -78,7 +92,9 @@ export default function CartPage() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity + 1)
+                          }
                           className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
                         >
                           +
@@ -97,16 +113,20 @@ export default function CartPage() {
                   <div className="space-y-3 text-sm mb-6">
                     <div className="flex justify-between text-slate-400">
                       <span>Subtotal</span>
-                      <span className="text-white">{formatPrice(total)}</span>
+                      <span className="text-white">
+                        {formatPrice(subtotal)}
+                      </span>
                     </div>
                     <div className="flex justify-between text-slate-400">
                       <span>Shipping</span>
-                      <span className="text-white">Calculated at checkout</span>
+                      <span className="text-white">
+                        Calculated at checkout
+                      </span>
                     </div>
                   </div>
                   <div className="border-t border-white/10 pt-4 mb-6 flex justify-between font-bold text-white">
                     <span>Total</span>
-                    <span className="text-white">{formatPrice(total)}</span>
+                    <span className="text-white">{formatPrice(subtotal)}</span>
                   </div>
 
                   <div className="bg-blue-accent/10 border border-blue-accent/20 rounded-lg p-3 mb-6 text-xs text-slate-300">

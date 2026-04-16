@@ -6,39 +6,37 @@ import { useCart } from "@/components/CartContext";
 interface Product {
   id: string;
   title: string;
-  price: number;
-  thumbnail?: string | null;
-  variants: { id: string; title: string; price: number }[];
+  variants: { id: string; title: string }[];
 }
 
 export default function AddToCartButton({ product }: { product: Product }) {
-  const { addItem } = useCart();
+  const { addItem, adding } = useCart();
   const [added, setAdded] = useState(false);
 
-  const handleAdd = () => {
-    addItem({
-      id: product.id,
-      variantId: product.variants[0].id,
-      title: product.title,
-      price: product.price,
-      quantity: 1,
-      thumbnail: product.thumbnail ?? undefined,
-    });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+  const handleAdd = async () => {
+    try {
+      await addItem(product.variants[0].id, 1);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+    }
   };
 
   return (
     <div className="flex flex-col gap-3">
       <button
         onClick={handleAdd}
+        disabled={adding}
         className={`w-full py-4 rounded font-medium text-sm tracking-wide transition-all duration-200 ${
           added
             ? "bg-green-600 text-white"
-            : "bg-blue-accent hover:bg-blue-light text-white"
+            : adding
+              ? "bg-blue-accent/50 text-white/50 cursor-wait"
+              : "bg-blue-accent hover:bg-blue-light text-white"
         }`}
       >
-        {added ? "Added to Cart" : "Add to Cart"}
+        {added ? "Added to Cart" : adding ? "Adding..." : "Add to Cart"}
       </button>
       <a
         href="/cart"

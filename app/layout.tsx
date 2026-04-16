@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { CartProvider } from "@/components/CartContext";
+import { AuthProvider } from "@/components/AuthContext";
 import SplashScreen from "@/components/SplashScreen";
 import "./globals.css";
 
@@ -30,10 +31,12 @@ export default function RootLayout({
         `}} />
       </head>
       <body className="min-h-full flex flex-col bg-black text-slate-100 antialiased">
-        <CartProvider>
-          <SplashScreen />
-          {children}
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <SplashScreen />
+            {children}
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

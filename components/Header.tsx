@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/components/CartContext";
+import { useAuth } from "@/components/AuthContext";
 
 const navLinks: { label: string; href: string; flash?: boolean }[] = [
   { label: "New Arrivals", href: "/new-arrivals", flash: true },
@@ -29,6 +30,7 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { count } = useCart();
+  const { customer } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -113,6 +115,16 @@ export default function Header() {
         </nav>
 
         <div className="hidden lg:flex items-center gap-6">
+          <Link
+            href={customer ? "/account" : "/login"}
+            className="p-2 text-blue-dim hover:text-blue-accent transition-colors"
+            aria-label={customer ? "Account" : "Sign In"}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="10" cy="7" r="3.5" />
+              <path d="M3 18c0-3.5 3-6 7-6s7 2.5 7 6" />
+            </svg>
+          </Link>
           <Link
             href="/cart"
             className="relative p-2 text-blue-dim hover:text-blue-accent transition-colors"
