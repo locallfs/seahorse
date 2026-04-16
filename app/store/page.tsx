@@ -29,7 +29,7 @@ export default async function StorePage({
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">
           <div className="max-w-screen-xl mx-auto px-6 py-12">
-            <p className="text-xs tracking-[0.25em] uppercase font-medium text-blue-accent mb-2">
+            <p className="text-xs tracking-[0.25em] uppercase font-medium text-white mb-2">
               All Products
             </p>
             <h1 className="text-4xl font-bold text-white tracking-tight">
@@ -43,7 +43,7 @@ export default async function StorePage({
                 href={`/store${cat.value !== "all" ? `?category=${cat.value}` : ""}`}
                 className={`flex-shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors duration-200 ${
                   active === cat.value
-                    ? "border-blue-accent text-blue-accent"
+                    ? "border-blue-accent text-white"
                     : "border-transparent text-slate-400 hover:text-white"
                 }`}
               >

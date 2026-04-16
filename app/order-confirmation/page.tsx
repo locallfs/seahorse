@@ -18,7 +18,7 @@ export default function OrderConfirmationPage() {
             </svg>
           </div>
 
-          <p className="text-xs tracking-[0.25em] uppercase text-blue-accent font-medium mb-3">
+          <p className="text-xs tracking-[0.25em] uppercase text-white font-medium mb-3">
             Order Placed
           </p>
           <h1 className="text-3xl font-bold text-white mb-4 tracking-tight">
@@ -31,7 +31,7 @@ export default function OrderConfirmationPage() {
             Questions? Email us at{" "}
             <a
               href="mailto:info@seahorseaquariumsupply.com"
-              className="text-blue-accent hover:text-blue-light transition-colors"
+              className="text-white hover:text-blue-light transition-colors"
             >
               info@seahorseaquariumsupply.com
             </a>

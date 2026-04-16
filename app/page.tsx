@@ -134,7 +134,7 @@ export default function HomePage() {
               className="group relative overflow-hidden rounded-xl border border-white/10 hover:border-white/25 p-10 bg-ocean-800 transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <p className="text-xs tracking-[0.2em] uppercase text-blue-accent font-medium mb-3">
+              <p className="text-xs tracking-[0.2em] uppercase text-white font-medium mb-3">
                 Services
               </p>
               <h3 className="text-2xl font-bold text-white mb-3">
@@ -144,7 +144,7 @@ export default function HomePage() {
                 Regular tank cleaning, water chemistry, livestock health
                 monitoring, and equipment servicing from our expert team.
               </p>
-              <span className="text-sm text-blue-accent group-hover:text-blue-light transition-colors flex items-center gap-2">
+              <span className="text-sm text-white group-hover:text-blue-light transition-colors flex items-center gap-2">
                 Learn More
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M2 6h8M7 3l3 3-3 3" />
@@ -157,7 +157,7 @@ export default function HomePage() {
               className="group relative overflow-hidden rounded-xl border border-white/10 hover:border-white/25 p-10 bg-ocean-800 transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <p className="text-xs tracking-[0.2em] uppercase text-blue-accent font-medium mb-3">
+              <p className="text-xs tracking-[0.2em] uppercase text-white font-medium mb-3">
                 Services
               </p>
               <h3 className="text-2xl font-bold text-white mb-3">
@@ -167,7 +167,7 @@ export default function HomePage() {
                 Full aquarium builds from design to completion — in-home, office,
                 and commercial installations throughout the Pacific Northwest.
               </p>
-              <span className="text-sm text-blue-accent group-hover:text-blue-light transition-colors flex items-center gap-2">
+              <span className="text-sm text-white group-hover:text-blue-light transition-colors flex items-center gap-2">
                 Learn More
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M2 6h8M7 3l3 3-3 3" />
