@@ -75,6 +75,20 @@ class BunnyFileService extends AbstractFileProviderService {
     );
   }
 
+  async getAsBuffer(file) {
+    const res = await fetch(this.storageUrl(file.fileKey), {
+      headers: { AccessKey: this.storagePassword },
+    });
+    if (!res.ok) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Bunny download failed (${res.status})`
+      );
+    }
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
   async getPresignedDownloadUrl(file) {
     return this.publicUrl(file.fileKey);
   }
