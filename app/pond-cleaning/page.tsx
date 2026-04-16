@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -49,12 +50,23 @@ export default function PondCleaningPage() {
             </p>
           </div>
 
-          <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
-            What We Offer
-          </p>
-          <h2 className="text-3xl font-bold text-white mb-10">
-            Our Pond Cleaning Services
-          </h2>
+          <div className="relative">
+            <div className="hidden lg:block absolute -right-[10%] top-1/2 -translate-y-1/2 w-[420px] rounded-xl overflow-hidden border border-white/10">
+              <Image
+                src="/images/pond-cleaning-filter.webp"
+                alt=""
+                width={800}
+                height={600}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+
+            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
+              What We Offer
+            </p>
+            <h2 className="text-3xl font-bold text-white mb-10">
+              Our Pond Cleaning Services
+            </h2>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl mb-16">
             {services.map((item) => (
               <li
@@ -66,6 +78,8 @@ export default function PondCleaningPage() {
               </li>
             ))}
           </ul>
+
+          </div>
 
           <div className="rounded-xl border border-white/10 bg-ocean-900 p-10 max-w-xl">
             <h3 className="text-xl font-bold text-white mb-3">
