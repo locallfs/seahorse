@@ -39,7 +39,7 @@ export default function ProductGrid({ category }: { category: string }) {
 
         let categoryId: string | undefined;
         if (category !== "all") {
-          const catRes = await medusa.store.productCategory.list({ handle: category });
+          const catRes = await medusa.store.category.list({ handle: category });
           categoryId = (catRes as any).product_categories?.[0]?.id;
         }
 
