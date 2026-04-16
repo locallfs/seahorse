@@ -130,6 +130,9 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
+            <p className="text-xs text-white/60 mt-4 leading-relaxed">
+              We are closed for all major Holidays, we hope you enjoy yours too!
+            </p>
           </div>
 
           <div>
