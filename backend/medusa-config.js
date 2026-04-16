@@ -1,6 +1,9 @@
 const { defineConfig, loadEnv } = require("@medusajs/framework/utils");
+const path = require("path");
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd());
+
+const mod = (p) => path.join(__dirname, p);
 
 module.exports = defineConfig({
   projectConfig: {
@@ -45,7 +48,7 @@ module.exports = defineConfig({
       options: {
         providers: [
           {
-            resolve: "./src/modules/file-bunny",
+            resolve: mod("src/modules/file-bunny"),
             id: "bunny",
             options: {
               storage_zone: process.env.BUNNY_STORAGE_ZONE,
@@ -62,7 +65,7 @@ module.exports = defineConfig({
       options: {
         providers: [
           {
-            resolve: "./src/modules/tax-stripe",
+            resolve: mod("src/modules/tax-stripe"),
             id: "stripe-tax",
             options: {
               api_key: process.env.STRIPE_API_KEY,
@@ -76,7 +79,7 @@ module.exports = defineConfig({
       options: {
         providers: [
           {
-            resolve: "./src/modules/notification-klaviyo",
+            resolve: mod("src/modules/notification-klaviyo"),
             id: "notification-klaviyo",
             options: {
               channels: ["email"],
