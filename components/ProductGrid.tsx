@@ -118,11 +118,11 @@ export default function ProductGrid({ category }: { category: string }) {
                 )}
               </div>
               <div className="p-3 bg-ocean-900">
-                <p className="text-sm text-white font-medium leading-snug mb-1 group-hover:text-blue-light transition-colors">
+                <p className="text-sm text-white font-medium leading-snug mb-1">
                   {product.title}
                 </p>
                 {price && (
-                  <p className="text-sm text-blue-accent font-semibold">
+                  <p className="text-sm text-white font-semibold">
                     {formatPrice(price.calculated_amount, price.currency_code)}
                   </p>
                 )}

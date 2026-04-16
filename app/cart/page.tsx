@@ -56,7 +56,7 @@ export default function CartPage() {
                       <p className="text-white font-medium text-sm mb-1">
                         {item.title}
                       </p>
-                      <p className="text-blue-accent text-sm font-semibold">
+                      <p className="text-white text-sm font-semibold">
                         {formatPrice(item.price)}
                       </p>
                     </div>
@@ -106,7 +106,7 @@ export default function CartPage() {
                   </div>
                   <div className="border-t border-white/10 pt-4 mb-6 flex justify-between font-bold text-white">
                     <span>Total</span>
-                    <span className="text-blue-light">{formatPrice(total)}</span>
+                    <span className="text-white">{formatPrice(total)}</span>
                   </div>
 
                   <div className="bg-blue-accent/10 border border-blue-accent/20 rounded-lg p-3 mb-6 text-xs text-slate-300">

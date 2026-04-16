@@ -119,7 +119,7 @@ export default function ProductPage({
                   {product.title}
                 </h1>
                 {price && (
-                  <p className="text-3xl font-bold text-blue-light mb-6">
+                  <p className="text-3xl font-bold text-white mb-6">
                     {formatPrice(price.calculated_amount, price.currency_code)}
                   </p>
                 )}
