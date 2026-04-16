@@ -5,6 +5,34 @@ export const metadata = {
   title: "Who We Are — Woody's Seahorse Aquarium & Supply",
 };
 
+const products = [
+  "Free salinity tests and refractometer calibrations",
+  "Purified Deionized Fresh Water",
+  "Premium Premixed Saltwater",
+  "5-Gallon and 3-gallon jugs",
+  "Saltwater fish",
+  "Live copepods",
+  "Captive-bred Seahorses",
+  "Inverts (shrimps, snails, crabs etc.)",
+  "Live Rock",
+  "Buy, Sell & Trade Coral",
+  "High quality reef gear",
+  "Aquarium related plumbing supplies (bulk heads, plastic clamps, hose etc.)",
+  "Live Sand and starter bacteria",
+  "LED reef tank lighting",
+  "Tank maintenance and installation services",
+  "Fish and coral food",
+  "Dosing supplies, supplements and medications",
+  "Bulk Activated Carbon, GFO and DI Resin",
+  "Pumps, skimmers & heaters",
+  "Filtration socks, pads & filter fleece rolls",
+  "Fritz RPM & Redsea Salt",
+  "Acrylic hole drilling",
+  "Glass hole drilling",
+  "Consultations",
+  "Onsite water testing, home & ICP test kits",
+];
+
 const values = [
   {
     title: "Creature\u2011First Care",
@@ -114,6 +142,28 @@ export default function WhoWeArePage() {
         </div>
 
         <div className="border-t border-white/10 bg-ocean-900/60">
+          <div className="max-w-screen-xl mx-auto px-6 py-20">
+            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
+              What We Offer
+            </p>
+            <h2 className="text-3xl font-bold text-white mb-10">
+              Our Products &amp; Services
+            </h2>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {products.map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-slate-300"
+                >
+                  <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t border-white/10">
           <div className="max-w-screen-xl mx-auto px-6 py-20 text-center">
             <p className="text-slate-400 text-base max-w-xl mx-auto mb-8 leading-relaxed">
               Have questions or want to learn more? We&apos;d love to hear from you.
