@@ -14,9 +14,9 @@
   --color-ocean-800: #0c1a30;
   --color-ocean-700: #112244;
   --color-ocean-600: #1a3a6b;
-  --color-blue-accent: #003DA5;
-  --color-blue-light: #1a56c4;
-  --color-blue-dim: #002d7a;
+  --color-blue-accent: #000E54;
+  --color-blue-light: #000E54;
+  --color-blue-dim: #000E54;
   --color-muted: #64748b;
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
 }
