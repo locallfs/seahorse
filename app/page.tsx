@@ -132,50 +132,6 @@ export default function HomePage() {
           <GoogleReviews />
         </div>
 
-        <section className="py-20 bg-ocean-950/80 backdrop-blur-sm border-t border-white/10">
-          <div className="max-w-screen-xl mx-auto px-6">
-            <p className="text-xs tracking-[0.25em] uppercase font-medium mb-2 text-[#FFD700]">
-              Visit Us
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-8">
-              Our Location
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <a
-                href="https://www.google.com/maps/place/Woody's+Seahorse+Aquarium+%26+Supply/@45.577747,-122.6673805,17z"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-xl overflow-hidden border border-white/10 hover:border-white/25 transition-all"
-              >
-                <img
-                  src="/api/static-map"
-                  alt="Woody's Seahorse Aquarium & Supply location"
-                  className="w-full h-auto"
-                />
-              </a>
-              <div className="flex flex-col gap-4">
-                <h3 className="text-xl font-bold text-white">
-                  Woody&apos;s Seahorse Aquarium &amp; Supply
-                </h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                  Portland, Oregon&apos;s premier saltwater fish and coral specialist since 1996. Stop by to see our tanks in person — we&apos;d love to help you build your dream reef.
-                </p>
-                <a
-                  href="https://www.google.com/maps/place/Woody's+Seahorse+Aquarium+%26+Supply/@45.577747,-122.6673805,17z"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[#FFD700] text-sm font-medium hover:underline"
-                >
-                  Get Directions
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M2 6h8M7 3l3 3-3 3" />
-                  </svg>
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section className="py-24 bg-ocean-900/80 backdrop-blur-sm border-t border-white/10">
           <div className="max-w-screen-xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <Link
@@ -223,6 +179,57 @@ export default function HomePage() {
                 </svg>
               </span>
             </Link>
+          </div>
+        </section>
+
+        <section className="py-20 bg-ocean-950/80 backdrop-blur-sm border-t border-white/10">
+          <div className="max-w-screen-xl mx-auto px-6">
+            <p className="text-xs tracking-[0.25em] uppercase font-medium mb-2 text-[#FFD700]">
+              Visit Us
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-8">
+              Our Location
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+              <div className="flex flex-col gap-4">
+                <h3 className="text-xl font-bold text-white">
+                  Woody&apos;s Seahorse Aquarium &amp; Supply
+                </h3>
+                <p className="text-white text-sm">
+                  106 NE Russet St.<br />
+                  Portland, Oregon 97211
+                </p>
+                <p className="text-slate-400 text-xs">
+                  The shop is on the gravel street (Rodney) around the corner.
+                </p>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Portland, Oregon&apos;s premier saltwater fish and coral specialist since 1996. Stop by to see our tanks in person — we&apos;d love to help you build your dream reef.
+                </p>
+                <a
+                  href="https://www.google.com/maps/place/Woody's+Seahorse+Aquarium+%26+Supply/@45.577747,-122.6673805,17z"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-[#FFD700] text-sm font-medium hover:underline"
+                >
+                  Get Directions
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2 6h8M7 3l3 3-3 3" />
+                  </svg>
+                </a>
+              </div>
+              <a
+                href="https://www.google.com/maps/place/Woody's+Seahorse+Aquarium+%26+Supply/@45.577747,-122.6673805,17z"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-xl overflow-hidden border border-white/10 hover:border-white/25 transition-all"
+              >
+                <img
+                  src="/api/static-map"
+                  alt="Woody's Seahorse Aquarium & Supply location"
+                  className="w-full h-auto"
+                />
+              </a>
+            </div>
           </div>
         </section>
       </main>
