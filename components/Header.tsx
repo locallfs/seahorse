@@ -56,9 +56,9 @@ export default function Header() {
           <Image
             src="/images/LogoFullNameOnly.png"
             alt="Woody's Seahorse Aquarium & Supply"
-            width={220}
-            height={60}
-            className="h-14 w-auto object-contain"
+            width={260}
+            height={70}
+            className="h-[4.5rem] w-auto object-contain"
             priority
           />
         </Link>
