@@ -36,7 +36,7 @@ export default function Footer() {
               alt="Woody's Seahorse Aquarium & Supply"
               width={400}
               height={140}
-              className="h-32 w-auto object-contain mb-4"
+              className="h-32 w-auto object-contain mb-4 drop-shadow-[0_2px_4px_rgba(255,255,255,0.5)]"
             />
             <p className="text-white text-sm leading-relaxed max-w-[200px]">
               Pacific Northwest&apos;s premier saltwater fish and coral
