@@ -36,10 +36,22 @@ export default function ProductGrid({ category }: { category: string }) {
       try {
         const regionsRes = await medusa.store.region.list();
         const regionId = regionsRes.regions?.[0]?.id;
-        const res = await medusa.store.product.list({
+
+        let categoryId: string | undefined;
+        if (category !== "all") {
+          const catRes = await medusa.store.productCategory.list({ handle: category });
+          categoryId = (catRes as any).product_categories?.[0]?.id;
+        }
+
+        const params: Record<string, any> = {
           fields: "id,handle,title,thumbnail,*variants.calculated_price",
           region_id: regionId,
-        });
+        };
+        if (categoryId) {
+          params.category_id = [categoryId];
+        }
+
+        const res = await medusa.store.product.list(params);
         if (cancelled) return;
         setProducts(res.products as StoreProduct[]);
         setLoading(false);
@@ -52,7 +64,7 @@ export default function ProductGrid({ category }: { category: string }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [category]);
 
   if (loading) {
     return (
