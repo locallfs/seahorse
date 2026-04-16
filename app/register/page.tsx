@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailConsent, setEmailConsent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -27,6 +28,15 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(email, password, firstName, lastName);
+
+      if (emailConsent) {
+        fetch("/api/klaviyo-subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, firstName, lastName }),
+        }).catch(() => {});
+      }
+
       router.push("/account");
     } catch (err: any) {
       setError(err?.message || "Registration failed. Please try again.");
@@ -103,6 +113,20 @@ export default function RegisterPage() {
                 placeholder="At least 8 characters"
               />
             </div>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={emailConsent}
+                onChange={(e) => setEmailConsent(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-white/15 bg-ocean-800 text-blue-accent focus:ring-blue-accent focus:ring-offset-0 cursor-pointer"
+              />
+              <span className="text-xs text-slate-400 leading-relaxed">
+                I agree to receive emails from Woody&apos;s Seahorse Aquarium &amp; Supply
+                including order updates, promotions, and care tips. You can
+                unsubscribe at any time.
+              </span>
+            </label>
 
             {error && (
               <p className="text-red-400 text-sm">{error}</p>
