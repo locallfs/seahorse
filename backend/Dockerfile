@@ -18,8 +18,11 @@ RUN cp medusa-config.js .medusa/server/medusa-config.js && \
     cp package.json .medusa/server/package.json && \
     mkdir -p .medusa/server/src/modules && \
     cp -r src/modules/file-bunny .medusa/server/src/modules/file-bunny && \
+    cp -r src/modules/notification-klaviyo .medusa/server/src/modules/notification-klaviyo && \
     ln -s /app/node_modules /app/.medusa/server/node_modules
 
 WORKDIR /app/.medusa/server
 
 EXPOSE 9000
+
+CMD ["sh", "-c", "node_modules/.bin/medusa db:migrate && node_modules/.bin/medusa start"]
