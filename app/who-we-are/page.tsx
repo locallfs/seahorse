@@ -171,6 +171,33 @@ export default function WhoWeArePage() {
             <h2 className="text-3xl font-bold text-white mb-10">
               Over Our Many Years We Have Been
             </h2>
+
+            <blockquote className="max-w-3xl mb-12 p-8 rounded-xl border border-white/10 bg-ocean-900">
+              <p className="text-slate-300 text-sm leading-relaxed mb-4">
+                &ldquo;We are a large scientific research lab here in Portland using
+                freshwater zebrafish (Danio rerio) as a model organism to study
+                synaptic electrophysiology and neurogenetics. Our recirculating system
+                houses several thousand zebrafish in over 200 tanks. We also raise
+                zebrafish from larval stages (about the size of a fruit fly) up to
+                adulthood. Even though these are a freshwater species, they require
+                some dissolved salts in their water for optimal health and
+                osmoregulation and to discourage parasites. With our large system and
+                ~10% daily water change, we go through salt fairly quickly. We
+                additionally use marine salts in the culturing of brine shrimp and
+                marine rotifers, two of our main fish foods. After investigating
+                available commercial marine salts, we settled on Crystal Sea as the
+                best choice for our system. Rather than pay shipping on multiple 50lbs.
+                boxes of salt every few months, we sought a local supplier who could
+                deal in large quantities. Seahorse Aquarium Supply was recommended by a
+                co-worker. Woody has been great, always accommodating our needs, and
+                his price on Crystal Sea saves us hundreds on shipping costs every
+                year.&rdquo;
+              </p>
+              <cite className="text-[#FFD700] text-sm font-medium not-italic">
+                &mdash; OHSU Brehm Lab
+              </cite>
+            </blockquote>
+
             <ul className="space-y-4 max-w-3xl">
               {[
                 "Interviewed by National Geographic and Pet Age Magazine",
