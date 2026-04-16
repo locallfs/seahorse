@@ -6,8 +6,11 @@ import Footer from "@/components/Footer";
 import Image from "next/image";
 import Link from "next/link";
 
-function formatPrice(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
+function formatPrice(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 }
 
 export default function CartPage() {

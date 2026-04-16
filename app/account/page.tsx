@@ -10,8 +10,11 @@ import Link from "next/link";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-function formatPrice(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
+function formatPrice(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 }
 
 function formatDate(iso: string) {
