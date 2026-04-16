@@ -47,7 +47,7 @@ export default function WhoWeArePage() {
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">
           <div className="max-w-screen-xl mx-auto px-6 py-20">
-            <p className="text-xs tracking-[0.25em] uppercase font-medium text-white mb-3">
+            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
               Our Story
             </p>
             <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight max-w-3xl">
@@ -81,7 +81,7 @@ export default function WhoWeArePage() {
 
         <div className="border-t border-white/10 bg-ocean-900/60">
           <div className="max-w-screen-xl mx-auto px-6 py-20">
-            <p className="text-xs tracking-[0.25em] uppercase font-medium text-white mb-3">
+            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
               What We Offer
             </p>
             <h2 className="text-3xl font-bold text-white mb-10">
@@ -103,7 +103,7 @@ export default function WhoWeArePage() {
 
         <div className="border-t border-white/10">
           <div className="max-w-screen-xl mx-auto px-6 py-20">
-            <p className="text-xs tracking-[0.25em] uppercase font-medium text-white mb-3">
+            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
               Recognition
             </p>
             <h2 className="text-3xl font-bold text-white mb-10">

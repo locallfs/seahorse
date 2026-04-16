@@ -134,7 +134,7 @@ export default function HomePage() {
               className="group relative overflow-hidden rounded-xl border border-white/10 hover:border-white/25 p-10 bg-ocean-800 transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <p className="text-xs tracking-[0.2em] uppercase text-white font-medium mb-3">
+              <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-3">
                 Services
               </p>
               <h3 className="text-2xl font-bold text-white mb-3">
@@ -157,7 +157,7 @@ export default function HomePage() {
               className="group relative overflow-hidden rounded-xl border border-white/10 hover:border-white/25 p-10 bg-ocean-800 transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <p className="text-xs tracking-[0.2em] uppercase text-white font-medium mb-3">
+              <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-3">
                 Services
               </p>
               <h3 className="text-2xl font-bold text-white mb-3">

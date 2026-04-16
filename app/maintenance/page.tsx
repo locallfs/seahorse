@@ -71,7 +71,7 @@ export default function MaintenancePage() {
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">
           <div className="max-w-screen-xl mx-auto px-6 py-12">
-            <p className="text-xs tracking-[0.25em] uppercase font-medium text-white mb-2">
+            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-2">
               Services
             </p>
             <h1 className="text-4xl font-bold text-white tracking-tight">
@@ -106,7 +106,7 @@ export default function MaintenancePage() {
                 className="rounded-xl border border-white/10 bg-ocean-900 p-8 flex flex-col"
               >
                 <div className="mb-6">
-                  <p className="text-xs tracking-[0.2em] uppercase text-white font-medium mb-2">
+                  <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-2">
                     {plan.freq}
                   </p>
                   <h2 className="text-xl font-bold text-white mb-3">
