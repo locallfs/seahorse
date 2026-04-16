@@ -7,14 +7,19 @@ import { useCart } from "@/components/CartContext";
 
 const navLinks: { label: string; href: string; flash?: boolean }[] = [
   { label: "New Arrivals", href: "/new-arrivals", flash: true },
-  { label: "Saltwater Fish", href: "/fish" },
-  { label: "Inverts", href: "/inverts" },
+  { label: "Fish", href: "/fish" },
   { label: "Corals", href: "/corals" },
+  { label: "Inverts", href: "/inverts" },
   { label: "Supplies", href: "/supplies" },
+];
+
+const serviceLinks = [
   { label: "Maintenance", href: "/maintenance" },
   { label: "Installations", href: "/installations" },
+];
+
+const rightLinks = [
   { label: "Who We Are", href: "/who-we-are" },
-  { label: "Store", href: "/store" },
 ];
 
 export default function Header() {
@@ -56,6 +61,36 @@ export default function Header() {
                   ? "text-blue-accent hover:text-blue-light"
                   : "text-blue-dim hover:text-blue-accent"
               } ${link.flash ? "nav-grow" : ""}`}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <div className="relative group">
+            <button className="text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-blue-dim hover:text-blue-accent flex items-center gap-1">
+              Services
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="mt-0.5">
+                <path d="M3 5l3 3 3-3" />
+              </svg>
+            </button>
+            <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+              <div className="bg-white border border-slate-200 rounded-lg shadow-lg py-2 min-w-[180px]">
+                {serviceLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="block px-4 py-2.5 text-sm font-medium text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+          {rightLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-blue-dim hover:text-blue-accent"
             >
               {link.label}
             </Link>
@@ -127,6 +162,27 @@ export default function Header() {
         <div className="lg:hidden bg-white border-t border-slate-200">
           <nav className="max-w-screen-xl mx-auto px-6 py-4 flex flex-col gap-1">
             {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <p className="py-2 px-4 text-xs tracking-[0.2em] uppercase text-slate-400 font-medium mt-2">Services</p>
+            {serviceLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium pl-6"
+              >
+                {link.label}
+              </Link>
+            ))}
+            {rightLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
