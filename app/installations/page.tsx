@@ -26,16 +26,7 @@ export default function InstallationsPage() {
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">
-          <div className="max-w-screen-xl mx-auto px-6 py-12 relative">
-            <div className="hidden lg:block absolute right-6 top-1/2 -translate-y-1/2 w-[280px] rounded-xl overflow-hidden border border-white/10">
-              <Image
-                src="/images/customreef3.png"
-                alt=""
-                width={800}
-                height={600}
-                className="w-full h-auto object-cover"
-              />
-            </div>
+          <div className="max-w-screen-xl mx-auto px-6 py-12">
             <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-2">
               Services
             </p>
@@ -45,22 +36,16 @@ export default function InstallationsPage() {
           </div>
         </div>
 
-        <div className="max-w-screen-xl mx-auto px-6 py-16 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16 items-center">
-            <div className="space-y-6 text-white leading-relaxed text-base">
-              <p>
-                Whether you&apos;re dreaming of a stunning reef centerpiece in your
-                living room or a show-stopping aquarium in your office lobby, our
-                team handles every detail from concept to completion. We design,
-                build, and install custom aquarium systems throughout the Pacific
-                Northwest.
-              </p>
-              <p>
-                Every installation starts with a consultation to understand your
-                space, your vision, and your experience level. We&apos;ll handle
-                the technical side — plumbing, filtration, lighting, and
-                aquascaping — so you can enjoy the result from day one.
-              </p>
+        <div className="max-w-screen-xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            <div className="rounded-xl overflow-hidden border border-white/10">
+              <Image
+                src="/images/customreef3.png"
+                alt=""
+                width={800}
+                height={600}
+                className="w-full h-auto object-cover"
+              />
             </div>
             <div className="rounded-xl overflow-hidden border border-white/10">
               <Image
@@ -71,10 +56,7 @@ export default function InstallationsPage() {
                 className="w-full h-auto object-cover"
               />
             </div>
-          </div>
-
-          <div className="relative">
-            <div className="hidden lg:block absolute -right-[10%] top-1/2 -translate-y-1/2 w-[420px] rounded-xl overflow-hidden border border-white/10">
+            <div className="rounded-xl overflow-hidden border border-white/10">
               <Image
                 src="/images/customreef2.jpg"
                 alt=""
@@ -83,13 +65,30 @@ export default function InstallationsPage() {
                 className="w-full h-auto object-cover"
               />
             </div>
+          </div>
 
-            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
-              What We Offer
+          <div className="max-w-3xl space-y-6 text-white leading-relaxed text-base mb-16">
+            <p>
+              Whether you&apos;re dreaming of a stunning reef centerpiece in your
+              living room or a show-stopping aquarium in your office lobby, our
+              team handles every detail from concept to completion. We design,
+              build, and install custom aquarium systems throughout the Pacific
+              Northwest.
             </p>
-            <h2 className="text-3xl font-bold text-white mb-10">
-              Our Installation Services
-            </h2>
+            <p>
+              Every installation starts with a consultation to understand your
+              space, your vision, and your experience level. We&apos;ll handle
+              the technical side — plumbing, filtration, lighting, and
+              aquascaping — so you can enjoy the result from day one.
+            </p>
+          </div>
+
+          <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
+            What We Offer
+          </p>
+          <h2 className="text-3xl font-bold text-white mb-10">
+            Our Installation Services
+          </h2>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl mb-16">
             {services.map((item) => (
               <li
@@ -101,8 +100,6 @@ export default function InstallationsPage() {
               </li>
             ))}
           </ul>
-
-          </div>
 
           <div className="rounded-xl border border-white/10 bg-ocean-900 p-10 max-w-xl">
             <h3 className="text-xl font-bold text-white mb-3">
