@@ -206,7 +206,7 @@ export default function HomePage() {
                   Portland, Oregon&apos;s premier saltwater fish and coral specialist since 1996. Stop by to see our tanks in person — we&apos;d love to help you build your dream reef.
                 </p>
                 <a
-                  href="https://www.google.com/maps/place/Woody's+Seahorse+Aquarium+%26+Supply/@45.577747,-122.6673805,17z"
+                  href="https://www.google.com/maps/dir/?api=1&destination=45.5777433,-122.6648056"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-[#FFD700] text-sm font-medium hover:underline"
@@ -218,7 +218,7 @@ export default function HomePage() {
                 </a>
               </div>
               <a
-                href="https://www.google.com/maps/place/Woody's+Seahorse+Aquarium+%26+Supply/@45.577747,-122.6673805,17z"
+                href="https://www.google.com/maps/dir/?api=1&destination=45.5777433,-122.6648056"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block rounded-xl overflow-hidden border border-white/10 hover:border-white/25 transition-all"
