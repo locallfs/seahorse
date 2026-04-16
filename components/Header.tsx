@@ -51,7 +51,7 @@ export default function Header() {
           ))}
         </div>
       </div>
-      <div className="w-full mx-auto px-12 h-16 flex items-center justify-between">
+      <div className="w-full mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex-shrink-0">
           <Image
             src="/images/logo.png"
