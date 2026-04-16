@@ -80,13 +80,10 @@ class BunnyFileService extends AbstractFileProviderService {
 
   async getPresignedUploadUrl(fileData) {
     const fileKey = this.buildFileKey(fileData.filename);
+    const backendUrl = (process.env.MEDUSA_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
     return {
-      url: this.storageUrl(fileKey),
+      url: `${backendUrl}/admin/upload-proxy?key=${encodeURIComponent(fileKey)}`,
       key: fileKey,
-      headers: {
-        AccessKey: this.storagePassword,
-        "Content-Type": fileData.mimeType || "application/octet-stream",
-      },
     };
   }
 }
