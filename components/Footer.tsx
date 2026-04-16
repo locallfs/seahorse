@@ -29,7 +29,7 @@ export default function Footer() {
   return (
     <footer className="bg-ocean-900 border-t border-white/10 mt-auto">
       <div className="max-w-screen-2xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[auto_auto_auto_auto_auto_1fr_auto] gap-x-6 gap-y-8">
           <div className="lg:col-span-1">
             <Image
               src="/images/LogoFullNameOnly.png"
