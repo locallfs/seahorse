@@ -29,7 +29,7 @@ export default function Footer() {
   return (
     <footer className="bg-ocean-900 border-t border-white/10 mt-auto">
       <div className="px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[auto_auto_auto_auto_auto_auto_auto] gap-x-10 gap-y-8 lg:justify-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[auto_auto_auto_auto_auto_auto] gap-x-10 gap-y-8 lg:justify-start">
           <div className="lg:col-span-1">
             <Image
               src="/images/LogoFullNameOnly.png"
@@ -80,49 +80,52 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
-            <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
-              Location
-            </p>
-            <a
-              href="https://www.google.com/maps/dir/?api=1&destination=Woody's+Seahorse+Aquarium+%26+Supply,+106+NE+Russet+St,+Portland,+OR+97211&destination_place_id=ChIJD0GFAfemlVQT_wCyRbJs2w"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-white leading-relaxed hover:text-[#FFD700] transition-colors"
-            >
-              106 NE Russet St.<br />
-              Portland, Oregon 97211
-            </a>
-            <p className="text-xs text-white/60 mt-2">
-              The shop is on the gravel street (Rodney) around the corner.
-            </p>
-          </div>
+          <div className="flex gap-8">
+            <div>
+              <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
+                Location
+              </p>
+              <a
+                href="https://www.google.com/maps/dir/?api=1&destination=Woody's+Seahorse+Aquarium+%26+Supply,+106+NE+Russet+St,+Portland,+OR+97211&destination_place_id=ChIJD0GFAfemlVQT_wCyRbJs2w"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-white leading-relaxed hover:text-[#FFD700] transition-colors"
+              >
+                106 NE Russet St.<br />
+                Portland, Oregon 97211
+              </a>
+              <p className="text-xs text-white/60 mt-2">
+                The shop is on the gravel street<br />
+                (Rodney) around the corner.
+              </p>
+            </div>
 
-          <div>
-            <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
-              Contact Us
-            </p>
-            <ul className="space-y-3 text-sm text-white">
-              <li>
-                <span className="text-white/60 text-xs">Phone:</span>{" "}
-                <a href="tel:5032834788" className="hover:text-[#FFD700] transition-colors">503-283-4788</a>
-              </li>
-              <li>
-                <span className="text-white/60 text-xs">Email:</span>{" "}
-                <a href="mailto:info@seahorseaquariumsupply.com" className="hover:text-[#FFD700] transition-colors">
-                  info@seahorseaquariumsupply.com
-                </a>
-              </li>
-            </ul>
+            <div>
+              <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
+                Contact Us
+              </p>
+              <ul className="space-y-3 text-sm text-white">
+                <li>
+                  <span className="text-white/60 text-xs">Phone:</span>{" "}
+                  <a href="tel:5032834788" className="hover:text-[#FFD700] transition-colors">503-283-4788</a>
+                </li>
+                <li>
+                  <span className="text-white/60 text-xs">Email:</span>{" "}
+                  <a href="mailto:info@seahorseaquariumsupply.com" className="hover:text-[#FFD700] transition-colors">
+                    info@seahorseaquariumsupply.com
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div>
             <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
               Local Store Hours
             </p>
-            <ul className="space-y-2">
+            <ul className="space-y-2 w-48">
               {hours.map((h) => (
-                <li key={h.day} className="flex justify-between gap-4 text-sm">
+                <li key={h.day} className="flex justify-between text-sm">
                   <span className="text-white">{h.day}</span>
                   <span className={h.time === "Closed" ? "text-white/50" : "text-white"}>
                     {h.time}
@@ -130,8 +133,9 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-white/60 mt-4 leading-relaxed">
-              We are closed for all major Holidays, we hope you enjoy yours too!
+            <p className="text-xs text-white/60 mt-4 leading-relaxed w-48">
+              We are closed for all major Holidays,<br />
+              we hope you enjoy yours too!
             </p>
           </div>
 
