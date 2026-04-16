@@ -16,7 +16,7 @@ export default function CartPage() {
   return (
     <>
       <Header />
-      <main className="pt-16 min-h-screen">
+      <main className="pt-24 min-h-screen">
         <div className="max-w-screen-xl mx-auto px-6 py-12">
           <h1 className="text-3xl font-bold text-white mb-8 tracking-tight">
             Your Cart

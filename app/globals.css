@@ -54,6 +54,15 @@ body {
   50% { transform: scale(1.15); }
 }
 
+@keyframes trust-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.trust-bar-scroll {
+  animation: trust-scroll 30s linear infinite;
+}
+
 .nav-grow {
   display: inline-block;
   animation: nav-grow 2s ease-in-out infinite;

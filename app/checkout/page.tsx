@@ -29,7 +29,7 @@ export default function CheckoutPage() {
     return (
       <>
         <Header />
-        <main className="pt-16 min-h-screen flex items-center justify-center">
+        <main className="pt-24 min-h-screen flex items-center justify-center">
           <div className="text-center">
             <p className="text-slate-400 mb-4">Your cart is empty.</p>
             <Link href="/store" className="text-blue-accent hover:text-blue-light text-sm transition-colors">
@@ -45,7 +45,7 @@ export default function CheckoutPage() {
   return (
     <>
       <Header />
-      <main className="pt-16 min-h-screen">
+      <main className="pt-24 min-h-screen">
         <div className="max-w-screen-xl mx-auto px-6 py-12">
           <h1 className="text-3xl font-bold text-white mb-8 tracking-tight">
             Checkout
