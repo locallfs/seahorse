@@ -50,7 +50,7 @@ export default function TankMovingPage() {
           </div>
 
           <div className="relative">
-            <div className="hidden lg:block absolute right-[12%] top-1/2 -translate-y-1/2 w-[420px] rounded-xl overflow-hidden border border-white/10">
+            <div className="hidden lg:block absolute -right-[10%] top-1/2 -translate-y-1/2 w-[420px] rounded-xl overflow-hidden border border-white/10">
               <Image
                 src="/images/large-tank-moves.jpg"
                 alt=""
