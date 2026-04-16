@@ -34,7 +34,7 @@ export default function TankMovingPage() {
         </div>
 
         <div className="max-w-screen-xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12 items-start mb-16">
             <div className="space-y-6 text-white leading-relaxed text-base">
               <p>
                 Moving an aquarium is one of the most stressful things a hobbyist
