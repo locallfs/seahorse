@@ -30,7 +30,7 @@ export default function Footer() {
     <footer className="bg-ocean-900 border-t border-white/10 mt-auto">
       <div className="py-16 px-6">
         <div className="flex flex-col lg:flex-row gap-10">
-          <div className="flex-shrink-0 lg:pl-12">
+          <div className="flex-shrink-0 lg:pl-20">
             <Image
               src="/images/LogoFullNameOnly.png"
               alt="Woody's Seahorse Aquarium & Supply"
@@ -97,8 +97,9 @@ export default function Footer() {
                     Portland, Oregon 97211
                   </a>
                   <p className="text-xs text-white/60 mt-2">
-                    The shop is on the gravel street<br />
-                    (Rodney) around the corner.
+                    The shop is on the<br />
+                    gravel street (Rodney)<br />
+                    around the corner.
                   </p>
                 </div>
 
@@ -136,8 +137,7 @@ export default function Footer() {
                   ))}
                 </ul>
                 <p className="text-xs text-white/60 mt-4 leading-relaxed w-48">
-                  We are closed for all major Holidays,<br />
-                  we hope you enjoy yours too!
+                  We are closed for all major Holidays!
                 </p>
               </div>
 
