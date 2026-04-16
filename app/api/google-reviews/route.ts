@@ -17,12 +17,33 @@ export async function GET() {
     const placeId = findData?.candidates?.[0]?.place_id;
     if (!placeId) return NextResponse.json({ reviews: [] });
 
-    const detailsRes = await fetch(
-      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&key=${API_KEY}`,
-      { next: { revalidate: 3600 } }
-    );
-    const detailsData = await detailsRes.json();
-    return NextResponse.json({ reviews: detailsData?.result?.reviews ?? [] });
+    const [relevantRes, newestRes] = await Promise.all([
+      fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&reviews_sort=most_relevant&key=${API_KEY}`,
+        { next: { revalidate: 3600 } }
+      ),
+      fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&reviews_sort=newest&key=${API_KEY}`,
+        { next: { revalidate: 3600 } }
+      ),
+    ]);
+
+    const relevantData = await relevantRes.json();
+    const newestData = await newestRes.json();
+
+    const relevant = relevantData?.result?.reviews ?? [];
+    const newest = newestData?.result?.reviews ?? [];
+
+    const seen = new Set<string>();
+    const combined = [];
+    for (const review of [...relevant, ...newest]) {
+      if (!seen.has(review.author_name)) {
+        seen.add(review.author_name);
+        combined.push(review);
+      }
+    }
+
+    return NextResponse.json({ reviews: combined });
   } catch {
     return NextResponse.json({ reviews: [] });
   }
