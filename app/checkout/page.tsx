@@ -302,7 +302,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("first_name", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="John"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -315,7 +315,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("last_name", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="Smith"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -328,7 +328,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("email", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="john@example.com"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -341,7 +341,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("phone", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="(503) 555-0100"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -354,7 +354,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("address_1", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="123 Main St"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -367,7 +367,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("city", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="Portland"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -380,7 +380,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("province", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="OR"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -395,7 +395,7 @@ export default function CheckoutPage() {
                       }
                       disabled={step !== "address"}
                       placeholder="97201"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:opacity-50"
                     />
                   </div>
                 </div>

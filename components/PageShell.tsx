@@ -32,7 +32,7 @@ export default function PageShell({
           </div>
         </div>
 
-        <div className="bg-gradient-to-b from-ocean-950 to-white">
+        <div className="bg-ocean-950">
           <div className="max-w-screen-xl mx-auto px-6 py-20">
             {children ?? (
               <div className="flex items-center justify-center py-32">

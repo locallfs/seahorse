@@ -73,6 +73,26 @@ body {
   width: max-content;
 }
 
+@media (pointer: coarse) {
+  .gallery-auto-scroll,
+  .reviews-auto-scroll {
+    animation: none;
+    width: auto;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .gallery-auto-scroll::-webkit-scrollbar,
+  .reviews-auto-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .gallery-auto-scroll > *,
+  .reviews-auto-scroll > * {
+    scroll-snap-align: start;
+  }
+}
+
 .nav-grow {
   display: inline-block;
   animation: nav-grow 2s ease-in-out infinite;

@@ -56,8 +56,8 @@ export default function Header() {
           ))}
         </div>
       </div>
-      <div className="w-full mx-auto px-12 h-16 flex items-center justify-between">
-        <Link href="/" className="flex-shrink-0 ml-24">
+      <div className="w-full mx-auto px-4 md:px-12 h-16 flex items-center justify-between">
+        <Link href="/" className="flex-shrink-0 md:ml-24">
           <Image
             src="/images/LogoFullNameOnly.png"
             alt="Woody's Seahorse Aquarium & Supply"
@@ -219,6 +219,33 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
+            <div className="border-t border-slate-200 mt-2 pt-2">
+              <Link
+                href={customer ? "/account" : "/login"}
+                onClick={() => setMenuOpen(false)}
+                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium flex items-center gap-2"
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="10" cy="7" r="3.5" />
+                  <path d="M3 18c0-3.5 3-6 7-6s7 2.5 7 6" />
+                </svg>
+                {customer ? "My Account" : "Sign In"}
+              </Link>
+              {customer && (
+                <Link
+                  href="/cart"
+                  onClick={() => setMenuOpen(false)}
+                  className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium flex items-center gap-2"
+                >
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M6 2L3 6v12a2 2 0 002 2h10a2 2 0 002-2V6l-3-4z" />
+                    <path d="M3 6h14" />
+                    <path d="M13 10a3 3 0 01-6 0" />
+                  </svg>
+                  Cart{count > 0 ? ` (${count})` : ""}
+                </Link>
+              )}
+            </div>
             <Link
               href="/store"
               onClick={() => setMenuOpen(false)}

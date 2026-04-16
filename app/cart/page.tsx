@@ -110,7 +110,7 @@ export default function CartPage() {
                           onClick={() =>
                             updateQuantity(item.id, item.quantity - 1)
                           }
-                          className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
                         >
                           −
                         </button>
@@ -121,7 +121,7 @@ export default function CartPage() {
                           onClick={() =>
                             updateQuantity(item.id, item.quantity + 1)
                           }
-                          className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
                         >
                           +
                         </button>

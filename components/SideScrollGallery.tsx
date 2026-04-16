@@ -23,7 +23,7 @@ interface SideScrollGalleryProps {
 
 function PlaceholderCard({ item }: { item: GalleryItem }) {
   return (
-    <div className="flex-shrink-0 w-56 md:w-64 group cursor-pointer">
+    <div className="flex-shrink-0 w-44 sm:w-56 md:w-64 group cursor-pointer">
       <div className="relative overflow-hidden rounded-lg border border-white/10 group-hover:border-white/25 transition-all duration-300">
         <div className="w-full aspect-[3/4] relative bg-ocean-800">
           {item.img ? (
@@ -68,7 +68,7 @@ export default function SideScrollGallery({
   return (
     <section className="py-20 overflow-hidden">
       <div className="max-w-screen-xl mx-auto px-6">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex items-end justify-between gap-4 mb-8">
           <div>
             <p className="text-xs tracking-[0.25em] uppercase font-medium mb-2 text-[#FFD700]">
               {subtitle || "Browse Collection"}

@@ -30,7 +30,7 @@ function Stars({ count }: { count: number }) {
 
 function ReviewCard({ review }: { review: Review }) {
   return (
-    <div className="flex-shrink-0 w-80 bg-ocean-900 border border-white/10 rounded-xl p-6">
+    <div className="flex-shrink-0 w-72 sm:w-80 bg-ocean-900 border border-white/10 rounded-xl p-5 sm:p-6">
       <div className="flex items-center gap-3 mb-3">
         <img
           src={review.profile_photo_url}

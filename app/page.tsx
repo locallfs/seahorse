@@ -227,6 +227,7 @@ export default function HomePage() {
                   src="/api/static-map"
                   alt="Woody's Seahorse Aquarium & Supply location"
                   className="w-full h-auto"
+                  loading="lazy"
                 />
               </a>
             </div>

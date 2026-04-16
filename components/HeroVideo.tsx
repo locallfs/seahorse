@@ -7,7 +7,7 @@ export default function HeroVideo() {
   return (
     <section className="relative w-full h-screen min-h-[600px] flex items-center justify-center">
       <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-        <p className="text-white uppercase font-medium mb-6 drop-shadow-lg" style={{ fontSize: "clamp(0.85rem, 1.5vw, 1.1rem)", letterSpacing: "0.25em" }}>
+        <p className="text-white uppercase font-medium mb-6 drop-shadow-lg text-sm md:text-base tracking-[0.25em]">
           Est. 1996 — Pacific Northwest
         </p>
         <div className="mb-8 flex justify-center">

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -84,10 +85,12 @@ export default function MaintenancePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {serviceTypes.map((service) => (
               <div key={service.title} className="relative overflow-hidden rounded-xl aspect-video">
-                <img
+                <Image
                   src={service.img}
                   alt={service.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 33vw"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-5">
