@@ -30,7 +30,7 @@ export default function Footer() {
     <footer className="bg-ocean-900 border-t border-white/10 mt-auto">
       <div className="py-16 px-6">
         <div className="flex flex-col lg:flex-row gap-10">
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 lg:pl-12">
             <Image
               src="/images/LogoFullNameOnly.png"
               alt="Woody's Seahorse Aquarium & Supply"
@@ -44,7 +44,7 @@ export default function Footer() {
             </p>
           </div>
 
-          <div className="max-w-screen-xl mx-auto w-full">
+          <div className="max-w-screen-xl w-full">
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[auto_auto_auto_auto_auto] gap-x-10 gap-y-8 lg:justify-between">
               <div>
                 <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
