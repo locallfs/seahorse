@@ -51,8 +51,8 @@ export default function TankMovingPage() {
             </div>
             <div className="rounded-xl overflow-hidden border border-white/10">
               <Image
-                src="/images/large tank moves.jpg"
-                alt="Large aquarium tank being moved by Woody's Seahorse team"
+                src="/images/large%20tank%20moves.jpg"
+                alt=""
                 width={800}
                 height={600}
                 className="w-full h-auto object-cover"
