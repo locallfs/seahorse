@@ -11,17 +11,15 @@ export default function HeroVideo() {
           Est. 1996 — Pacific Northwest
         </p>
         <div className="mb-8 flex justify-center">
-          <div className="inline-block rounded-2xl bg-black/65 backdrop-blur-sm px-6 py-4 shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
-            <Image
-              src="/Logo Full Name Only.svg"
-              alt="Woody's Seahorse Aquarium & Supply"
-              width={900}
-              height={450}
-              priority
-              unoptimized
-              className="w-full max-w-4xl h-auto"
-            />
-          </div>
+          <Image
+            src="/Logo Full Name Only.svg"
+            alt="Woody's Seahorse Aquarium & Supply"
+            width={900}
+            height={450}
+            priority
+            unoptimized
+            className="w-full max-w-4xl h-auto drop-shadow-[0_0_8px_rgba(0,0,0,0.8)] [filter:drop-shadow(0_0_3px_rgba(0,0,0,0.9))_drop-shadow(0_0_12px_rgba(0,0,0,0.6))]"
+          />
         </div>
         <p className="text-slate-200 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-lg">
           Premium live saltwater fish, WYSIWYG corals, invertebrates, and
