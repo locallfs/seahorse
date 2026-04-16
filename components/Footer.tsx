@@ -102,7 +102,7 @@ export default function Footer() {
               Location
             </p>
             <a
-              href="https://www.google.com/maps/dir/?api=1&destination=45.5777433,-122.6648056"
+              href="https://www.google.com/maps/dir/?api=1&destination=Woody's+Seahorse+Aquarium+%26+Supply,+106+NE+Russet+St,+Portland,+OR+97211&destination_place_id=ChIJD0GFAfemlVQT_wCyRbJs2w"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-white leading-relaxed hover:text-[#FFD700] transition-colors"
