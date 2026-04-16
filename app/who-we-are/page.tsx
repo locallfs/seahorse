@@ -164,6 +164,32 @@ export default function WhoWeArePage() {
         </div>
 
         <div className="border-t border-white/10">
+          <div className="max-w-screen-xl mx-auto px-6 py-20">
+            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
+              Recognition
+            </p>
+            <h2 className="text-3xl font-bold text-white mb-10">
+              Over Our Many Years We Have Been
+            </h2>
+            <ul className="space-y-4 max-w-3xl">
+              {[
+                "Interviewed by National Geographic and Pet Age Magazine",
+                "Supplier of Crystal Sea Salt for the Newport Aquarium when ocean water is unavailable",
+                "Consultant for European users of Crystal Sea",
+                "Supplier of Crystal Sea to the University of Portland",
+                "Supplier of Crystal Sea to OHSU",
+                "Aquarium equipment insurance claims adjuster",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-4 text-slate-300">
+                  <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
+                  <span className="leading-relaxed">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t border-white/10 bg-ocean-900/60">
           <div className="max-w-screen-xl mx-auto px-6 py-20 text-center">
             <p className="text-slate-400 text-base max-w-xl mx-auto mb-8 leading-relaxed">
               Have questions or want to learn more? We&apos;d love to hear from you.
