@@ -5,26 +5,25 @@ const PLACE_QUERY = process.env.GOOGLE_PLACE_QUERY || "Woody's Seahorse Aquarium
 
 export async function GET() {
   if (!API_KEY) {
-    return NextResponse.json({ reviews: [], error: "Missing API key" });
+    return NextResponse.json({ reviews: [] });
   }
 
   try {
-    const findUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(PLACE_QUERY)}&inputtype=textquery&fields=place_id&key=${API_KEY}`;
-    const findRes = await fetch(findUrl, { cache: "no-store" });
+    const findRes = await fetch(
+      `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(PLACE_QUERY)}&inputtype=textquery&fields=place_id&key=${API_KEY}`,
+      { next: { revalidate: 86400 } }
+    );
     const findData = await findRes.json();
     const placeId = findData?.candidates?.[0]?.place_id;
+    if (!placeId) return NextResponse.json({ reviews: [] });
 
-    if (!placeId) {
-      return NextResponse.json({ reviews: [], error: "Place not found", findData });
-    }
-
-    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&key=${API_KEY}`;
-    const detailsRes = await fetch(detailsUrl, { cache: "no-store" });
+    const detailsRes = await fetch(
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&key=${API_KEY}`,
+      { next: { revalidate: 3600 } }
+    );
     const detailsData = await detailsRes.json();
-    const reviews = detailsData?.result?.reviews ?? [];
-
-    return NextResponse.json({ reviews });
-  } catch (err) {
-    return NextResponse.json({ reviews: [], error: String(err) });
+    return NextResponse.json({ reviews: detailsData?.result?.reviews ?? [] });
+  } catch {
+    return NextResponse.json({ reviews: [] });
   }
 }
