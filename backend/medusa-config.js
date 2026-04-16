@@ -71,6 +71,35 @@ module.exports = defineConfig({
         ],
       },
     },
+    notification: {
+      resolve: "@medusajs/notification",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/notification-klaviyo",
+            id: "notification-klaviyo",
+            options: {
+              channels: ["email"],
+              private_key: process.env.KLAVIYO_PRIVATE_KEY,
+              public_key: process.env.KLAVIYO_PUBLIC_KEY,
+              from: "Terry@seahorse-nw.com",
+              company_name: "Woody's Seahorse Aquarium & Supply",
+            },
+          },
+        ],
+      },
+    },
+    fulfillment: {
+      resolve: "@medusajs/fulfillment",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/fulfillment-manual",
+            id: "manual",
+          },
+        ],
+      },
+    },
     payment: {
       resolve: "@medusajs/payment",
       options: {
