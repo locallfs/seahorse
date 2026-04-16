@@ -8,6 +8,7 @@ import {
   useCallback,
 } from "react";
 import { medusa } from "@/lib/medusa";
+import { FetchError } from "@medusajs/js-sdk";
 
 interface Customer {
   id: string;
@@ -78,21 +79,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       firstName: string,
       lastName: string
     ) => {
-      const token = await medusa.auth.register("customer", "emailpass", {
-        email,
-        password,
-      });
-      if (typeof token !== "string") {
-        throw new Error("Registration failed");
+      try {
+        await medusa.auth.register("customer", "emailpass", {
+          email,
+          password,
+        });
+      } catch (error) {
+        const fetchError = error as FetchError;
+        if (
+          fetchError.statusText === "Unauthorized" &&
+          fetchError.message === "Identity with email already exists"
+        ) {
+          const loginResponse = await medusa.auth.login("customer", "emailpass", {
+            email,
+            password,
+          });
+          if (typeof loginResponse !== "string") {
+            throw new Error("Authentication requires additional steps");
+          }
+        } else {
+          throw error;
+        }
       }
-      await medusa.store.customer.create(
-        { email, first_name: firstName, last_name: lastName },
-        {},
-        { Authorization: `Bearer ${token}` }
-      );
-      await login(email, password);
+
+      await medusa.store.customer.create({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+      });
+
+      await fetchCustomer();
     },
-    [login]
+    [fetchCustomer]
   );
 
   const logout = useCallback(async () => {
