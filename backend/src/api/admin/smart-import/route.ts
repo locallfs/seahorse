@@ -75,18 +75,15 @@ export async function POST(req: any, res: any) {
 
     const processedCSV = outputLines.join("\n")
 
-    const fileModule = req.scope.resolve("file")
-    const uploaded = await fileModule.createFiles({
-      filename: file.originalname || "import.csv",
-      content: processedCSV,
-      mimeType: "text/csv",
-    })
+    console.log("Smart import: processed CSV headers:", newHeaders.join(", "))
+    console.log("Smart import: total data rows:", outputLines.length - 1)
+    console.log("Smart import: first data row sample:", outputLines[1]?.substring(0, 200))
 
-    const { importProductsAsChunksWorkflow } = require("@medusajs/core-flows")
-    const { result, transaction } = await importProductsAsChunksWorkflow(req.scope).run({
+    const { importProductsWorkflow } = require("@medusajs/core-flows")
+    const { result, transaction } = await importProductsWorkflow(req.scope).run({
       input: {
         filename: file.originalname || "import.csv",
-        fileKey: uploaded.id,
+        fileContent: processedCSV,
       },
     })
 
