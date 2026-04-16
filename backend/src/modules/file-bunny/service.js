@@ -1,5 +1,6 @@
 "use strict";
 const { AbstractFileProviderService, MedusaError } = require("@medusajs/framework/utils");
+const { Readable } = require("stream");
 const path = require("path");
 
 class BunnyFileService extends AbstractFileProviderService {
@@ -76,6 +77,19 @@ class BunnyFileService extends AbstractFileProviderService {
 
   async getPresignedDownloadUrl(file) {
     return this.publicUrl(file.fileKey);
+  }
+
+  async getDownloadStream(file) {
+    const res = await fetch(this.storageUrl(file.fileKey), {
+      headers: { AccessKey: this.storagePassword },
+    });
+    if (!res.ok) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Bunny download failed (${res.status})`
+      );
+    }
+    return Readable.fromWeb(res.body);
   }
 
   async getPresignedUploadUrl(fileData) {
