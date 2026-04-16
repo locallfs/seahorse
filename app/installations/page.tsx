@@ -26,7 +26,16 @@ export default function InstallationsPage() {
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">
-          <div className="max-w-screen-xl mx-auto px-6 py-12">
+          <div className="max-w-screen-xl mx-auto px-6 py-12 relative">
+            <div className="hidden lg:block absolute right-6 top-1/2 -translate-y-1/2 w-[280px] rounded-xl overflow-hidden border border-white/10">
+              <Image
+                src="/images/customreef3.png"
+                alt=""
+                width={800}
+                height={600}
+                className="w-full h-auto object-cover"
+              />
+            </div>
             <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-2">
               Services
             </p>
