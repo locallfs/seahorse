@@ -31,13 +31,15 @@ export default function Footer() {
       <div className="py-16 px-6">
         <div className="flex flex-col lg:flex-row gap-10">
           <div className="flex-shrink-0 lg:pl-20 text-center">
-            <Image
-              src="/images/LogoFullNameOnly.png"
-              alt="Woody's Seahorse Aquarium & Supply"
-              width={400}
-              height={140}
-              className="h-32 w-auto object-contain mb-4 drop-shadow-[0_2px_4px_rgba(255,255,255,0.5)] mx-auto"
-            />
+            <Link href="/">
+              <Image
+                src="/images/LogoFullNameOnly.png"
+                alt="Woody's Seahorse Aquarium & Supply"
+                width={400}
+                height={140}
+                className="h-32 w-auto object-contain mb-4 drop-shadow-[0_2px_4px_rgba(255,255,255,0.5)] mx-auto"
+              />
+            </Link>
             <p className="text-white text-sm leading-relaxed max-w-[200px] mx-auto">
               Pacific Northwest&apos;s premier saltwater fish and coral
               specialist since 1996.
