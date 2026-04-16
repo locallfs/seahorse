@@ -28,15 +28,15 @@ const hours = [
 export default function Footer() {
   return (
     <footer className="bg-ocean-900 border-t border-white/10 mt-auto">
-      <div className="max-w-screen-xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
+      <div className="max-w-screen-2xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-8">
           <div className="lg:col-span-1">
             <Image
               src="/images/LogoFullNameOnly.png"
               alt="Woody's Seahorse Aquarium & Supply"
-              width={320}
-              height={110}
-              className="h-24 w-auto object-contain mb-4"
+              width={400}
+              height={140}
+              className="h-32 w-auto object-contain mb-4"
             />
             <p className="text-white text-sm leading-relaxed">
               Pacific Northwest&apos;s premier saltwater fish and coral
@@ -60,7 +60,10 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-            <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mt-8 mb-5">
+          </div>
+
+          <div>
+            <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
               Services
             </p>
             <ul className="space-y-3">
@@ -79,22 +82,6 @@ export default function Footer() {
 
           <div>
             <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
-              Contact Us
-            </p>
-            <ul className="space-y-3 text-sm text-white">
-              <li>
-                <span className="text-white/60 text-xs">Phone:</span>{" "}
-                <a href="tel:5032834788" className="hover:text-[#FFD700] transition-colors">503-283-4788</a>
-              </li>
-              <li>
-                <span className="text-white/60 text-xs">Email:</span>{" "}
-                <a href="mailto:info@seahorseaquariumsupply.com" className="hover:text-[#FFD700] transition-colors">
-                  info@seahorseaquariumsupply.com
-                </a>
-              </li>
-            </ul>
-
-            <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mt-8 mb-5">
               Location
             </p>
             <a
@@ -113,11 +100,29 @@ export default function Footer() {
 
           <div>
             <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
-              Shop Hours
+              Contact Us
+            </p>
+            <ul className="space-y-3 text-sm text-white">
+              <li>
+                <span className="text-white/60 text-xs">Phone:</span>{" "}
+                <a href="tel:5032834788" className="hover:text-[#FFD700] transition-colors">503-283-4788</a>
+              </li>
+              <li>
+                <span className="text-white/60 text-xs">Email:</span>{" "}
+                <a href="mailto:info@seahorseaquariumsupply.com" className="hover:text-[#FFD700] transition-colors">
+                  info@seahorseaquariumsupply.com
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
+              Local Store Hours
             </p>
             <ul className="space-y-2">
               {hours.map((h) => (
-                <li key={h.day} className="flex justify-between text-sm">
+                <li key={h.day} className="flex justify-between gap-4 text-sm">
                   <span className="text-white">{h.day}</span>
                   <span className={h.time === "Closed" ? "text-white/50" : "text-white"}>
                     {h.time}
@@ -127,8 +132,8 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium">
+          <div>
+            <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-5">
               Follow Us
             </p>
             <div className="flex items-center gap-4">
@@ -155,7 +160,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="max-w-screen-xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-screen-2xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-white">
             &copy; {new Date().getFullYear()} Secret Reef LLC — All rights reserved.
           </p>
