@@ -16,6 +16,8 @@ const navLinks: { label: string; href: string; flash?: boolean }[] = [
 const serviceLinks = [
   { label: "Maintenance", href: "/maintenance" },
   { label: "Installations", href: "/installations" },
+  { label: "Pond Cleaning", href: "/pond-cleaning" },
+  { label: "Tank Moving", href: "/tank-moving" },
 ];
 
 const rightLinks = [
