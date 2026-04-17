@@ -118,7 +118,8 @@ export default function ProductListScreen() {
               </Text>
               <View style={styles.metaRow}>
                 <Text style={styles.price}>{formatPrice(item.price, item.currency)}</Text>
-                <StockBadge stock={item.stock} status={item.status} />
+                <StatusBadge status={item.status} />
+                <StockBadge stock={item.stock} />
               </View>
             </View>
           </Pressable>
@@ -128,20 +129,32 @@ export default function ProductListScreen() {
   );
 }
 
-function StockBadge({ stock, status }: { stock: number; status: string }) {
-  const isDraft = status !== 'published';
+function StatusBadge({ status }: { status: string }) {
+  const published = status === 'published';
+  return (
+    <View
+      style={[
+        styles.badge,
+        { backgroundColor: published ? theme.color.gold : theme.color.border },
+      ]}
+    >
+      <Text
+        style={[
+          styles.badgeText,
+          { color: published ? '#000' : theme.color.text },
+        ]}
+      >
+        {published ? 'Published' : 'Draft'}
+      </Text>
+    </View>
+  );
+}
+
+function StockBadge({ stock }: { stock: number }) {
   const isOut = stock <= 0;
   const isLow = stock > 0 && stock <= LOW_STOCK_THRESHOLD;
-  const label = isDraft
-    ? 'Draft'
-    : isOut
-    ? 'Out of Stock'
-    : isLow
-    ? `Low · ${stock}`
-    : `Stock · ${stock}`;
-  const bg = isDraft
-    ? theme.color.border
-    : isOut
+  const label = isOut ? 'Out of Stock' : isLow ? `Low · ${stock}` : `Stock · ${stock}`;
+  const bg = isOut
     ? theme.color.danger
     : isLow
     ? theme.color.warning
@@ -213,7 +226,7 @@ const styles = StyleSheet.create({
   thumbPlaceholderText: { color: theme.color.textDim, fontSize: theme.font.xl },
   rowBody: { flex: 1, gap: theme.space.xs },
   title: { color: theme.color.text, fontSize: theme.font.md, fontWeight: '600' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm, flexWrap: 'wrap' },
   price: { color: theme.color.gold, fontSize: theme.font.sm, fontWeight: '600' },
   badge: {
     paddingHorizontal: theme.space.sm,
