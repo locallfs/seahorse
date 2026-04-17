@@ -97,7 +97,7 @@ export default function ProductPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="w-full aspect-square rounded-xl border border-white/10 overflow-hidden relative bg-ocean-800">
+              <div className="w-full aspect-square rounded-xl border border-white/10 overflow-hidden relative bg-ocean-800 glow-white">
                 {product.thumbnail ? (
                   <Image
                     src={product.thumbnail}

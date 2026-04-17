@@ -100,7 +100,7 @@ export default function ProductGrid({ category }: { category: string }) {
         const price = product.variants?.[0]?.calculated_price;
         return (
           <Link key={product.id} href={`/products/${product.handle}`} className="group">
-            <div className="rounded-lg border border-white/10 group-hover:border-white/30 overflow-hidden transition-all duration-300">
+            <div className="rounded-lg border border-white/10 group-hover:border-white/30 overflow-hidden transition-all duration-300 glow-white">
               <div className="w-full aspect-square relative bg-ocean-800">
                 {product.thumbnail ? (
                   <Image

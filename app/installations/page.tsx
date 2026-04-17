@@ -65,7 +65,7 @@ export default function InstallationsPage() {
                 {services.map((item) => (
                   <li
                     key={item}
-                    className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-white"
+                    className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-white glow-white"
                   >
                     <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
                     {item}
@@ -73,7 +73,7 @@ export default function InstallationsPage() {
                 ))}
               </ul>
 
-              <div className="rounded-xl border border-white/10 bg-ocean-900 p-10">
+              <div className="rounded-xl border border-white/10 bg-ocean-900 p-10 glow-white">
                 <h3 className="text-xl font-bold text-white mb-3">
                   Request a Quote
                 </h3>
@@ -87,7 +87,7 @@ export default function InstallationsPage() {
             </div>
 
             <div className="flex flex-col gap-6">
-              <div className="rounded-xl overflow-hidden border border-white/10">
+              <div className="rounded-xl overflow-hidden border border-white/10 glow-white">
                 <Image
                   src="/images/customreef3.png"
                   alt=""
@@ -96,7 +96,7 @@ export default function InstallationsPage() {
                   className="w-full h-auto object-cover"
                 />
               </div>
-              <div className="rounded-xl overflow-hidden border border-white/10">
+              <div className="rounded-xl overflow-hidden border border-white/10 glow-white">
                 <Image
                   src="/images/customreef1.webp"
                   alt=""
@@ -105,7 +105,7 @@ export default function InstallationsPage() {
                   className="w-full h-auto object-cover"
                 />
               </div>
-              <div className="rounded-xl overflow-hidden border border-white/10">
+              <div className="rounded-xl overflow-hidden border border-white/10 glow-white">
                 <Image
                   src="/images/customreef2.jpg"
                   alt=""

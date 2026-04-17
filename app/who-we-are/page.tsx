@@ -105,7 +105,7 @@ export default function WhoWeArePage() {
               {values.map((item) => (
                 <div
                   key={item.title}
-                  className="p-8 rounded-xl border border-white/10 bg-ocean-900"
+                  className="p-8 rounded-xl border border-white/10 bg-ocean-900 glow-white"
                 >
                   <h3 className="text-xl font-bold text-white mb-4">
                     {item.title}
@@ -154,7 +154,7 @@ export default function WhoWeArePage() {
               {products.map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-white"
+                  className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-white glow-white"
                 >
                   <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
                   {item}
@@ -188,7 +188,7 @@ export default function WhoWeArePage() {
               ))}
             </ul>
 
-            <blockquote className="max-w-3xl p-8 rounded-xl border border-white/10 bg-ocean-900">
+            <blockquote className="max-w-3xl p-8 rounded-xl border border-white/10 bg-ocean-900 glow-white">
               <p className="text-white text-sm leading-relaxed mb-4">
                 &ldquo;We are a large scientific research lab here in Portland using
                 freshwater zebrafish (Danio rerio) as a model organism to study

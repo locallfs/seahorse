@@ -73,7 +73,7 @@ export default function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 ${
+              className={`text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-glow-gold ${
                 link.flash
                   ? "text-blue-accent hover:text-blue-light"
                   : "text-blue-dim hover:text-blue-accent"
@@ -83,7 +83,7 @@ export default function Header() {
             </Link>
           ))}
           <div className="relative group">
-            <button className="text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-blue-dim hover:text-blue-accent flex items-center gap-1">
+            <button className="text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-blue-dim hover:text-blue-accent flex items-center gap-1 text-glow-gold">
               Services
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="mt-0.5">
                 <path d="M3 5l3 3 3-3" />
@@ -107,7 +107,7 @@ export default function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-blue-dim hover:text-blue-accent"
+              className="text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-blue-dim hover:text-blue-accent text-glow-gold"
             >
               {link.label}
             </Link>
@@ -143,7 +143,7 @@ export default function Header() {
           </Link>
           <Link
             href="/store"
-            className="px-5 py-2 text-sm font-medium bg-blue-accent hover:bg-blue-light text-white rounded transition-colors duration-200 tracking-wide"
+            className="px-5 py-2 text-sm font-medium bg-blue-accent hover:bg-blue-light text-white rounded transition-colors duration-200 tracking-wide text-glow-gold"
           >
             Shop Now
           </Link>
@@ -193,7 +193,7 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium"
+                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium text-glow-gold"
               >
                 {link.label}
               </Link>
@@ -204,7 +204,7 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium pl-6"
+                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium pl-6 text-glow-gold"
               >
                 {link.label}
               </Link>
@@ -214,7 +214,7 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium"
+                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium text-glow-gold"
               >
                 {link.label}
               </Link>

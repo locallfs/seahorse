@@ -85,7 +85,7 @@ export default function MaintenancePage() {
         <div className="max-w-screen-xl mx-auto px-6 py-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {serviceTypes.map((service) => (
-              <div key={service.title} className="relative overflow-hidden rounded-xl aspect-video">
+              <div key={service.title} className="relative overflow-hidden rounded-xl aspect-video glow-white">
                 <Image
                   src={service.img}
                   alt={service.title}
@@ -107,7 +107,7 @@ export default function MaintenancePage() {
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className="rounded-xl border border-white/10 bg-ocean-900 p-8 flex flex-col"
+                className="rounded-xl border border-white/10 bg-ocean-900 p-8 flex flex-col glow-white"
               >
                 <div className="mb-6">
                   <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-2">
@@ -142,7 +142,7 @@ export default function MaintenancePage() {
                 )}
                 <QuoteForm
                   service={`Maintenance — ${plan.name}`}
-                  buttonClassName="mt-auto block text-center px-4 py-3 bg-blue-accent hover:bg-blue-light text-white text-sm font-medium rounded transition-colors duration-200 w-full"
+                  buttonClassName="mt-auto block text-center px-4 py-3 bg-blue-accent hover:bg-blue-light text-white text-sm font-medium rounded transition-colors duration-200 w-full glow-white"
                 />
               </div>
             ))}

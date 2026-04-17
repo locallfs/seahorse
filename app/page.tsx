@@ -136,7 +136,7 @@ export default function HomePage() {
           <div className="max-w-screen-xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <Link
               href="/maintenance"
-              className="group relative overflow-hidden rounded-xl border border-white/10 hover:border-white/25 p-10 bg-ocean-800 transition-all duration-300"
+              className="group relative overflow-hidden rounded-xl border border-white/10 hover:border-white/25 p-10 bg-ocean-800 transition-all duration-300 glow-white"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-3">
@@ -159,7 +159,7 @@ export default function HomePage() {
 
             <Link
               href="/installations"
-              className="group relative overflow-hidden rounded-xl border border-white/10 hover:border-white/25 p-10 bg-ocean-800 transition-all duration-300"
+              className="group relative overflow-hidden rounded-xl border border-white/10 hover:border-white/25 p-10 bg-ocean-800 transition-all duration-300 glow-white"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-3">
@@ -221,7 +221,7 @@ export default function HomePage() {
                 href="https://www.google.com/maps/dir/?api=1&destination=Woody's+Seahorse+Aquarium+%26+Supply,+106+NE+Russet+St,+Portland,+OR+97211&destination_place_id=ChIJD0GFAfemlVQT_wCyRbJs2w"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block rounded-xl overflow-hidden border border-white/10 hover:border-white/25 transition-all"
+                className="block rounded-xl overflow-hidden border border-white/10 hover:border-white/25 transition-all glow-white"
               >
                 <img
                   src="/api/static-map"

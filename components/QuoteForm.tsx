@@ -11,7 +11,7 @@ interface QuoteFormProps {
 export default function QuoteForm({
   service = "",
   buttonLabel = "Get a Quote",
-  buttonClassName = "inline-flex items-center gap-2 px-8 py-4 bg-blue-accent hover:bg-blue-light text-white font-medium rounded transition-colors duration-200 text-sm tracking-wide",
+  buttonClassName = "inline-flex items-center gap-2 px-8 py-4 bg-blue-accent hover:bg-blue-light text-white font-medium rounded transition-colors duration-200 text-sm tracking-wide glow-white",
 }: QuoteFormProps) {
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -165,7 +165,7 @@ export default function QuoteForm({
                   <button
                     type="submit"
                     disabled={sending}
-                    className="w-full py-4 bg-blue-accent hover:bg-blue-light text-white font-medium text-sm rounded transition-colors duration-200 disabled:opacity-50"
+                    className="w-full py-4 bg-blue-accent hover:bg-blue-light text-white font-medium text-sm rounded transition-colors duration-200 disabled:opacity-50 glow-white"
                   >
                     {sending ? "Sending..." : "Submit Request"}
                   </button>
