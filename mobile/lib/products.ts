@@ -40,12 +40,26 @@ function sumVariantStock(variant: any): number {
 }
 
 export async function listProducts(search?: string): Promise<ProductSummary[]> {
-  const { products } = await sdk.admin.product.list({
-    q: search || undefined,
-    limit: 100,
-    fields:
-      'id,title,status,thumbnail,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels',
-  } as any);
+  const fields =
+    'id,title,status,thumbnail,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels';
+  const pageSize = 200;
+  const all: any[] = [];
+  let offset = 0;
+  // Pull every page so client-side sort sees the whole catalog, not just page 1.
+  while (true) {
+    const res = (await sdk.admin.product.list({
+      q: search || undefined,
+      limit: pageSize,
+      offset,
+      fields,
+    } as any)) as any;
+    const batch: any[] = res.products || [];
+    all.push(...batch);
+    const total = typeof res.count === 'number' ? res.count : all.length;
+    offset += batch.length;
+    if (batch.length === 0 || offset >= total) break;
+  }
+  const products = all;
 
   const mapped: ProductSummary[] = (products || []).map((p: any) => {
     const variant = p.variants?.[0];
