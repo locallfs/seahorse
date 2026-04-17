@@ -62,16 +62,17 @@ export async function listProducts(search?: string): Promise<ProductSummary[]> {
   });
 
   // Priority buckets (lower = higher priority):
+  // In-stock always beats out-of-stock, regardless of publish state.
   // 0: Published + in stock
-  // 1: Published + out of stock
-  // 2: Draft + in stock
+  // 1: Draft + in stock
+  // 2: Published + out of stock
   // 3: Draft + out of stock
   const bucket = (p: ProductSummary) => {
     const published = p.status === 'published';
     const inStock = p.stock > 0;
-    if (published && inStock) return 0;
-    if (published && !inStock) return 1;
-    if (!published && inStock) return 2;
+    if (inStock && published) return 0;
+    if (inStock && !published) return 1;
+    if (!inStock && published) return 2;
     return 3;
   };
   mapped.sort((a, b) => {
