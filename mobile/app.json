@@ -10,14 +10,15 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.woodysseahorse.reefnerds",
+      "bundleIdentifier": "com.pwnership.reefnerds",
       "infoPlist": {
         "NSCameraUsageDescription": "ReefNerds uses the camera to take product photos.",
-        "NSPhotoLibraryUsageDescription": "ReefNerds uses your photo library to attach product images."
+        "NSPhotoLibraryUsageDescription": "ReefNerds uses your photo library to attach product images.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.woodysseahorse.reefnerds",
+      "package": "com.pwnership.reefnerds",
       "adaptiveIcon": {
         "backgroundColor": "#0b1220",
         "foregroundImage": "./assets/images/ReefNerds.png",

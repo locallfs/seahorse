@@ -162,6 +162,32 @@ Built after the store is live. Connects to the same Medusa backend on Railway. L
 ### Out of Scope (v1)
 Orders, customers, discounts, reports, variants (size/color options).
 
+### Role Management (Admin vs Employee)
+
+**Goal:** Owner (admin) can promote or demote any Medusa user between Admin and Employee from inside the Medusa admin dashboard — no redeploy, no env var edits.
+
+**Storage:** Role is saved on each Medusa user in the built-in `metadata` JSON field: `user.metadata.role = 'admin' | 'employee'`. Default (missing) = employee. This uses Medusa's native per-user metadata — no new database tables, no custom module.
+
+**Medusa admin dashboard (web):**
+- New widget on the user detail page (`/app/users/:id`)
+- Shows current role + dropdown to switch (Admin / Employee)
+- Save button calls admin API `POST /admin/users/:id` with `{ metadata: { role: 'admin' } }`
+- Visible to logged-in admins only (only admins see the Users page anyway)
+- Widget lives in `backend/src/admin/widgets/user-role.tsx`
+
+**Mobile app (ReefNerds):**
+- [mobile/lib/auth.tsx](mobile/lib/auth.tsx) `login()` reads `me.metadata?.role` instead of comparing email to `EXPO_PUBLIC_ADMIN_EMAIL`
+- `isAdmin` becomes `me.metadata?.role === 'admin'`
+- Team tab visibility (already gated on `isAdmin`) works unchanged
+- `EXPO_PUBLIC_ADMIN_EMAIL` becomes an optional bootstrap fallback: if a user has no role set yet AND their email matches, treat as admin. This prevents locking yourself out the first time.
+
+**Bootstrap:** One-time script (`backend/src/scripts/seed-admin-role.ts`) that finds the owner user by email and writes `metadata.role = 'admin'`. Run once after deploy, then the dashboard widget takes over.
+
+**Done means:**
+- Owner opens Medusa admin → Users → picks an employee → sees role dropdown → changes Employee to Admin → Save → employee opens mobile app → Team tab now visible
+- New users default to Employee
+- No code changes required to add/remove admins going forward
+
 
 ---
 

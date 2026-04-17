@@ -7,7 +7,16 @@ type AdminUser = {
   email: string;
   first_name?: string | null;
   last_name?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
+
+function resolveIsAdmin(user: AdminUser): boolean {
+  const role = typeof user.metadata?.role === 'string' ? user.metadata.role : null;
+  if (role === 'admin') return true;
+  if (role === 'employee') return false;
+  const bootstrapEmail = process.env.EXPO_PUBLIC_ADMIN_EMAIL?.toLowerCase();
+  return !!bootstrapEmail && user.email.toLowerCase() === bootstrapEmail;
+}
 
 type AuthState = {
   user: AdminUser | null;
@@ -18,8 +27,6 @@ type AuthState = {
 };
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
-
-const ADMIN_ROLE_KEY = 'reefnerds.role';
 
 async function fetchCurrentUser(): Promise<AdminUser | null> {
   try {
@@ -45,8 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const me = await fetchCurrentUser();
       if (me) {
         setUser(me);
-        const role = await SecureStore.getItemAsync(ADMIN_ROLE_KEY);
-        setIsAdmin(role === 'admin');
+        setIsAdmin(resolveIsAdmin(me));
       } else {
         await SecureStore.deleteItemAsync(TOKEN_KEY);
       }
@@ -61,11 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const me = await fetchCurrentUser();
     if (!me) throw new Error('Could not load user.');
-    const adminEmail = process.env.EXPO_PUBLIC_ADMIN_EMAIL?.toLowerCase();
-    const isOwner = !!adminEmail && me.email.toLowerCase() === adminEmail;
-    await SecureStore.setItemAsync(ADMIN_ROLE_KEY, isOwner ? 'admin' : 'employee');
     setUser(me);
-    setIsAdmin(isOwner);
+    setIsAdmin(resolveIsAdmin(me));
   };
 
   const logout = async () => {
@@ -73,7 +76,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await sdk.auth.logout();
     } catch {}
     await SecureStore.deleteItemAsync(TOKEN_KEY);
-    await SecureStore.deleteItemAsync(ADMIN_ROLE_KEY);
     setUser(null);
     setIsAdmin(false);
   };
