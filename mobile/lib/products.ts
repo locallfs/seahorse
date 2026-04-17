@@ -152,11 +152,16 @@ export async function createProduct(input: NewProductInput): Promise<string> {
     const inventoryId = link?.inventory?.id || link?.inventory_item_id;
     if (inventoryId) {
       try {
-        await sdk.admin.inventoryItem.updateLevel(inventoryId, defaults.stockLocationId, {
-          stocked_quantity: input.stock,
+        await sdk.admin.inventoryItem.batchUpdateLevels(inventoryId, {
+          create: [
+            {
+              location_id: defaults.stockLocationId,
+              stocked_quantity: input.stock,
+            },
+          ],
         });
       } catch (err) {
-        console.warn('Could not set initial stock — create the level in Medusa admin first.', err);
+        console.warn('Could not set initial stock level.', err);
       }
     }
   }

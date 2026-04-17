@@ -17,6 +17,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { sdk } from '@/lib/medusa';
 import { uploadImage } from '@/lib/uploads';
+import { getStoreDefaults } from '@/lib/products';
 import { theme } from '@/lib/theme';
 import { KeyboardDoneButton } from '@/lib/KeyboardDoneButton';
 
@@ -151,11 +152,28 @@ export default function ProductEditScreen() {
       if (!Number.isNaN(nextStock) && nextStock !== currentStock && variant) {
         const link = variant.inventory_items?.[0];
         const inventoryId = link?.inventory?.id;
-        const lvl = link?.inventory?.location_levels?.[0];
-        if (inventoryId && lvl?.location_id) {
-          await sdk.admin.inventoryItem.updateLevel(inventoryId, lvl.location_id, {
-            stocked_quantity: nextStock,
-          });
+        const existingLevel = link?.inventory?.location_levels?.[0];
+        if (inventoryId) {
+          if (existingLevel?.location_id) {
+            await sdk.admin.inventoryItem.updateLevel(inventoryId, existingLevel.location_id, {
+              stocked_quantity: nextStock,
+            });
+          } else {
+            const defaults = await getStoreDefaults();
+            if (!defaults.stockLocationId) {
+              throw new Error(
+                'No stock location exists. Open Medusa admin → Settings → Locations and add one.'
+              );
+            }
+            await sdk.admin.inventoryItem.batchUpdateLevels(inventoryId, {
+              create: [
+                {
+                  location_id: defaults.stockLocationId,
+                  stocked_quantity: nextStock,
+                },
+              ],
+            });
+          }
         }
       }
 
