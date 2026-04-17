@@ -197,10 +197,14 @@ export async function createProduct(input: NewProductInput): Promise<string> {
   if (defaults.salesChannelId) payload.sales_channels = [{ id: defaults.salesChannelId }];
 
   if (input.organize) {
-    if (input.organize.tagIds.length) payload.tag_ids = input.organize.tagIds;
+    if (input.organize.tagIds.length) {
+      payload.tags = input.organize.tagIds.map((id) => ({ id }));
+    }
     if (input.organize.typeId) payload.type_id = input.organize.typeId;
     if (input.organize.collectionId) payload.collection_id = input.organize.collectionId;
-    if (input.organize.categoryIds.length) payload.category_ids = input.organize.categoryIds;
+    if (input.organize.categoryIds.length) {
+      payload.categories = input.organize.categoryIds.map((id) => ({ id }));
+    }
   }
   if (input.attributes) {
     if (input.attributes.height != null) payload.height = input.attributes.height;
