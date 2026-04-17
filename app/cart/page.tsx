@@ -60,7 +60,7 @@ export default function CartPage() {
               <p className="text-white mb-6">Your cart is empty.</p>
               <Link
                 href="/store"
-                className="px-6 py-3 bg-blue-accent hover:bg-blue-light text-white text-sm font-medium rounded transition-colors"
+                className="px-6 py-3 bg-blue-accent hover:bg-blue-light text-white text-sm font-medium rounded transition-colors glow-white"
               >
                 Continue Shopping
               </Link>
@@ -71,7 +71,7 @@ export default function CartPage() {
                 {items.map((item: any) => (
                   <div
                     key={item.id}
-                    className="flex gap-4 p-4 rounded-lg border border-white/10 bg-ocean-900"
+                    className="flex gap-4 p-4 rounded-lg border border-white/10 bg-ocean-900 glow-white"
                   >
                     <div className="w-20 h-20 rounded flex-shrink-0 bg-ocean-800 border border-white/10 overflow-hidden relative">
                       {item.thumbnail && (
@@ -132,7 +132,7 @@ export default function CartPage() {
               </div>
 
               <div className="lg:col-span-1">
-                <div className="rounded-xl border border-white/10 bg-ocean-900 p-6 sticky top-24">
+                <div className="rounded-xl border border-white/10 bg-ocean-900 p-6 sticky top-24 glow-white">
                   <h2 className="text-lg font-bold text-white mb-6">
                     Order Summary
                   </h2>
@@ -168,7 +168,7 @@ export default function CartPage() {
 
                   <Link
                     href="/checkout"
-                    className="block w-full py-4 bg-blue-accent hover:bg-blue-light text-white text-center font-medium text-sm rounded transition-colors"
+                    className="block w-full py-4 bg-blue-accent hover:bg-blue-light text-white text-center font-medium text-sm rounded transition-colors glow-white"
                   >
                     Proceed to Checkout
                   </Link>

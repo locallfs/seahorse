@@ -75,7 +75,7 @@ function StripePaymentForm({
       <button
         onClick={handleSubmit}
         disabled={!stripe || processing}
-        className="w-full py-4 bg-white hover:bg-white/10 text-[#d4af37] font-semibold text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-4 bg-white hover:bg-white/10 text-[#d4af37] font-semibold text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed glow-white"
       >
         {processing ? "Processing payment..." : "Place Order"}
       </button>
@@ -299,7 +299,7 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             <div className="lg:col-span-2 space-y-8">
               {/* Contact & Shipping Address */}
-              <div className="rounded-xl border border-white/10 bg-ocean-900 p-6">
+              <div className="rounded-xl border border-white/10 bg-ocean-900 p-6 glow-white">
                 <h2 className="text-base font-bold text-[#d4af37] mb-5">
                   Contact & Shipping
                 </h2>
@@ -416,7 +416,7 @@ export default function CheckoutPage() {
                   <button
                     onClick={saveAddress}
                     disabled={!isAddressComplete || shippingLoading}
-                    className="mt-5 w-full py-3 bg-white hover:bg-white/90 text-[#d4af37] font-semibold text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-5 w-full py-3 bg-white hover:bg-white/90 text-[#d4af37] font-semibold text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed glow-white"
                   >
                     {shippingLoading
                       ? "Saving..."
@@ -441,7 +441,7 @@ export default function CheckoutPage() {
 
               {/* Shipping Method */}
               {(step === "shipping" || step === "payment") && (
-                <div className="rounded-xl border border-white/10 bg-ocean-900 p-6">
+                <div className="rounded-xl border border-white/10 bg-ocean-900 p-6 glow-white">
                   <h2 className="text-base font-bold text-white mb-5">
                     Shipping Method
                   </h2>
@@ -538,7 +538,7 @@ export default function CheckoutPage() {
                 </div>
               )}
               {step === "payment" && clientSecret && stripePromise && (
-                <div className="rounded-xl border border-white/10 bg-ocean-900 p-6">
+                <div className="rounded-xl border border-white/10 bg-ocean-900 p-6 glow-white">
                   <h2 className="text-base font-bold text-white mb-5">
                     Payment
                   </h2>
@@ -576,7 +576,7 @@ export default function CheckoutPage() {
 
             {/* Order Summary Sidebar */}
             <div className="lg:col-span-1">
-              <div className="rounded-xl border border-white/10 bg-ocean-900 p-6 sticky top-24">
+              <div className="rounded-xl border border-white/10 bg-ocean-900 p-6 glow-white sticky top-24">
                 <h2 className="text-base font-bold text-[#d4af37] mb-5">
                   Order Summary
                 </h2>
