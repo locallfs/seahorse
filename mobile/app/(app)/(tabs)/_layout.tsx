@@ -1,7 +1,7 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
-import { Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   return (
@@ -18,6 +18,7 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
 
 export default function AppLayout() {
   const { isAdmin } = useAuth();
+  const router = useRouter();
 
   return (
     <Tabs
@@ -43,8 +44,20 @@ export default function AppLayout() {
       <Tabs.Screen
         name="new"
         options={{
-          title: 'New',
+          title: 'New Product',
+          tabBarLabel: 'New',
           tabBarIcon: ({ focused }) => <TabIcon label="+" focused={focused} />,
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.navigate('/(app)/(tabs)/index')}
+              style={{ paddingLeft: 12, paddingRight: 6 }}
+              hitSlop={12}
+            >
+              <Text style={{ color: theme.color.gold, fontSize: 24, fontWeight: '700' }}>
+                ‹
+              </Text>
+            </Pressable>
+          ),
         }}
       />
       <Tabs.Screen

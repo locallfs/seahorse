@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { sdk } from '@/lib/medusa';
 import { uploadImage } from '@/lib/uploads';
 import { theme } from '@/lib/theme';
+import { KeyboardDoneButton } from '@/lib/KeyboardDoneButton';
 
 type VariantShape = {
   id: string;
@@ -296,6 +297,7 @@ export default function ProductEditScreen() {
           <Text style={styles.deleteBtnText}>Delete Product</Text>
         </Pressable>
       </ScrollView>
+      <KeyboardDoneButton />
     </KeyboardAvoidingView>
   );
 }

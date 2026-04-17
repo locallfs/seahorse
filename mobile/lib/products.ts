@@ -46,7 +46,7 @@ export async function listProducts(search?: string): Promise<ProductSummary[]> {
       'id,title,status,thumbnail,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels',
   } as any);
 
-  return (products || []).map((p: any) => {
+  const mapped: ProductSummary[] = (products || []).map((p: any) => {
     const variant = p.variants?.[0];
     const { amount, currency } = firstVariantPrice(variant || {});
     return {
@@ -60,6 +60,27 @@ export async function listProducts(search?: string): Promise<ProductSummary[]> {
       variantId: variant?.id || null,
     };
   });
+
+  // Priority buckets (lower = higher priority):
+  // 0: Published + in stock
+  // 1: Published + out of stock
+  // 2: Draft + in stock
+  // 3: Draft + out of stock
+  const bucket = (p: ProductSummary) => {
+    const published = p.status === 'published';
+    const inStock = p.stock > 0;
+    if (published && inStock) return 0;
+    if (published && !inStock) return 1;
+    if (!published && inStock) return 2;
+    return 3;
+  };
+  mapped.sort((a, b) => {
+    const ba = bucket(a);
+    const bb = bucket(b);
+    if (ba !== bb) return ba - bb;
+    return a.title.localeCompare(b.title);
+  });
+  return mapped;
 }
 
 type Defaults = {

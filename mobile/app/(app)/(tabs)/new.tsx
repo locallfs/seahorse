@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { createProduct } from '@/lib/products';
 import { theme } from '@/lib/theme';
+import { KeyboardDoneButton } from '@/lib/KeyboardDoneButton';
 
 export default function NewProductScreen() {
   const router = useRouter();
@@ -209,6 +210,7 @@ export default function NewProductScreen() {
           )}
         </Pressable>
       </ScrollView>
+      <KeyboardDoneButton />
     </KeyboardAvoidingView>
   );
 }
