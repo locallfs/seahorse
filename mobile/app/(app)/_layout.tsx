@@ -1,67 +1,22 @@
-import { Tabs } from 'expo-router';
-import { useAuth } from '@/lib/auth';
+import { Stack } from 'expo-router';
 import { theme } from '@/lib/theme';
-import { Text } from 'react-native';
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
+export default function AppStack() {
   return (
-    <Text
-      style={{
-        color: focused ? theme.color.gold : theme.color.textMuted,
-        fontSize: 20,
-      }}
-    >
-      {label}
-    </Text>
-  );
-}
-
-export default function AppLayout() {
-  const { isAdmin } = useAuth();
-
-  return (
-    <Tabs
+    <Stack
       screenOptions={{
         headerStyle: { backgroundColor: theme.color.bgElevated },
-        headerTintColor: theme.color.text,
+        headerTintColor: theme.color.gold,
         headerTitleStyle: { color: theme.color.gold, fontWeight: '700' },
-        tabBarStyle: {
-          backgroundColor: theme.color.bgElevated,
-          borderTopColor: theme.color.border,
-        },
-        tabBarActiveTintColor: theme.color.gold,
-        tabBarInactiveTintColor: theme.color.textMuted,
+        headerBackTitle: 'Back',
+        contentStyle: { backgroundColor: theme.color.bg },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Products',
-          tabBarIcon: ({ focused }) => <TabIcon label="◉" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="new"
-        options={{
-          title: 'New',
-          tabBarIcon: ({ focused }) => <TabIcon label="+" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="team"
-        options={{
-          title: 'Team',
-          href: isAdmin ? '/(app)/team' : null,
-          tabBarIcon: ({ focused }) => <TabIcon label="◆" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
         name="product/[id]"
-        options={{
-          href: null,
-          title: 'Edit Product',
-        }}
+        options={{ title: 'Edit Product', presentation: 'card' }}
       />
-    </Tabs>
+    </Stack>
   );
 }
