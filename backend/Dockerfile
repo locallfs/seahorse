@@ -19,6 +19,8 @@ RUN cp medusa-config.js .medusa/server/medusa-config.js && \
     mkdir -p .medusa/server/src/modules && \
     cp -r src/modules/file-bunny .medusa/server/src/modules/file-bunny && \
     cp -r src/modules/notification-klaviyo .medusa/server/src/modules/notification-klaviyo && \
+    cp -r src/modules/fulfillment-shippo .medusa/server/src/modules/fulfillment-shippo && \
+    cp -r src/modules/tax-stripe .medusa/server/src/modules/tax-stripe && \
     ln -s /app/node_modules /app/.medusa/server/node_modules
 
 WORKDIR /app/.medusa/server
