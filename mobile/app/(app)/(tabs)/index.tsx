@@ -119,7 +119,7 @@ export default function ProductListScreen() {
               <View style={styles.metaRow}>
                 <Text style={styles.price}>{formatPrice(item.price, item.currency)}</Text>
                 <StatusBadge status={item.status} />
-                <StockBadge stock={item.stock} />
+                <StockBadge stock={item.stock} manageInventory={item.manageInventory} />
               </View>
             </View>
           </Pressable>
@@ -150,7 +150,14 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function StockBadge({ stock }: { stock: number }) {
+function StockBadge({ stock, manageInventory }: { stock: number; manageInventory: boolean }) {
+  if (!manageInventory) {
+    return (
+      <View style={[styles.badge, { backgroundColor: theme.color.success }]}>
+        <Text style={styles.badgeText}>Unlimited</Text>
+      </View>
+    );
+  }
   const isOut = stock <= 0;
   const isLow = stock > 0 && stock <= LOW_STOCK_THRESHOLD;
   const label = isOut ? 'Out of Stock' : isLow ? `Low · ${stock}` : `Stock · ${stock}`;

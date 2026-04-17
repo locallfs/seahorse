@@ -9,6 +9,7 @@ export type ProductSummary = {
   price: number | null;
   currency: string;
   stock: number;
+  manageInventory: boolean;
   variantId: string | null;
 };
 
@@ -49,6 +50,7 @@ export async function listProducts(search?: string): Promise<ProductSummary[]> {
   const mapped: ProductSummary[] = (products || []).map((p: any) => {
     const variant = p.variants?.[0];
     const { amount, currency } = firstVariantPrice(variant || {});
+    const manageInventory = variant?.manage_inventory ?? true;
     return {
       id: p.id,
       title: p.title,
@@ -56,24 +58,30 @@ export async function listProducts(search?: string): Promise<ProductSummary[]> {
       thumbnail: p.thumbnail || null,
       price: amount,
       currency,
-      stock: variant ? sumVariantStock(variant) : 0,
+      stock: variant && manageInventory ? sumVariantStock(variant) : 0,
+      manageInventory,
       variantId: variant?.id || null,
     };
   });
 
   // Priority buckets (lower = higher priority):
-  // In-stock always beats out-of-stock, regardless of publish state.
-  // 0: Published + in stock
-  // 1: Draft + in stock
-  // 2: Published + out of stock
-  // 3: Draft + out of stock
+  // Unlimited (manage_inventory off) ranks above any tracked-stock row.
+  // 0: Published + unlimited
+  // 1: Draft + unlimited
+  // 2: Published + in stock
+  // 3: Draft + in stock
+  // 4: Published + out of stock
+  // 5: Draft + out of stock
   const bucket = (p: ProductSummary) => {
     const published = p.status === 'published';
+    const unlimited = !p.manageInventory;
     const inStock = p.stock > 0;
-    if (inStock && published) return 0;
-    if (inStock && !published) return 1;
-    if (!inStock && published) return 2;
-    return 3;
+    if (unlimited && published) return 0;
+    if (unlimited && !published) return 1;
+    if (inStock && published) return 2;
+    if (inStock && !published) return 3;
+    if (!inStock && published) return 4;
+    return 5;
   };
   mapped.sort((a, b) => {
     const ba = bucket(a);
