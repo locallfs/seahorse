@@ -26,7 +26,6 @@ import {
   type ProductOrganize,
 } from '@/lib/products';
 import { theme } from '@/lib/theme';
-import { KeyboardDoneButton } from '@/lib/KeyboardDoneButton';
 import { AttributeFields, OrganizeFields } from '@/lib/ProductFormFields';
 
 type VariantShape = {
@@ -387,7 +386,6 @@ export default function ProductEditScreen() {
           <Text style={styles.deleteBtnText}>Delete Product</Text>
         </Pressable>
       </ScrollView>
-      <KeyboardDoneButton />
     </KeyboardAvoidingView>
   );
 }

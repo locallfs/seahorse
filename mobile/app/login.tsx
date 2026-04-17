@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
-import { KeyboardDoneButton } from '@/lib/KeyboardDoneButton';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -89,7 +88,6 @@ export default function LoginScreen() {
           )}
         </Pressable>
       </View>
-      <KeyboardDoneButton />
     </KeyboardAvoidingView>
   );
 }

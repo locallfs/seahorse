@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
+import { KeyboardDoneButton } from '@/lib/KeyboardDoneButton';
 
 const navTheme = {
   ...DarkTheme,
@@ -54,6 +55,7 @@ export default function RootLayout() {
       <AuthProvider>
         <RootGate />
       </AuthProvider>
+      <KeyboardDoneButton />
       <StatusBar style="light" />
     </ThemeProvider>
   );

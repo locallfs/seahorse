@@ -1,7 +1,26 @@
 import { Tabs, useRouter } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
-import { Pressable, Text } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+
+function LogoTitle({ label }: { label: string }) {
+  return (
+    <View style={titleStyles.row}>
+      <Image
+        source={require('../../../assets/images/ReefNerds.png')}
+        style={titleStyles.logo}
+        resizeMode="contain"
+      />
+      <Text style={titleStyles.text}>{label}</Text>
+    </View>
+  );
+}
+
+const titleStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logo: { width: 28, height: 28, borderRadius: 6 },
+  text: { color: theme.color.gold, fontWeight: '700', fontSize: 17 },
+});
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   return (
@@ -38,6 +57,7 @@ export default function AppLayout() {
         name="index"
         options={{
           title: 'Products',
+          headerTitle: () => <LogoTitle label="Products" />,
           tabBarIcon: ({ focused }) => <TabIcon label="◉" focused={focused} />,
         }}
       />

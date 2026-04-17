@@ -22,7 +22,6 @@ import {
   type ProductOrganize,
 } from '@/lib/products';
 import { theme } from '@/lib/theme';
-import { KeyboardDoneButton } from '@/lib/KeyboardDoneButton';
 import { AttributeFields, OrganizeFields } from '@/lib/ProductFormFields';
 
 export default function NewProductScreen() {
@@ -265,7 +264,6 @@ export default function NewProductScreen() {
           )}
         </Pressable>
       </ScrollView>
-      <KeyboardDoneButton />
     </KeyboardAvoidingView>
   );
 }
