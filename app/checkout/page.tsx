@@ -444,8 +444,8 @@ export default function CheckoutPage() {
                   {hasLiveItems && (
                     <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4 text-xs text-amber-200">
                       Your cart contains live animals. For the safety of your livestock,
-                      only 2-Day and Overnight shipping are available. We will contact
-                      you to confirm your ship date.
+                      only Overnight shipping is available. We will contact you to
+                      confirm your ship date.
                     </div>
                   )}
 
@@ -453,7 +453,7 @@ export default function CheckoutPage() {
                     const filteredOptions = hasLiveItems
                       ? shippingOptions.filter((o: any) => {
                           const name = (o.name || "").toLowerCase();
-                          return !name.includes("standard");
+                          return name.includes("overnight");
                         })
                       : shippingOptions;
 

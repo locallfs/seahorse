@@ -89,9 +89,9 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
   }
 
   async validateFulfillmentData(optionData, data, context) {
-    // Enforce: live animals cannot use standard shipping
+    // Enforce: live animals can only use overnight shipping
     const optionId = optionData?.id || "";
-    if (optionId === "shippo-standard" && context?.items) {
+    if (optionId !== "shippo-overnight" && context?.items) {
       const liveKeywords = ["fish", "coral", "invert", "shrimp", "crab", "snail", "anemone", "seahorse", "clown", "tang", "wrasse", "goby", "angel", "urchin", "starfish"];
       const hasLive = context.items.some((item) => {
         const title = (item.product_title || item.title || "").toLowerCase();
@@ -100,7 +100,7 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
       if (hasLive) {
         throw new MedusaError(
           MedusaError.Types.NOT_ALLOWED,
-          "Live animals require 2-Day or Overnight shipping for safe delivery."
+          "Live animals require Overnight shipping for safe delivery."
         );
       }
     }
