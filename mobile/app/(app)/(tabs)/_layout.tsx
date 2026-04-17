@@ -14,7 +14,7 @@ function HeaderLogo() {
 }
 
 const titleStyles = StyleSheet.create({
-  logo: { width: 30, height: 30, borderRadius: 6, marginLeft: 12 },
+  logo: { width: 44, height: 44, borderRadius: 8, marginLeft: 12 },
 });
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
