@@ -252,7 +252,7 @@ export default function ProductEditScreen() {
     setSaving(true);
     try {
       await sdk.admin.product.delete(id);
-      router.replace('/(app)');
+      router.replace('/');
     } catch (e: any) {
       setError(e?.message || 'Could not delete product.');
       setSaving(false);

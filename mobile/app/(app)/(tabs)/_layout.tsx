@@ -69,7 +69,7 @@ export default function AppLayout() {
           tabBarIcon: ({ focused }) => <TabIcon label="+" focused={focused} />,
           headerLeft: () => (
             <Pressable
-              onPress={() => router.navigate('/(app)/(tabs)/index')}
+              onPress={() => router.navigate('/')}
               style={{ paddingLeft: 12, paddingRight: 6 }}
               hitSlop={12}
             >

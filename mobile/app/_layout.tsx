@@ -30,7 +30,7 @@ function RootGate() {
     if (loading) return;
     const inAuthGroup = segments[0] === '(app)';
     if (!user && inAuthGroup) router.replace('/login');
-    else if (user && !inAuthGroup) router.replace('/(app)');
+    else if (user && !inAuthGroup) router.replace('/');
   }, [user, loading, segments]);
 
   if (loading) {
