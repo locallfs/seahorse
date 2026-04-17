@@ -1,4 +1,4 @@
-import { ExecArgs } from "@medusajs/types"
+import { ExecArgs, IUserModuleService } from "@medusajs/types"
 import { Modules } from "@medusajs/utils"
 
 export default async function seedAdminRole({ container, args }: ExecArgs) {
@@ -12,7 +12,7 @@ export default async function seedAdminRole({ container, args }: ExecArgs) {
     process.exit(1)
   }
 
-  const userModule = container.resolve(Modules.USER)
+  const userModule: IUserModuleService = container.resolve(Modules.USER)
   const [users] = await userModule.listAndCountUsers({ email })
 
   if (users.length === 0) {
