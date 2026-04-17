@@ -71,7 +71,7 @@ function StripePaymentForm({
       <button
         onClick={handleSubmit}
         disabled={!stripe || processing}
-        className="w-full py-4 bg-blue-accent hover:bg-blue-light text-white font-medium text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-4 bg-white hover:bg-slate-100 text-[#d4af37] font-semibold text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {processing ? "Processing payment..." : "Place Order"}
       </button>
@@ -453,7 +453,14 @@ export default function CheckoutPage() {
                     const filteredOptions = hasLiveItems
                       ? shippingOptions.filter((o: any) => {
                           const name = (o.name || "").toLowerCase();
-                          return name.includes("overnight");
+                          const dataId = (o.data?.id || "").toLowerCase();
+                          const providerId = (o.provider_id || "").toLowerCase();
+                          const overnightKeywords = ["overnight", "next day", "next-day", "nextday", "1-day", "1 day"];
+                          return (
+                            dataId === "shippo-overnight" ||
+                            providerId.includes("overnight") ||
+                            overnightKeywords.some((kw) => name.includes(kw))
+                          );
                         })
                       : shippingOptions;
 
@@ -464,33 +471,39 @@ export default function CheckoutPage() {
                       </p>
                     ) : (
                       <div className="space-y-3">
-                        {filteredOptions.map((option: any) => (
+                        {filteredOptions.map((option: any) => {
+                          const hasAmount =
+                            typeof option.amount === "number" &&
+                            !isNaN(option.amount);
+                          return (
                           <label
                             key={option.id}
-                            className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                            className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                               selectedShipping === option.id
-                                ? "border-blue-accent bg-blue-accent/10"
-                                : "border-white/10 hover:border-white/25"
+                                ? "border-white bg-white/10"
+                                : "border-white/60 hover:border-white"
                             }`}
                           >
                             <div className="flex items-center gap-3">
                               <div
                                 className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                                   selectedShipping === option.id
-                                    ? "border-blue-accent"
-                                    : "border-white/30"
+                                    ? "border-white"
+                                    : "border-white/60"
                                 }`}
                               >
                                 {selectedShipping === option.id && (
-                                  <div className="w-2 h-2 rounded-full bg-blue-accent" />
+                                  <div className="w-2 h-2 rounded-full bg-white" />
                                 )}
                               </div>
                               <p className="text-sm text-white font-medium">
                                 {option.name}
                               </p>
                             </div>
-                            <span className="text-sm font-semibold text-blue-light">
-                              {option.amount === 0
+                            <span className="text-sm font-semibold text-white">
+                              {!hasAmount
+                                ? "Calculated at checkout"
+                                : option.amount === 0
                                 ? "Free"
                                 : formatPrice(option.amount)}
                             </span>
@@ -503,7 +516,8 @@ export default function CheckoutPage() {
                               className="sr-only"
                             />
                           </label>
-                        ))}
+                          );
+                        })}
                       </div>
                     );
                   })()}
@@ -551,7 +565,7 @@ export default function CheckoutPage() {
             {/* Order Summary Sidebar */}
             <div className="lg:col-span-1">
               <div className="rounded-xl border border-white/10 bg-ocean-900 p-6 sticky top-24">
-                <h2 className="text-base font-bold text-white mb-5">
+                <h2 className="text-base font-bold text-[#d4af37] mb-5">
                   Order Summary
                 </h2>
                 <div className="space-y-3 mb-5">
@@ -593,7 +607,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="border-t border-white/10 pt-4 flex justify-between font-bold text-white">
                   <span>Total</span>
-                  <span className="text-blue-light">
+                  <span className="text-white">
                     {formatPrice(cart?.total ?? cart?.subtotal ?? 0)}
                   </span>
                 </div>
