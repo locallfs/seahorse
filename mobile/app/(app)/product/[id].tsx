@@ -17,12 +17,21 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { sdk } from '@/lib/medusa';
 import { uploadImage } from '@/lib/uploads';
-import { getStoreDefaults } from '@/lib/products';
+import {
+  COUNTRY_OF_ORIGIN,
+  getStoreDefaults,
+  listOrganizeOptions,
+  type OrganizeOptions,
+  type ProductAttributes,
+  type ProductOrganize,
+} from '@/lib/products';
 import { theme } from '@/lib/theme';
 import { KeyboardDoneButton } from '@/lib/KeyboardDoneButton';
+import { AttributeFields, OrganizeFields } from '@/lib/ProductFormFields';
 
 type VariantShape = {
   id: string;
+  manage_inventory?: boolean;
   prices?: { id?: string; amount: number; currency_code: string }[];
   inventory_items?: {
     inventory?: {
@@ -48,6 +57,7 @@ export default function ProductEditScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [published, setPublished] = useState(false);
+  const [manageInventory, setManageInventory] = useState(true);
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('0');
   const [thumbnail, setThumbnail] = useState<string | null>(null);
@@ -55,13 +65,31 @@ export default function ProductEditScreen() {
 
   const [variant, setVariant] = useState<VariantShape | null>(null);
 
+  const [organizeOptions, setOrganizeOptions] = useState<OrganizeOptions | null>(null);
+  const [organize, setOrganize] = useState<ProductOrganize>({
+    tagIds: [],
+    typeId: null,
+    collectionId: null,
+    categoryIds: [],
+  });
+  const [attributes, setAttributes] = useState<ProductAttributes>({
+    height: null,
+    width: null,
+    length: null,
+    weight: null,
+  });
+
+  useEffect(() => {
+    listOrganizeOptions().then(setOrganizeOptions).catch(() => setOrganizeOptions(null));
+  }, []);
+
   const load = useCallback(async () => {
     if (!id) return;
     setError(null);
     try {
       const { product } = await sdk.admin.product.retrieve(id, {
         fields:
-          'id,title,description,status,thumbnail,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels',
+          'id,title,description,status,thumbnail,height,width,length,weight,origin_country,*tags,*type,*collection,*categories,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels',
       } as any);
       const p: any = product;
       setTitle(p.title || '');
@@ -70,6 +98,7 @@ export default function ProductEditScreen() {
       setThumbnail(p.thumbnail || null);
       const v: VariantShape | null = p.variants?.[0] || null;
       setVariant(v);
+      setManageInventory(v?.manage_inventory ?? true);
       const usd = v?.prices?.find((x) => x.currency_code === 'usd') || v?.prices?.[0];
       setPrice(usd ? usd.amount.toString() : '');
       const qty = (v?.inventory_items || []).reduce((sum, link) => {
@@ -79,6 +108,18 @@ export default function ProductEditScreen() {
         return sum;
       }, 0);
       setStock(String(qty));
+      setOrganize({
+        tagIds: (p.tags || []).map((t: any) => t.id),
+        typeId: p.type?.id || null,
+        collectionId: p.collection?.id || null,
+        categoryIds: (p.categories || []).map((c: any) => c.id),
+      });
+      setAttributes({
+        height: p.height ?? null,
+        width: p.width ?? null,
+        length: p.length ?? null,
+        weight: p.weight ?? null,
+      });
     } catch (e: any) {
       setError(e?.message || 'Could not load product.');
     } finally {
@@ -124,19 +165,28 @@ export default function ProductEditScreen() {
         title,
         description,
         status: published ? 'published' : 'draft',
+        origin_country: COUNTRY_OF_ORIGIN,
+        tag_ids: organize.tagIds,
+        type_id: organize.typeId,
+        collection_id: organize.collectionId,
+        category_ids: organize.categoryIds,
+        height: attributes.height,
+        width: attributes.width,
+        length: attributes.length,
+        weight: attributes.weight,
       };
       if (uploadedUrl) payload.thumbnail = uploadedUrl;
 
       if (variant) {
         const amount = Number(price);
+        const variantPayload: any = {
+          id: variant.id,
+          manage_inventory: manageInventory,
+        };
         if (!Number.isNaN(amount)) {
-          payload.variants = [
-            {
-              id: variant.id,
-              prices: [{ amount, currency_code: 'usd' }],
-            },
-          ];
+          variantPayload.prices = [{ amount, currency_code: 'usd' }];
         }
+        payload.variants = [variantPayload];
       }
 
       await sdk.admin.product.update(id, payload);
@@ -149,7 +199,7 @@ export default function ProductEditScreen() {
         return sum;
       }, 0);
 
-      if (!Number.isNaN(nextStock) && nextStock !== currentStock && variant) {
+      if (manageInventory && !Number.isNaN(nextStock) && nextStock !== currentStock && variant) {
         const link = variant.inventory_items?.[0];
         const inventoryId = link?.inventory?.id;
         const existingLevel = link?.inventory?.location_levels?.[0];
@@ -267,21 +317,40 @@ export default function ProductEditScreen() {
           placeholderTextColor={theme.color.textDim}
         />
 
-        <Text style={styles.label}>Inventory</Text>
-        <View style={styles.stepperRow}>
-          <Pressable onPress={() => adjustStock(-1)} style={styles.stepBtn}>
-            <Text style={styles.stepBtnText}>−</Text>
-          </Pressable>
-          <TextInput
-            value={stock}
-            onChangeText={setStock}
-            keyboardType="number-pad"
-            style={[styles.input, styles.stockInput]}
+        <View style={styles.switchRow}>
+          <View style={styles.switchText}>
+            <Text style={styles.label}>Manage Inventory</Text>
+            <Text style={styles.switchHint}>
+              {manageInventory ? 'Track stock; can sell out.' : 'Always in stock.'}
+            </Text>
+          </View>
+          <Switch
+            value={manageInventory}
+            onValueChange={setManageInventory}
+            trackColor={{ false: theme.color.border, true: theme.color.gold }}
+            thumbColor="#fff"
           />
-          <Pressable onPress={() => adjustStock(1)} style={styles.stepBtn}>
-            <Text style={styles.stepBtnText}>+</Text>
-          </Pressable>
         </View>
+
+        {manageInventory ? (
+          <>
+            <Text style={styles.label}>Inventory</Text>
+            <View style={styles.stepperRow}>
+              <Pressable onPress={() => adjustStock(-1)} style={styles.stepBtn}>
+                <Text style={styles.stepBtnText}>−</Text>
+              </Pressable>
+              <TextInput
+                value={stock}
+                onChangeText={setStock}
+                keyboardType="number-pad"
+                style={[styles.input, styles.stockInput]}
+              />
+              <Pressable onPress={() => adjustStock(1)} style={styles.stepBtn}>
+                <Text style={styles.stepBtnText}>+</Text>
+              </Pressable>
+            </View>
+          </>
+        ) : null}
 
         <View style={styles.switchRow}>
           <Text style={styles.label}>Published (visible on website)</Text>
@@ -292,6 +361,9 @@ export default function ProductEditScreen() {
             thumbColor="#fff"
           />
         </View>
+
+        <OrganizeFields options={organizeOptions} value={organize} onChange={setOrganize} />
+        <AttributeFields value={attributes} onChange={setAttributes} />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -374,7 +446,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: theme.space.lg,
+    gap: theme.space.md,
   },
+  switchText: { flex: 1 },
+  switchHint: { color: theme.color.textDim, fontSize: theme.font.xs, marginBottom: theme.space.xs },
   error: { color: theme.color.danger, marginTop: theme.space.md },
   saveBtn: {
     marginTop: theme.space.xl,

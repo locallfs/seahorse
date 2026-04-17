@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -7,15 +7,23 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { createProduct } from '@/lib/products';
+import {
+  createProduct,
+  listOrganizeOptions,
+  type OrganizeOptions,
+  type ProductAttributes,
+  type ProductOrganize,
+} from '@/lib/products';
 import { theme } from '@/lib/theme';
 import { KeyboardDoneButton } from '@/lib/KeyboardDoneButton';
+import { AttributeFields, OrganizeFields } from '@/lib/ProductFormFields';
 
 export default function NewProductScreen() {
   const router = useRouter();
@@ -24,9 +32,28 @@ export default function NewProductScreen() {
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('0');
   const [published, setPublished] = useState(true);
+  const [manageInventory, setManageInventory] = useState(true);
   const [file, setFile] = useState<{ uri: string; name: string; type: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const [organizeOptions, setOrganizeOptions] = useState<OrganizeOptions | null>(null);
+  const [organize, setOrganize] = useState<ProductOrganize>({
+    tagIds: [],
+    typeId: null,
+    collectionId: null,
+    categoryIds: [],
+  });
+  const [attributes, setAttributes] = useState<ProductAttributes>({
+    height: null,
+    width: null,
+    length: null,
+    weight: null,
+  });
+
+  useEffect(() => {
+    listOrganizeOptions().then(setOrganizeOptions).catch(() => setOrganizeOptions(null));
+  }, []);
 
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -74,8 +101,11 @@ export default function NewProductScreen() {
     setPrice('');
     setStock('0');
     setPublished(true);
+    setManageInventory(true);
     setFile(null);
     setError(null);
+    setOrganize({ tagIds: [], typeId: null, collectionId: null, categoryIds: [] });
+    setAttributes({ height: null, width: null, length: null, weight: null });
   };
 
   const submit = async () => {
@@ -94,7 +124,10 @@ export default function NewProductScreen() {
         priceUsd: priceNum,
         stock: stockNum,
         published,
+        manageInventory,
         thumbnail: file,
+        organize,
+        attributes,
       });
       reset();
       router.push({ pathname: '/(app)/product/[id]', params: { id } });
@@ -186,15 +219,37 @@ export default function NewProductScreen() {
           placeholderTextColor={theme.color.textDim}
         />
 
-        <Text style={styles.label}>Starting Stock</Text>
-        <TextInput
-          value={stock}
-          onChangeText={setStock}
-          keyboardType="number-pad"
-          style={styles.input}
-          placeholder="0"
-          placeholderTextColor={theme.color.textDim}
-        />
+        <View style={styles.switchRow}>
+          <View style={styles.switchText}>
+            <Text style={styles.label}>Manage Inventory</Text>
+            <Text style={styles.switchHint}>
+              {manageInventory ? 'Track stock; can sell out.' : 'Always in stock.'}
+            </Text>
+          </View>
+          <Switch
+            value={manageInventory}
+            onValueChange={setManageInventory}
+            trackColor={{ false: theme.color.border, true: theme.color.gold }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        {manageInventory ? (
+          <>
+            <Text style={styles.label}>Starting Stock</Text>
+            <TextInput
+              value={stock}
+              onChangeText={setStock}
+              keyboardType="number-pad"
+              style={styles.input}
+              placeholder="0"
+              placeholderTextColor={theme.color.textDim}
+            />
+          </>
+        ) : null}
+
+        <OrganizeFields options={organizeOptions} value={organize} onChange={setOrganize} />
+        <AttributeFields value={attributes} onChange={setAttributes} />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -273,6 +328,15 @@ const styles = StyleSheet.create({
     color: '#000',
     fontWeight: '700',
   },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: theme.space.lg,
+    gap: theme.space.md,
+  },
+  switchText: { flex: 1 },
+  switchHint: { color: theme.color.textDim, fontSize: theme.font.xs, marginBottom: theme.space.xs },
   error: { color: theme.color.danger, marginTop: theme.space.md },
   saveBtn: {
     marginTop: theme.space.xl,

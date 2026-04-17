@@ -107,13 +107,57 @@ export async function getStoreDefaults(): Promise<Defaults> {
   return defaultsCache;
 }
 
+export type OrganizeOption = { id: string; label: string };
+
+export type OrganizeOptions = {
+  tags: OrganizeOption[];
+  types: OrganizeOption[];
+  collections: OrganizeOption[];
+  categories: OrganizeOption[];
+};
+
+export async function listOrganizeOptions(): Promise<OrganizeOptions> {
+  const [tagsRes, typesRes, collectionsRes, categoriesRes] = await Promise.all([
+    sdk.admin.productTag.list({ limit: 200 } as any).catch(() => ({ product_tags: [] })),
+    sdk.admin.productType.list({ limit: 200 } as any).catch(() => ({ product_types: [] })),
+    sdk.admin.productCollection.list({ limit: 200 } as any).catch(() => ({ collections: [] })),
+    sdk.admin.productCategory.list({ limit: 200 } as any).catch(() => ({ product_categories: [] })),
+  ]);
+  return {
+    tags: ((tagsRes as any).product_tags || []).map((t: any) => ({ id: t.id, label: t.value })),
+    types: ((typesRes as any).product_types || []).map((t: any) => ({ id: t.id, label: t.value })),
+    collections: ((collectionsRes as any).collections || []).map((c: any) => ({ id: c.id, label: c.title })),
+    categories: ((categoriesRes as any).product_categories || []).map((c: any) => ({ id: c.id, label: c.name })),
+  };
+}
+
+export const COUNTRY_OF_ORIGIN = 'us';
+export const COUNTRY_OF_ORIGIN_LABEL = 'United States';
+
+export type ProductAttributes = {
+  height: number | null;
+  width: number | null;
+  length: number | null;
+  weight: number | null;
+};
+
+export type ProductOrganize = {
+  tagIds: string[];
+  typeId: string | null;
+  collectionId: string | null;
+  categoryIds: string[];
+};
+
 export type NewProductInput = {
   title: string;
   description: string;
   priceUsd: number;
   stock: number;
   published: boolean;
+  manageInventory: boolean;
   thumbnail?: { uri: string; name: string; type: string } | null;
+  organize?: ProductOrganize;
+  attributes?: ProductAttributes;
 };
 
 export async function createProduct(input: NewProductInput): Promise<string> {
@@ -130,11 +174,12 @@ export async function createProduct(input: NewProductInput): Promise<string> {
     description: input.description,
     status: input.published ? 'published' : 'draft',
     thumbnail: thumbnailUrl,
+    origin_country: COUNTRY_OF_ORIGIN,
     options: [{ title: 'Default', values: ['Default'] }],
     variants: [
       {
         title: 'Default',
-        manage_inventory: true,
+        manage_inventory: input.manageInventory,
         options: { Default: 'Default' },
         prices: [{ amount: input.priceUsd, currency_code: 'usd' }],
       },
@@ -143,9 +188,22 @@ export async function createProduct(input: NewProductInput): Promise<string> {
   if (defaults.shippingProfileId) payload.shipping_profile_id = defaults.shippingProfileId;
   if (defaults.salesChannelId) payload.sales_channels = [{ id: defaults.salesChannelId }];
 
+  if (input.organize) {
+    if (input.organize.tagIds.length) payload.tag_ids = input.organize.tagIds;
+    if (input.organize.typeId) payload.type_id = input.organize.typeId;
+    if (input.organize.collectionId) payload.collection_id = input.organize.collectionId;
+    if (input.organize.categoryIds.length) payload.category_ids = input.organize.categoryIds;
+  }
+  if (input.attributes) {
+    if (input.attributes.height != null) payload.height = input.attributes.height;
+    if (input.attributes.width != null) payload.width = input.attributes.width;
+    if (input.attributes.length != null) payload.length = input.attributes.length;
+    if (input.attributes.weight != null) payload.weight = input.attributes.weight;
+  }
+
   const { product } = await sdk.admin.product.create(payload);
 
-  if (input.stock > 0 && defaults.stockLocationId) {
+  if (input.manageInventory && input.stock > 0 && defaults.stockLocationId) {
     const { product: full } = await sdk.admin.product.retrieve(product.id, {
       fields: '*variants.inventory_items',
     } as any);
