@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -42,7 +43,11 @@ export default function LoginScreen() {
       style={styles.root}
     >
       <View style={styles.card}>
-        <Text style={styles.brand}>ReefNerds</Text>
+        <Image
+          source={require('../assets/images/ReefNerds.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.subtitle}>Woody's Seahorse staff login</Text>
 
         <Text style={styles.label}>Email</Text>
@@ -106,12 +111,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.color.border,
   },
-  brand: {
-    color: theme.color.gold,
-    fontSize: theme.font.xxl,
-    fontWeight: '700',
-    textAlign: 'center',
-    letterSpacing: 1,
+  logo: {
+    width: 160,
+    height: 160,
+    alignSelf: 'center',
   },
   subtitle: {
     color: theme.color.textMuted,

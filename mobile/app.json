@@ -4,7 +4,7 @@
     "slug": "reefnerds",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/ReefNerds.png",
     "scheme": "reefnerds",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
@@ -20,8 +20,7 @@
       "package": "com.woodysseahorse.reefnerds",
       "adaptiveIcon": {
         "backgroundColor": "#0b1220",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
+        "foregroundImage": "./assets/images/ReefNerds.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
@@ -30,15 +29,15 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/ReefNerds.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/ReefNerds.png",
+          "imageWidth": 220,
           "resizeMode": "contain",
           "backgroundColor": "#0b1220",
           "dark": {
