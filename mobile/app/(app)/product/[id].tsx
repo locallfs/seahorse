@@ -16,6 +16,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { sdk } from '@/lib/medusa';
+import { uploadImage } from '@/lib/uploads';
 import { theme } from '@/lib/theme';
 
 type VariantShape = {
@@ -108,14 +109,7 @@ export default function ProductEditScreen() {
 
   const uploadNewThumbnailIfAny = async (): Promise<string | null> => {
     if (!newThumbnailFile) return null;
-    const form = new FormData();
-    form.append('files', {
-      uri: newThumbnailFile.uri,
-      name: newThumbnailFile.name,
-      type: newThumbnailFile.type,
-    } as any);
-    const { files } = await sdk.admin.upload.create(form as any);
-    return files?.[0]?.url || null;
+    return uploadImage(newThumbnailFile);
   };
 
   const save = async () => {

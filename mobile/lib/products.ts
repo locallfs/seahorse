@@ -1,4 +1,5 @@
 import { sdk } from './medusa';
+import { uploadImage } from './uploads';
 
 export type ProductSummary = {
   id: string;
@@ -98,14 +99,8 @@ export async function createProduct(input: NewProductInput): Promise<string> {
 
   let thumbnailUrl: string | undefined;
   if (input.thumbnail) {
-    const form = new FormData();
-    form.append('files', {
-      uri: input.thumbnail.uri,
-      name: input.thumbnail.name,
-      type: input.thumbnail.type,
-    } as any);
-    const { files } = await sdk.admin.upload.create(form as any);
-    thumbnailUrl = files?.[0]?.url;
+    const url = await uploadImage(input.thumbnail);
+    if (url) thumbnailUrl = url;
   }
 
   const payload: any = {
