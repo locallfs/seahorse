@@ -18,9 +18,13 @@ import Link from "next/link";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
-);
+const STRIPE_PK = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+if (typeof window !== "undefined" && !STRIPE_PK) {
+  console.error(
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set in the build environment"
+  );
+}
+const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null;
 
 function formatPrice(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -525,7 +529,15 @@ export default function CheckoutPage() {
               )}
 
               {/* Payment */}
-              {step === "payment" && clientSecret && (
+              {step === "payment" && clientSecret && !stripePromise && (
+                <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-200">
+                  Payment is unavailable because the Stripe publishable key is
+                  missing from this deployment. Set
+                  <code className="mx-1 px-1 rounded bg-black/30">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>
+                  on Vercel and redeploy.
+                </div>
+              )}
+              {step === "payment" && clientSecret && stripePromise && (
                 <div className="rounded-xl border border-white/10 bg-ocean-900 p-6">
                   <h2 className="text-base font-bold text-white mb-5">
                     Payment
