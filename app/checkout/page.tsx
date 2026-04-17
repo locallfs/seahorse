@@ -243,6 +243,14 @@ export default function CheckoutPage() {
 
   const items = cart?.items ?? [];
 
+  // Check if cart has live animals (fish, corals, inverts)
+  const hasLiveItems = items.some((item: any) => {
+    const handle = (item.product_handle || item.variant?.product?.handle || "").toLowerCase();
+    const title = (item.product_title || item.title || "").toLowerCase();
+    const liveKeywords = ["fish", "coral", "invert", "shrimp", "crab", "snail", "anemone", "seahorse", "clown", "tang", "wrasse", "goby", "angel", "urchin", "starfish"];
+    return liveKeywords.some((kw) => handle.includes(kw) || title.includes(kw));
+  });
+
   if (cartLoading || authLoading || !customer) {
     return (
       <>
@@ -433,60 +441,72 @@ export default function CheckoutPage() {
                   <h2 className="text-base font-bold text-white mb-5">
                     Shipping Method
                   </h2>
-                  <div className="bg-blue-accent/10 border border-blue-accent/20 rounded-lg p-3 mb-4 text-xs text-slate-300">
-                    Live animals ship 2-day or faster only. Shipping day cutoffs
-                    apply — we will contact you to confirm your ship date.
-                  </div>
-
-                  {shippingOptions.length === 0 ? (
-                    <p className="text-slate-400 text-sm py-4 text-center">
-                      No shipping options available for this address. Please check
-                      your address or contact us.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {shippingOptions.map((option: any) => (
-                        <label
-                          key={option.id}
-                          className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                            selectedShipping === option.id
-                              ? "border-blue-accent bg-blue-accent/10"
-                              : "border-white/10 hover:border-white/25"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                selectedShipping === option.id
-                                  ? "border-blue-accent"
-                                  : "border-white/30"
-                              }`}
-                            >
-                              {selectedShipping === option.id && (
-                                <div className="w-2 h-2 rounded-full bg-blue-accent" />
-                              )}
-                            </div>
-                            <p className="text-sm text-white font-medium">
-                              {option.name}
-                            </p>
-                          </div>
-                          <span className="text-sm font-semibold text-blue-light">
-                            {option.amount === 0
-                              ? "Free"
-                              : formatPrice(option.amount)}
-                          </span>
-                          <input
-                            type="radio"
-                            name="shipping"
-                            value={option.id}
-                            checked={selectedShipping === option.id}
-                            onChange={() => selectShipping(option.id)}
-                            className="sr-only"
-                          />
-                        </label>
-                      ))}
+                  {hasLiveItems && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4 text-xs text-amber-200">
+                      Your cart contains live animals. For the safety of your livestock,
+                      only 2-Day and Overnight shipping are available. We will contact
+                      you to confirm your ship date.
                     </div>
                   )}
+
+                  {(() => {
+                    const filteredOptions = hasLiveItems
+                      ? shippingOptions.filter((o: any) => {
+                          const name = (o.name || "").toLowerCase();
+                          return !name.includes("standard");
+                        })
+                      : shippingOptions;
+
+                    return filteredOptions.length === 0 ? (
+                      <p className="text-slate-400 text-sm py-4 text-center">
+                        No shipping options available for this address. Please check
+                        your address or contact us.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredOptions.map((option: any) => (
+                          <label
+                            key={option.id}
+                            className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                              selectedShipping === option.id
+                                ? "border-blue-accent bg-blue-accent/10"
+                                : "border-white/10 hover:border-white/25"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                  selectedShipping === option.id
+                                    ? "border-blue-accent"
+                                    : "border-white/30"
+                                }`}
+                              >
+                                {selectedShipping === option.id && (
+                                  <div className="w-2 h-2 rounded-full bg-blue-accent" />
+                                )}
+                              </div>
+                              <p className="text-sm text-white font-medium">
+                                {option.name}
+                              </p>
+                            </div>
+                            <span className="text-sm font-semibold text-blue-light">
+                              {option.amount === 0
+                                ? "Free"
+                                : formatPrice(option.amount)}
+                            </span>
+                            <input
+                              type="radio"
+                              name="shipping"
+                              value={option.id}
+                              checked={selectedShipping === option.id}
+                              onChange={() => selectShipping(option.id)}
+                              className="sr-only"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 

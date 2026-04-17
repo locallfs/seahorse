@@ -89,6 +89,21 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
   }
 
   async validateFulfillmentData(optionData, data, context) {
+    // Enforce: live animals cannot use standard shipping
+    const optionId = optionData?.id || "";
+    if (optionId === "shippo-standard" && context?.items) {
+      const liveKeywords = ["fish", "coral", "invert", "shrimp", "crab", "snail", "anemone", "seahorse", "clown", "tang", "wrasse", "goby", "angel", "urchin", "starfish"];
+      const hasLive = context.items.some((item) => {
+        const title = (item.product_title || item.title || "").toLowerCase();
+        return liveKeywords.some((kw) => title.includes(kw));
+      });
+      if (hasLive) {
+        throw new MedusaError(
+          MedusaError.Types.NOT_ALLOWED,
+          "Live animals require 2-Day or Overnight shipping for safe delivery."
+        );
+      }
+    }
     return { ...data };
   }
 
