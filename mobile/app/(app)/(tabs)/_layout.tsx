@@ -3,23 +3,18 @@ import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-function LogoTitle({ label }: { label: string }) {
+function HeaderLogo() {
   return (
-    <View style={titleStyles.row}>
-      <Image
-        source={require('../../../assets/images/ReefNerds.png')}
-        style={titleStyles.logo}
-        resizeMode="contain"
-      />
-      <Text style={titleStyles.text}>{label}</Text>
-    </View>
+    <Image
+      source={require('../../../assets/images/ReefNerds.png')}
+      style={titleStyles.logo}
+      resizeMode="contain"
+    />
   );
 }
 
 const titleStyles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logo: { width: 28, height: 28, borderRadius: 6 },
-  text: { color: theme.color.gold, fontWeight: '700', fontSize: 17 },
+  logo: { width: 30, height: 30, borderRadius: 6, marginLeft: 12 },
 });
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
@@ -57,7 +52,7 @@ export default function AppLayout() {
         name="index"
         options={{
           title: 'Products',
-          headerTitle: () => <LogoTitle label="Products" />,
+          headerLeft: () => <HeaderLogo />,
           tabBarIcon: ({ focused }) => <TabIcon label="◉" focused={focused} />,
         }}
       />
