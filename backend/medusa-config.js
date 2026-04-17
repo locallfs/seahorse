@@ -86,6 +86,13 @@ module.exports = defineConfig({
             resolve: "@medusajs/fulfillment-manual",
             id: "manual",
           },
+          {
+            resolve: mod("src/modules/fulfillment-shippo"),
+            id: "shippo",
+            options: {
+              api_key: process.env.SHIPPO_API_KEY,
+            },
+          },
         ],
       },
     },
