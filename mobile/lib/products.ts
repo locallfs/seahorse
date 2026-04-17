@@ -64,32 +64,42 @@ export async function listProducts(search?: string): Promise<ProductSummary[]> {
     };
   });
 
-  // Priority buckets (lower = higher priority):
-  // Unlimited (manage_inventory off) ranks above any tracked-stock row.
-  // 0: Published + unlimited
-  // 1: Draft + unlimited
-  // 2: Published + in stock
-  // 3: Draft + in stock
-  // 4: Published + out of stock
-  // 5: Draft + out of stock
-  const bucket = (p: ProductSummary) => {
-    const published = p.status === 'published';
-    const unlimited = !p.manageInventory;
-    const inStock = p.stock > 0;
-    if (unlimited && published) return 0;
-    if (unlimited && !published) return 1;
-    if (inStock && published) return 2;
-    if (inStock && !published) return 3;
-    if (!inStock && published) return 4;
-    return 5;
-  };
-  mapped.sort((a, b) => {
-    const ba = bucket(a);
-    const bb = bucket(b);
-    if (ba !== bb) return ba - bb;
+  return mapped;
+}
+
+export type SortMode = 'priority' | 'stock' | 'alpha';
+
+// Priority: Published first, stock tier second, alphabetical last.
+// 0: Published + unlimited | 1: Published + in-stock | 2: Published + OOS
+// 3: Draft + unlimited    | 4: Draft + in-stock    | 5: Draft + OOS
+function priorityBucket(p: ProductSummary): number {
+  const publishedOffset = p.status === 'published' ? 0 : 3;
+  if (!p.manageInventory) return publishedOffset + 0;
+  if (p.stock > 0) return publishedOffset + 1;
+  return publishedOffset + 2;
+}
+
+// Stock-first: unlimited > in-stock > out-of-stock, published within each.
+function stockBucket(p: ProductSummary): number {
+  const publishedOffset = p.status === 'published' ? 0 : 1;
+  if (!p.manageInventory) return 0 + publishedOffset;
+  if (p.stock > 0) return 2 + publishedOffset;
+  return 4 + publishedOffset;
+}
+
+export function sortProducts(items: ProductSummary[], mode: SortMode): ProductSummary[] {
+  const copy = [...items];
+  if (mode === 'alpha') {
+    copy.sort((a, b) => a.title.localeCompare(b.title));
+    return copy;
+  }
+  const bucket = mode === 'stock' ? stockBucket : priorityBucket;
+  copy.sort((a, b) => {
+    const diff = bucket(a) - bucket(b);
+    if (diff !== 0) return diff;
     return a.title.localeCompare(b.title);
   });
-  return mapped;
+  return copy;
 }
 
 type Defaults = {

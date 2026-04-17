@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,9 +11,22 @@ import {
   View,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { listProducts, formatPrice, LOW_STOCK_THRESHOLD, ProductSummary } from '@/lib/products';
+import {
+  listProducts,
+  formatPrice,
+  LOW_STOCK_THRESHOLD,
+  ProductSummary,
+  sortProducts,
+  type SortMode,
+} from '@/lib/products';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
+
+const SORT_OPTIONS: { id: SortMode; label: string }[] = [
+  { id: 'priority', label: 'Priority' },
+  { id: 'stock', label: 'Stock' },
+  { id: 'alpha', label: 'A–Z' },
+];
 
 export default function ProductListScreen() {
   const router = useRouter();
@@ -23,6 +36,9 @@ export default function ProductListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<SortMode>('priority');
+
+  const sorted = useMemo(() => sortProducts(items, sortMode), [items, sortMode]);
 
   const load = useCallback(async (q?: string) => {
     setError(null);
@@ -82,10 +98,28 @@ export default function ProductListScreen() {
         </Pressable>
       </View>
 
+      <View style={styles.sortRow}>
+        <Text style={styles.sortLabel}>Sort</Text>
+        {SORT_OPTIONS.map((opt) => {
+          const active = opt.id === sortMode;
+          return (
+            <Pressable
+              key={opt.id}
+              onPress={() => setSortMode(opt.id)}
+              style={[styles.sortChip, active && styles.sortChipActive]}
+            >
+              <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <FlatList
-        data={items}
+        data={sorted}
         keyExtractor={(item) => item.id}
         refreshControl={
           <RefreshControl
@@ -94,7 +128,7 @@ export default function ProductListScreen() {
             tintColor={theme.color.gold}
           />
         }
-        contentContainerStyle={items.length ? undefined : styles.empty}
+        contentContainerStyle={sorted.length ? undefined : styles.empty}
         ListEmptyComponent={
           <Text style={styles.emptyText}>
             {query ? 'No products match that search.' : 'No products yet. Tap New to add one.'}
@@ -205,6 +239,25 @@ const styles = StyleSheet.create({
     borderColor: theme.color.border,
   },
   logoutText: { color: theme.color.textMuted, fontSize: theme.font.sm },
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space.sm,
+    paddingHorizontal: theme.space.md,
+    paddingBottom: theme.space.sm,
+  },
+  sortLabel: { color: theme.color.textDim, fontSize: theme.font.xs, marginRight: theme.space.xs },
+  sortChip: {
+    paddingHorizontal: theme.space.md,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    backgroundColor: theme.color.card,
+  },
+  sortChipActive: { backgroundColor: theme.color.gold, borderColor: theme.color.gold },
+  sortChipText: { color: theme.color.text, fontSize: theme.font.xs, fontWeight: '600' },
+  sortChipTextActive: { color: '#000', fontWeight: '700' },
   error: {
     color: theme.color.danger,
     textAlign: 'center',
