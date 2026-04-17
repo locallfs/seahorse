@@ -301,7 +301,7 @@ export default function CheckoutPage() {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+                    <label className="block text-xs text-white mb-1.5 tracking-wide">
                       First Name
                     </label>
                     <input
@@ -314,7 +314,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+                    <label className="block text-xs text-white mb-1.5 tracking-wide">
                       Last Name
                     </label>
                     <input
@@ -327,7 +327,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+                    <label className="block text-xs text-white mb-1.5 tracking-wide">
                       Email
                     </label>
                     <input
@@ -340,7 +340,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+                    <label className="block text-xs text-white mb-1.5 tracking-wide">
                       Phone
                     </label>
                     <input
@@ -353,7 +353,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+                    <label className="block text-xs text-white mb-1.5 tracking-wide">
                       Address
                     </label>
                     <input
@@ -366,7 +366,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+                    <label className="block text-xs text-white mb-1.5 tracking-wide">
                       City
                     </label>
                     <input
@@ -379,7 +379,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+                    <label className="block text-xs text-white mb-1.5 tracking-wide">
                       State
                     </label>
                     <input
@@ -392,7 +392,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+                    <label className="block text-xs text-white mb-1.5 tracking-wide">
                       ZIP
                     </label>
                     <input
