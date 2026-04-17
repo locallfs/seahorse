@@ -111,5 +111,12 @@ module.exports = defineConfig({
         ],
       },
     },
+    user: {
+      resolve: "@medusajs/user",
+      options: {
+        jwt_secret: process.env.JWT_SECRET,
+        valid_duration: 60 * 60 * 24 * 7 * 1000,
+      },
+    },
   },
 });
