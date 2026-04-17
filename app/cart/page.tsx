@@ -156,6 +156,9 @@ export default function CartPage() {
                   </div>
 
                   <div className="bg-blue-accent/10 border border-blue-accent/20 rounded-lg p-3 mb-6 text-xs text-white">
+                    <p className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#FFD700] mb-2">
+                      Shipping Information
+                    </p>
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
                       Live animal shipping — 2-day or faster only
