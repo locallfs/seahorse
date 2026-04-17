@@ -77,7 +77,7 @@ export default function QuoteForm({
           >
             <button
               onClick={handleClose}
-              className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-white hover:text-white transition-colors"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18M6 6l12 12" />
@@ -92,7 +92,7 @@ export default function QuoteForm({
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">Request Sent</h3>
-                <p className="text-slate-400 text-sm">
+                <p className="text-white text-sm">
                   We'll get back to you as soon as possible.
                 </p>
               </div>
@@ -102,13 +102,13 @@ export default function QuoteForm({
                   Request a Quote
                 </h3>
                 {service && (
-                  <p className="text-slate-500 text-xs mb-6">{service}</p>
+                  <p className="text-white text-xs mb-6">{service}</p>
                 )}
                 {!service && <div className="mb-6" />}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">Name</label>
+                    <label className="block text-xs text-white mb-1">Name</label>
                     <input
                       type="text"
                       required
@@ -119,7 +119,7 @@ export default function QuoteForm({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs text-slate-400 mb-1">Email</label>
+                      <label className="block text-xs text-white mb-1">Email</label>
                       <input
                         type="email"
                         required
@@ -129,7 +129,7 @@ export default function QuoteForm({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-slate-400 mb-1">Phone</label>
+                      <label className="block text-xs text-white mb-1">Phone</label>
                       <input
                         type="tel"
                         value={phone}
@@ -139,17 +139,17 @@ export default function QuoteForm({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">Tank / Pond Size</label>
+                    <label className="block text-xs text-white mb-1">Tank / Pond Size</label>
                     <input
                       type="text"
                       placeholder="e.g. 150 gallon reef"
                       value={size}
                       onChange={(e) => setSize(e.target.value)}
-                      className="w-full px-4 py-3 rounded bg-ocean-800 border border-white/10 text-white text-base placeholder:text-slate-600 focus:border-blue-accent focus:outline-none transition-colors"
+                      className="w-full px-4 py-3 rounded bg-ocean-800 border border-white/10 text-white text-base placeholder:text-white focus:border-blue-accent focus:outline-none transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">Message</label>
+                    <label className="block text-xs text-white mb-1">Message</label>
                     <textarea
                       rows={3}
                       value={message}

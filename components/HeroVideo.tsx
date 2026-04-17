@@ -21,7 +21,7 @@ export default function HeroVideo() {
             className="w-full max-w-4xl h-auto drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] [filter:drop-shadow(0_0_3px_rgba(255,255,255,0.9))_drop-shadow(0_0_12px_rgba(255,255,255,0.6))]"
           />
         </div>
-        <p className="text-slate-200 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-lg">
+        <p className="text-white text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-lg">
           Premium live saltwater fish, WYSIWYG corals, invertebrates, and
           professional aquarium services.
         </p>

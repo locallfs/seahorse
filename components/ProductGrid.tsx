@@ -72,7 +72,7 @@ export default function ProductGrid({ category }: { category: string }) {
         <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center mx-auto mb-4">
           <div className="w-2 h-2 rounded-full bg-blue-accent animate-pulse" />
         </div>
-        <p className="text-slate-400 text-sm">Loading products…</p>
+        <p className="text-white text-sm">Loading products…</p>
       </div>
     );
   }
@@ -81,7 +81,7 @@ export default function ProductGrid({ category }: { category: string }) {
     return (
       <div className="text-center py-32">
         <p className="text-red-400 text-sm mb-2">Could not load products.</p>
-        <p className="text-slate-500 text-xs">{error}</p>
+        <p className="text-white text-xs">{error}</p>
       </div>
     );
   }
@@ -89,7 +89,7 @@ export default function ProductGrid({ category }: { category: string }) {
   if (products.length === 0) {
     return (
       <div className="text-center py-32">
-        <p className="text-slate-400">No products found{category !== "all" ? " in this category" : ""}.</p>
+        <p className="text-white">No products found{category !== "all" ? " in this category" : ""}.</p>
       </div>
     );
   }
@@ -112,7 +112,7 @@ export default function ProductGrid({ category }: { category: string }) {
                     unoptimized
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">
+                  <div className="w-full h-full flex items-center justify-center text-white text-xs">
                     No image
                   </div>
                 )}

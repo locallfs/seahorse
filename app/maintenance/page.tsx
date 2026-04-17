@@ -116,18 +116,18 @@ export default function MaintenancePage() {
                   <h2 className="text-xl font-bold text-white mb-3">
                     {plan.name}
                   </h2>
-                  <p className="text-slate-400 text-sm leading-relaxed">
+                  <p className="text-white text-sm leading-relaxed">
                     {plan.tagline}
                   </p>
                 </div>
 
                 <div className="mb-6 flex-1">
-                  <p className="text-xs tracking-[0.15em] uppercase text-slate-500 font-medium mb-3">
+                  <p className="text-xs tracking-[0.15em] uppercase text-white font-medium mb-3">
                     This includes
                   </p>
                   <ul className="space-y-2">
                     {plan.includes.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-sm text-slate-300">
+                      <li key={item} className="flex items-start gap-2 text-sm text-white">
                         <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-accent flex-shrink-0" />
                         {item}
                       </li>
@@ -136,7 +136,7 @@ export default function MaintenancePage() {
                 </div>
 
                 {plan.note && (
-                  <p className="text-xs text-slate-500 leading-relaxed border-t border-white/10 pt-4 mb-4">
+                  <p className="text-xs text-white leading-relaxed border-t border-white/10 pt-4 mb-4">
                     * {plan.note}
                   </p>
                 )}

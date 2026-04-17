@@ -40,7 +40,7 @@ export default function PageShell({
                   <div className="w-16 h-16 rounded-full border border-white/10 flex items-center justify-center mx-auto mb-6">
                     <div className="w-2 h-2 rounded-full bg-blue-accent animate-pulse" />
                   </div>
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-white text-sm">
                     Products loading soon — check back shortly.
                   </p>
                 </div>

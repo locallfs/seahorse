@@ -72,7 +72,7 @@ export default function PondCleaningPage() {
             {services.map((item) => (
               <li
                 key={item}
-                className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-slate-300"
+                className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-white"
               >
                 <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
                 {item}
@@ -86,7 +86,7 @@ export default function PondCleaningPage() {
             <h3 className="text-xl font-bold text-white mb-3">
               Request a Quote
             </h3>
-            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+            <p className="text-white text-sm leading-relaxed mb-6">
               Every pond is different. Contact us for a free estimate based on
               your pond&apos;s size and condition.
             </p>

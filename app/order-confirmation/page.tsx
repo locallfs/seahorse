@@ -36,12 +36,12 @@ function OrderConfirmationContent() {
           Order ID: {orderId.substring(0, 8)}...
         </p>
       )}
-      <p className="text-slate-400 leading-relaxed mb-4">
+      <p className="text-white leading-relaxed mb-4">
         We&apos;ve received your order and will send a confirmation email
         shortly. Our team will review your order and confirm your ship date —
         live animals ship 2-day or faster only.
       </p>
-      <p className="text-slate-500 text-sm mb-10">
+      <p className="text-white text-sm mb-10">
         Questions? Email us at{" "}
         <a
           href="mailto:info@seahorseaquariumsupply.com"
@@ -60,7 +60,7 @@ function OrderConfirmationContent() {
         </Link>
         <Link
           href="/account"
-          className="px-6 py-3 border border-white/20 text-slate-300 hover:text-white hover:border-white/40 text-sm font-medium rounded transition-colors"
+          className="px-6 py-3 border border-white/20 text-white hover:text-white hover:border-white/40 text-sm font-medium rounded transition-colors"
         >
           View My Orders
         </Link>
@@ -76,7 +76,7 @@ export default function OrderConfirmationPage() {
       <main className="pt-24 min-h-screen flex items-center justify-center">
         <Suspense
           fallback={
-            <p className="text-slate-400 text-center">Loading...</p>
+            <p className="text-white text-center">Loading...</p>
           }
         >
           <OrderConfirmationContent />

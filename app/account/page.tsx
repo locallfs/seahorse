@@ -56,7 +56,7 @@ export default function AccountPage() {
       <>
         <Header />
         <main className="pt-24 min-h-screen flex items-center justify-center">
-          <p className="text-slate-400">Loading...</p>
+          <p className="text-white">Loading...</p>
         </main>
         <Footer />
       </>
@@ -73,14 +73,14 @@ export default function AccountPage() {
               <h1 className="text-3xl font-bold text-white tracking-tight">
                 My Account
               </h1>
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-white text-sm mt-1">
                 {customer.first_name} {customer.last_name} &middot;{" "}
                 {customer.email}
               </p>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 border border-white/20 text-slate-300 hover:text-white hover:border-white/40 text-sm rounded transition-colors"
+              className="px-4 py-2 border border-white/20 text-white hover:text-white hover:border-white/40 text-sm rounded transition-colors"
             >
               Sign Out
             </button>
@@ -89,12 +89,12 @@ export default function AccountPage() {
           <h2 className="text-xl font-bold text-white mb-6">Order History</h2>
 
           {ordersLoading ? (
-            <p className="text-slate-400 py-12 text-center">
+            <p className="text-white py-12 text-center">
               Loading orders...
             </p>
           ) : orders.length === 0 ? (
             <div className="text-center py-16 rounded-xl border border-white/10 bg-ocean-900">
-              <p className="text-slate-400 mb-4">No orders yet.</p>
+              <p className="text-white mb-4">No orders yet.</p>
               <Link
                 href="/store"
                 className="px-6 py-3 bg-blue-accent hover:bg-blue-light text-white text-sm font-medium rounded transition-colors"
@@ -114,7 +114,7 @@ export default function AccountPage() {
                       <p className="text-white font-medium">
                         Order #{order.display_id}
                       </p>
-                      <p className="text-slate-400 text-xs mt-0.5">
+                      <p className="text-white text-xs mt-0.5">
                         {formatDate(order.created_at)}
                       </p>
                     </div>
@@ -134,9 +134,9 @@ export default function AccountPage() {
                           key={item.id}
                           className="flex justify-between text-sm"
                         >
-                          <span className="text-slate-400">
+                          <span className="text-white">
                             {item.product_title || item.title}{" "}
-                            <span className="text-slate-600">
+                            <span className="text-white">
                               x{item.quantity}
                             </span>
                           </span>

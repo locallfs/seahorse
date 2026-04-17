@@ -79,7 +79,7 @@ export default function SideScrollGallery({
           </div>
           <Link
             href={viewAllHref}
-            className="text-sm text-slate-400 hover:text-white transition-colors duration-200 flex items-center gap-1.5"
+            className="text-sm text-white hover:text-white transition-colors duration-200 flex items-center gap-1.5"
           >
             View All
             <svg

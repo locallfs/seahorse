@@ -145,7 +145,7 @@ export default function HomePage() {
               <h3 className="text-2xl font-bold text-white mb-3">
                 Aquarium Maintenance
               </h3>
-              <p className="text-slate-400 text-sm leading-relaxed mb-6">
+              <p className="text-white text-sm leading-relaxed mb-6">
                 Regular tank cleaning, water chemistry, livestock health
                 monitoring, and equipment servicing from our expert team.
               </p>
@@ -168,7 +168,7 @@ export default function HomePage() {
               <h3 className="text-2xl font-bold text-white mb-3">
                 Custom Installations
               </h3>
-              <p className="text-slate-400 text-sm leading-relaxed mb-6">
+              <p className="text-white text-sm leading-relaxed mb-6">
                 Full aquarium builds from design to completion — in-home, office,
                 and commercial installations throughout the Pacific Northwest.
               </p>
@@ -199,10 +199,10 @@ export default function HomePage() {
                   106 NE Russet St.<br />
                   Portland, Oregon 97211
                 </p>
-                <p className="text-slate-400 text-xs">
+                <p className="text-white text-xs">
                   The shop is on the gravel street (Rodney) around the corner.
                 </p>
-                <p className="text-slate-300 text-sm leading-relaxed">
+                <p className="text-white text-sm leading-relaxed">
                   Portland, Oregon&apos;s premier saltwater fish and coral specialist since 1996. Stop by to see our tanks in person — we&apos;d love to help you build your dream reef.
                 </p>
                 <a

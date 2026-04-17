@@ -65,7 +65,7 @@ export default function InstallationsPage() {
                 {services.map((item) => (
                   <li
                     key={item}
-                    className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-slate-300"
+                    className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-white"
                   >
                     <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
                     {item}
@@ -77,7 +77,7 @@ export default function InstallationsPage() {
                 <h3 className="text-xl font-bold text-white mb-3">
                   Request a Quote
                 </h3>
-                <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                <p className="text-white text-sm leading-relaxed mb-6">
                   Every installation is different. Tell us about your space and
                   what you have in mind — we&apos;ll put together a plan and
                   estimate.

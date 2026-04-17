@@ -53,14 +53,14 @@ export default function RegisterPage() {
           <h1 className="text-2xl font-bold text-white mb-2 tracking-tight text-center">
             Create Account
           </h1>
-          <p className="text-slate-400 text-sm text-center mb-8">
+          <p className="text-white text-sm text-center mb-8">
             Create an account to track orders and check out faster
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+                <label className="block text-xs text-white mb-1.5 tracking-wide">
                   First Name
                 </label>
                 <input
@@ -68,12 +68,12 @@ export default function RegisterPage() {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
-                  className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors"
+                  className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors"
                   placeholder="John"
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+                <label className="block text-xs text-white mb-1.5 tracking-wide">
                   Last Name
                 </label>
                 <input
@@ -81,13 +81,13 @@ export default function RegisterPage() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
-                  className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors"
+                  className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors"
                   placeholder="Smith"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+              <label className="block text-xs text-white mb-1.5 tracking-wide">
                 Email
               </label>
               <input
@@ -95,12 +95,12 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors"
+                className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors"
                 placeholder="you@example.com"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+              <label className="block text-xs text-white mb-1.5 tracking-wide">
                 Password
               </label>
               <input
@@ -109,7 +109,7 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors"
+                className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors"
                 placeholder="At least 8 characters"
               />
             </div>
@@ -121,7 +121,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmailConsent(e.target.checked)}
                 className="mt-0.5 w-4 h-4 rounded border-white/15 bg-ocean-800 text-blue-accent focus:ring-blue-accent focus:ring-offset-0 cursor-pointer"
               />
-              <span className="text-xs text-slate-400 leading-relaxed">
+              <span className="text-xs text-white leading-relaxed">
                 I agree to receive emails from Woody&apos;s Seahorse Aquarium &amp; Supply
                 including order updates, promotions, and care tips. You can
                 unsubscribe at any time.
@@ -141,7 +141,7 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="text-slate-400 text-sm text-center mt-6">
+          <p className="text-white text-sm text-center mt-6">
             Already have an account?{" "}
             <Link
               href="/login"

@@ -37,13 +37,13 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-white mb-2 tracking-tight text-center">
             Sign In
           </h1>
-          <p className="text-slate-400 text-sm text-center mb-8">
+          <p className="text-white text-sm text-center mb-8">
             Sign in to view your orders and account details
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+              <label className="block text-xs text-white mb-1.5 tracking-wide">
                 Email
               </label>
               <input
@@ -51,12 +51,12 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors"
+                className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors"
                 placeholder="you@example.com"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1.5 tracking-wide">
+              <label className="block text-xs text-white mb-1.5 tracking-wide">
                 Password
               </label>
               <input
@@ -64,7 +64,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors"
+                className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors"
                 placeholder="Your password"
               />
             </div>
@@ -82,7 +82,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-slate-400 text-sm text-center mt-6">
+          <p className="text-white text-sm text-center mt-6">
             Don&apos;t have an account?{" "}
             <Link
               href="/register"

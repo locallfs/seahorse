@@ -48,7 +48,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
       </button>
       <a
         href="/cart"
-        className="w-full py-4 rounded font-medium text-sm tracking-wide text-center border border-white/20 text-slate-300 hover:text-white hover:border-white/40 transition-all duration-200"
+        className="w-full py-4 rounded font-medium text-sm tracking-wide text-center border border-white/20 text-white hover:text-white hover:border-white/40 transition-all duration-200"
       >
         View Cart
       </a>

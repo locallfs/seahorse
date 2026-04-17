@@ -44,7 +44,7 @@ export default async function StorePage({
                 className={`flex-shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors duration-200 ${
                   active === cat.value
                     ? "border-blue-accent text-white"
-                    : "border-transparent text-slate-400 hover:text-white"
+                    : "border-transparent text-white hover:text-white"
                 }`}
               >
                 {cat.label}

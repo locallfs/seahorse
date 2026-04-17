@@ -36,7 +36,7 @@ export default function RootLayout({
           }
         `}} />
       </head>
-      <body className="min-h-full flex flex-col bg-black text-slate-100 antialiased">
+      <body className="min-h-full flex flex-col bg-black text-white antialiased">
         <AuthProvider>
           <CartProvider>
             <SplashScreen />

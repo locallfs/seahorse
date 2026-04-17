@@ -71,11 +71,11 @@ function StripePaymentForm({
       <button
         onClick={handleSubmit}
         disabled={!stripe || processing}
-        className="w-full py-4 bg-white hover:bg-slate-100 text-[#d4af37] font-semibold text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-4 bg-white hover:bg-white/10 text-[#d4af37] font-semibold text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {processing ? "Processing payment..." : "Place Order"}
       </button>
-      <p className="text-xs text-slate-500 text-center">
+      <p className="text-xs text-white text-center">
         Payment processing powered by Stripe. Your card details are never stored
         on our servers.
       </p>
@@ -256,7 +256,7 @@ export default function CheckoutPage() {
       <>
         <Header />
         <main className="pt-24 min-h-screen flex items-center justify-center">
-          <p className="text-slate-400">Loading...</p>
+          <p className="text-white">Loading...</p>
         </main>
         <Footer />
       </>
@@ -269,7 +269,7 @@ export default function CheckoutPage() {
         <Header />
         <main className="pt-24 min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <p className="text-slate-400 mb-4">Your cart is empty.</p>
+            <p className="text-white mb-4">Your cart is empty.</p>
             <Link
               href="/store"
               className="text-white hover:text-blue-light text-sm transition-colors"
@@ -310,7 +310,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("first_name", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="John"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
                     />
                   </div>
                   <div>
@@ -323,7 +323,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("last_name", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="Smith"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -336,7 +336,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("email", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="john@example.com"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -349,7 +349,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("phone", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="(503) 555-0100"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -362,7 +362,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("address_1", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="123 Main St"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
                     />
                   </div>
                   <div>
@@ -375,7 +375,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("city", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="Portland"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
                     />
                   </div>
                   <div>
@@ -388,7 +388,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleField("province", e.target.value)}
                       disabled={step !== "address"}
                       placeholder="OR"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
                     />
                   </div>
                   <div>
@@ -403,7 +403,7 @@ export default function CheckoutPage() {
                       }
                       disabled={step !== "address"}
                       placeholder="97201"
-                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
+                      className="w-full bg-ocean-800 border border-white/15 rounded px-4 py-3 text-base text-white placeholder:text-white focus:outline-none focus:border-blue-accent transition-colors disabled:text-white disabled:cursor-default"
                     />
                   </div>
                 </div>
@@ -465,7 +465,7 @@ export default function CheckoutPage() {
                       : shippingOptions;
 
                     return filteredOptions.length === 0 ? (
-                      <p className="text-slate-400 text-sm py-4 text-center">
+                      <p className="text-white text-sm py-4 text-center">
                         No shipping options available for this address. Please check
                         your address or contact us.
                       </p>
@@ -571,9 +571,9 @@ export default function CheckoutPage() {
                 <div className="space-y-3 mb-5">
                   {items.map((item: any) => (
                     <div key={item.id} className="flex justify-between text-sm">
-                      <span className="text-slate-400 truncate pr-2">
+                      <span className="text-white truncate pr-2">
                         {item.product_title || item.title}{" "}
-                        <span className="text-slate-600">x{item.quantity}</span>
+                        <span className="text-white">x{item.quantity}</span>
                       </span>
                       <span className="text-white flex-shrink-0">
                         {formatPrice(item.unit_price * item.quantity)}
@@ -582,13 +582,13 @@ export default function CheckoutPage() {
                   ))}
                 </div>
                 <div className="border-t border-white/10 pt-4 space-y-3 text-sm mb-5">
-                  <div className="flex justify-between text-slate-400">
+                  <div className="flex justify-between text-white">
                     <span>Subtotal</span>
                     <span className="text-white">
                       {formatPrice(cart?.subtotal ?? 0)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-slate-400">
+                  <div className="flex justify-between text-white">
                     <span>Shipping</span>
                     <span className="text-white">
                       {cart?.shipping_total
@@ -597,7 +597,7 @@ export default function CheckoutPage() {
                     </span>
                   </div>
                   {(cart?.tax_total ?? 0) > 0 && (
-                    <div className="flex justify-between text-slate-400">
+                    <div className="flex justify-between text-white">
                       <span>Tax</span>
                       <span className="text-white">
                         {formatPrice(cart.tax_total)}

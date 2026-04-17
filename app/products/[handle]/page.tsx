@@ -76,24 +76,24 @@ export default function ProductPage({
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="max-w-screen-xl mx-auto px-6 py-12">
-          <nav className="text-xs text-slate-500 mb-8 flex items-center gap-2">
-            <a href="/store" className="hover:text-slate-300 transition-colors">
+          <nav className="text-xs text-white mb-8 flex items-center gap-2">
+            <a href="/store" className="hover:text-white transition-colors">
               Store
             </a>
             <span>/</span>
-            <span className="text-slate-300">
+            <span className="text-white">
               {product?.title ?? (loading ? "Loading…" : "Not found")}
             </span>
           </nav>
 
           {loading ? (
             <div className="text-center py-32">
-              <p className="text-slate-400 text-sm">Loading product…</p>
+              <p className="text-white text-sm">Loading product…</p>
             </div>
           ) : error || !product ? (
             <div className="text-center py-32">
               <p className="text-red-400 text-sm mb-2">Could not load product.</p>
-              {error && <p className="text-slate-500 text-xs">{error}</p>}
+              {error && <p className="text-white text-xs">{error}</p>}
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -108,7 +108,7 @@ export default function ProductPage({
                     unoptimized
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">
+                  <div className="w-full h-full flex items-center justify-center text-white text-xs">
                     No image
                   </div>
                 )}

@@ -110,7 +110,7 @@ export default function WhoWeArePage() {
                   <h3 className="text-xl font-bold text-white mb-4">
                     {item.title}
                   </h3>
-                  <p className="text-slate-300 text-sm leading-relaxed">
+                  <p className="text-white text-sm leading-relaxed">
                     {item.description}
                   </p>
                 </div>
@@ -154,7 +154,7 @@ export default function WhoWeArePage() {
               {products.map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-slate-300"
+                  className="flex items-start gap-3 p-4 rounded-lg border border-white/10 bg-ocean-900 text-sm text-white"
                 >
                   <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
                   {item}
@@ -181,7 +181,7 @@ export default function WhoWeArePage() {
                 "Supplier of Crystal Sea to OHSU",
                 "Aquarium equipment insurance claims adjuster",
               ].map((item) => (
-                <li key={item} className="flex items-start gap-4 text-slate-300">
+                <li key={item} className="flex items-start gap-4 text-white">
                   <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
                   <span className="leading-relaxed">{item}</span>
                 </li>
@@ -189,7 +189,7 @@ export default function WhoWeArePage() {
             </ul>
 
             <blockquote className="max-w-3xl p-8 rounded-xl border border-white/10 bg-ocean-900">
-              <p className="text-slate-300 text-sm leading-relaxed mb-4">
+              <p className="text-white text-sm leading-relaxed mb-4">
                 &ldquo;We are a large scientific research lab here in Portland using
                 freshwater zebrafish (Danio rerio) as a model organism to study
                 synaptic electrophysiology and neurogenetics. Our recirculating system
@@ -218,7 +218,7 @@ export default function WhoWeArePage() {
 
         <div className="border-t border-white/10 bg-ocean-900/60">
           <div className="max-w-screen-xl mx-auto px-6 py-20 text-center">
-            <p className="text-slate-400 text-base max-w-xl mx-auto mb-8 leading-relaxed">
+            <p className="text-white text-base max-w-xl mx-auto mb-8 leading-relaxed">
               Have questions or want to learn more? We&apos;d love to hear from you.
             </p>
             <QuoteForm service="General Inquiry" buttonLabel="Get In Touch" />

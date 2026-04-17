@@ -35,7 +35,7 @@ export default function CartPage() {
       <>
         <Header />
         <main className="pt-24 min-h-screen flex items-center justify-center">
-          <p className="text-slate-400">Loading...</p>
+          <p className="text-white">Loading...</p>
         </main>
         <Footer />
       </>
@@ -53,11 +53,11 @@ export default function CartPage() {
 
           {loading ? (
             <div className="text-center py-32">
-              <p className="text-slate-400">Loading cart...</p>
+              <p className="text-white">Loading cart...</p>
             </div>
           ) : items.length === 0 ? (
             <div className="text-center py-32">
-              <p className="text-slate-400 mb-6">Your cart is empty.</p>
+              <p className="text-white mb-6">Your cart is empty.</p>
               <Link
                 href="/store"
                 className="px-6 py-3 bg-blue-accent hover:bg-blue-light text-white text-sm font-medium rounded transition-colors"
@@ -90,7 +90,7 @@ export default function CartPage() {
                         {item.product_title || item.title}
                       </p>
                       {item.variant_title && item.variant_title !== "Default" && (
-                        <p className="text-slate-400 text-xs mb-1">
+                        <p className="text-white text-xs mb-1">
                           {item.variant_title}
                         </p>
                       )}
@@ -101,7 +101,7 @@ export default function CartPage() {
                     <div className="flex flex-col items-end gap-2">
                       <button
                         onClick={() => removeItem(item.id)}
-                        className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+                        className="text-xs text-white hover:text-red-400 transition-colors"
                       >
                         Remove
                       </button>
@@ -110,7 +110,7 @@ export default function CartPage() {
                           onClick={() =>
                             updateQuantity(item.id, item.quantity - 1)
                           }
-                          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                          className="w-10 h-10 flex items-center justify-center text-white hover:text-white transition-colors"
                         >
                           −
                         </button>
@@ -121,7 +121,7 @@ export default function CartPage() {
                           onClick={() =>
                             updateQuantity(item.id, item.quantity + 1)
                           }
-                          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                          className="w-10 h-10 flex items-center justify-center text-white hover:text-white transition-colors"
                         >
                           +
                         </button>
@@ -137,13 +137,13 @@ export default function CartPage() {
                     Order Summary
                   </h2>
                   <div className="space-y-3 text-sm mb-6">
-                    <div className="flex justify-between text-slate-400">
+                    <div className="flex justify-between text-white">
                       <span>Subtotal</span>
                       <span className="text-white">
                         {formatPrice(subtotal)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-slate-400">
+                    <div className="flex justify-between text-white">
                       <span>Shipping</span>
                       <span className="text-white">
                         Calculated at checkout
@@ -155,7 +155,7 @@ export default function CartPage() {
                     <span className="text-white">{formatPrice(subtotal)}</span>
                   </div>
 
-                  <div className="bg-blue-accent/10 border border-blue-accent/20 rounded-lg p-3 mb-6 text-xs text-slate-300">
+                  <div className="bg-blue-accent/10 border border-blue-accent/20 rounded-lg p-3 mb-6 text-xs text-white">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-1.5 h-1.5 rounded-full bg-blue-accent" />
                       Live animal shipping — 2-day or faster only

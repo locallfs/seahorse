@@ -40,7 +40,7 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white border-b border-slate-200 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white border-b border-white/20 ${
         scrolled ? "shadow-md shadow-black/10" : ""
       }`}
     >
@@ -90,7 +90,7 @@ export default function Header() {
               </svg>
             </button>
             <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-              <div className="bg-white border border-slate-200 rounded-lg shadow-lg py-2 min-w-[180px]">
+              <div className="bg-white border border-white/20 rounded-lg shadow-lg py-2 min-w-[180px]">
                 {serviceLinks.map((link) => (
                   <Link
                     key={link.href}
@@ -147,7 +147,7 @@ export default function Header() {
           >
             Shop Now
           </Link>
-          <div className="flex items-center gap-4 border-l border-slate-200 pl-6">
+          <div className="flex items-center gap-4 border-l border-white/20 pl-6">
             <a href="https://www.facebook.com/SeahorseAquariumSupply" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="p-1 text-blue-dim hover:text-blue-accent transition-colors">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
@@ -186,7 +186,7 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <div className="lg:hidden bg-white border-t border-slate-200">
+        <div className="lg:hidden bg-white border-t border-white/20">
           <nav className="max-w-screen-xl mx-auto px-6 py-4 flex flex-col gap-1">
             {navLinks.map((link) => (
               <Link
@@ -198,7 +198,7 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
-            <p className="py-2 px-4 text-xs tracking-[0.2em] uppercase text-slate-400 font-medium mt-2">Services</p>
+            <p className="py-2 px-4 text-xs tracking-[0.2em] uppercase text-white font-medium mt-2">Services</p>
             {serviceLinks.map((link) => (
               <Link
                 key={link.href}
@@ -219,7 +219,7 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
-            <div className="border-t border-slate-200 mt-2 pt-2">
+            <div className="border-t border-white/20 mt-2 pt-2">
               <Link
                 href={customer ? "/account" : "/login"}
                 onClick={() => setMenuOpen(false)}
