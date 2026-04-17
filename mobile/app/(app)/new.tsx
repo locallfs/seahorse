@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
@@ -113,6 +112,7 @@ export default function NewProductScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.heading}>New Product</Text>
 
+        <Text style={styles.label}>Thumbnail</Text>
         <View style={styles.imageRow}>
           {file ? (
             <Image source={{ uri: file.uri }} style={styles.thumb} />
@@ -128,7 +128,32 @@ export default function NewProductScreen() {
             <Pressable onPress={pickImage} style={styles.secondaryBtn}>
               <Text style={styles.secondaryBtnText}>Choose Photo</Text>
             </Pressable>
+            {file ? (
+              <Pressable onPress={() => setFile(null)} style={styles.secondaryBtn}>
+                <Text style={styles.secondaryBtnText}>Remove</Text>
+              </Pressable>
+            ) : null}
           </View>
+        </View>
+
+        <Text style={styles.label}>Status</Text>
+        <View style={styles.segment}>
+          <Pressable
+            onPress={() => setPublished(false)}
+            style={[styles.segmentBtn, !published && styles.segmentBtnActive]}
+          >
+            <Text style={[styles.segmentText, !published && styles.segmentTextActive]}>
+              Draft
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setPublished(true)}
+            style={[styles.segmentBtn, published && styles.segmentBtnActive]}
+          >
+            <Text style={[styles.segmentText, published && styles.segmentTextActive]}>
+              Published
+            </Text>
+          </Pressable>
         </View>
 
         <Text style={styles.label}>Title</Text>
@@ -169,16 +194,6 @@ export default function NewProductScreen() {
           placeholder="0"
           placeholderTextColor={theme.color.textDim}
         />
-
-        <View style={styles.switchRow}>
-          <Text style={styles.label}>Publish immediately</Text>
-          <Switch
-            value={published}
-            onValueChange={setPublished}
-            trackColor={{ false: theme.color.border, true: theme.color.gold }}
-            thumbColor="#fff"
-          />
-        </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -231,11 +246,30 @@ const styles = StyleSheet.create({
     fontSize: theme.font.md,
   },
   textarea: { minHeight: 100, textAlignVertical: 'top' },
-  switchRow: {
+  segment: {
     flexDirection: 'row',
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    overflow: 'hidden',
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: theme.space.md,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: theme.space.lg,
+    backgroundColor: theme.color.card,
+  },
+  segmentBtnActive: {
+    backgroundColor: theme.color.gold,
+  },
+  segmentText: {
+    color: theme.color.textMuted,
+    fontSize: theme.font.sm,
+    fontWeight: '600',
+  },
+  segmentTextActive: {
+    color: '#000',
+    fontWeight: '700',
   },
   error: { color: theme.color.danger, marginTop: theme.space.md },
   saveBtn: {
