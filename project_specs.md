@@ -115,17 +115,52 @@ Specific shipping day cutoffs and Saturday delivery rules to be defined before c
 ---
 
 
-## Employee Mobile App (Phase 2)
+## Employee Mobile App — ReefNerds (Phase 2)
 
-Built after the store is live. Connects to the same Medusa backend.
+Built after the store is live. Connects to the same Medusa backend on Railway. Lives at `/mobile` in this repo.
 
-| Feature | Detail |
+### Users and Roles
+| Role | Can do |
 |---|---|
-| Platform | iOS + Android (React Native + Expo) |
-| Auth | Employee login — same admin credentials as Medusa |
-| Product photo upload | Take or select photos → attach directly to a product listing |
-| Promo video upload | Record or select video → publishes to the `/gallery` page on the website |
-| Storage | All uploads go to Bunny.net |
+| **Admin** (owner) | Everything + invite/remove employees |
+| **Employee** | Add, edit, delete, publish products; manage inventory. Cannot manage users. |
+
+### Tech Stack
+| Layer | Tool |
+|---|---|
+| Framework | Expo (React Native) + Expo Router |
+| Language | TypeScript |
+| Backend client | `@medusajs/js-sdk` (same API as desktop admin) |
+| Token storage | `expo-secure-store` |
+| Image capture | `expo-image-picker` |
+| Theme | Dark, matching site branding |
+| Distribution | EAS Build → App Store + Play Store |
+
+### Screens
+1. **Login** — email + password
+2. **Product list** — search, filter by status, thumbnail, price, stock, red low-stock badge, quick stock adjust
+3. **Product detail / edit** — title, description, price, inventory count (stepper + direct entry), images, publish toggle, Delete button
+4. **New product** — same form blank, image picker from camera or gallery
+5. **Team** *(admin-only)* — list employees, invite by email, remove employee
+
+### Inventory Features (daily-deals friendly)
+- Quick stock adjust from list screen (+/− without opening full edit)
+- Auto marks out-of-stock when count hits 0
+- Per-product low-stock threshold (default 3) → red badge on list
+
+### Delete Behavior
+- Confirm dialog before delete
+- Deletes product from Medusa entirely → disappears from website
+
+### Done Means
+- Admin logs in, invites employee → they set password via email link
+- Employee logs in on phone → adds low-inventory daily deal (name, price, photo, stock) → publishes → appears on site
+- Stock hits 0 → auto marks out-of-stock on site
+- Employee deletes product → gone from site
+- Admin taps "Remove" on employee → locked out immediately
+
+### Out of Scope (v1)
+Orders, customers, discounts, reports, variants (size/color options).
 
 
 ---
@@ -150,7 +185,7 @@ Built after the store is live. Connects to the same Medusa backend.
 - [ ] Klaviyo connected — order confirmation and abandoned cart emails live
 - [ ] Site deployed to Vercel and connected to custom domain
 - [ ] Mobile responsive across all pages
-- [ ] **Phase 2:** React Native employee app (iOS + Android) for photo/video uploads
+- [ ] **Phase 2:** ReefNerds mobile app (iOS + Android) — admin + employee logins, add/edit/delete products, manage inventory, invite/remove employees
 
 
 ---

@@ -1,0 +1,383 @@
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { sdk } from '@/lib/medusa';
+import { theme } from '@/lib/theme';
+
+type VariantShape = {
+  id: string;
+  prices?: { id?: string; amount: number; currency_code: string }[];
+  inventory_items?: {
+    inventory?: {
+      id: string;
+      location_levels?: {
+        id: string;
+        location_id: string;
+        stocked_quantity: number;
+        reserved_quantity: number;
+      }[];
+    };
+  }[];
+};
+
+export default function ProductEditScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [published, setPublished] = useState(false);
+  const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('0');
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [newThumbnailFile, setNewThumbnailFile] = useState<{ uri: string; name: string; type: string } | null>(null);
+
+  const [variant, setVariant] = useState<VariantShape | null>(null);
+
+  const load = useCallback(async () => {
+    if (!id) return;
+    setError(null);
+    try {
+      const { product } = await sdk.admin.product.retrieve(id, {
+        fields:
+          'id,title,description,status,thumbnail,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels',
+      } as any);
+      const p: any = product;
+      setTitle(p.title || '');
+      setDescription(p.description || '');
+      setPublished(p.status === 'published');
+      setThumbnail(p.thumbnail || null);
+      const v: VariantShape | null = p.variants?.[0] || null;
+      setVariant(v);
+      const usd = v?.prices?.find((x) => x.currency_code === 'usd') || v?.prices?.[0];
+      setPrice(usd ? usd.amount.toString() : '');
+      const qty = (v?.inventory_items || []).reduce((sum, link) => {
+        for (const lvl of link.inventory?.location_levels || []) {
+          sum += Number(lvl.stocked_quantity ?? 0) - Number(lvl.reserved_quantity ?? 0);
+        }
+        return sum;
+      }, 0);
+      setStock(String(qty));
+    } catch (e: any) {
+      setError(e?.message || 'Could not load product.');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const pickImage = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Allow photo library access to change the image.');
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: true,
+    });
+    if (res.canceled || !res.assets?.[0]) return;
+    const asset = res.assets[0];
+    const name = asset.fileName || `thumb-${Date.now()}.jpg`;
+    const type = asset.mimeType || 'image/jpeg';
+    setNewThumbnailFile({ uri: asset.uri, name, type });
+    setThumbnail(asset.uri);
+  };
+
+  const uploadNewThumbnailIfAny = async (): Promise<string | null> => {
+    if (!newThumbnailFile) return null;
+    const form = new FormData();
+    form.append('files', {
+      uri: newThumbnailFile.uri,
+      name: newThumbnailFile.name,
+      type: newThumbnailFile.type,
+    } as any);
+    const { files } = await sdk.admin.upload.create(form as any);
+    return files?.[0]?.url || null;
+  };
+
+  const save = async () => {
+    if (!id) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const uploadedUrl = await uploadNewThumbnailIfAny();
+      const payload: any = {
+        title,
+        description,
+        status: published ? 'published' : 'draft',
+      };
+      if (uploadedUrl) payload.thumbnail = uploadedUrl;
+
+      if (variant) {
+        const amount = Number(price);
+        if (!Number.isNaN(amount)) {
+          payload.variants = [
+            {
+              id: variant.id,
+              prices: [{ amount, currency_code: 'usd' }],
+            },
+          ];
+        }
+      }
+
+      await sdk.admin.product.update(id, payload);
+
+      const nextStock = Math.max(0, Math.floor(Number(stock)));
+      const currentStock = (variant?.inventory_items || []).reduce((sum, link) => {
+        for (const lvl of link.inventory?.location_levels || []) {
+          sum += Number(lvl.stocked_quantity ?? 0);
+        }
+        return sum;
+      }, 0);
+
+      if (!Number.isNaN(nextStock) && nextStock !== currentStock && variant) {
+        const link = variant.inventory_items?.[0];
+        const inventoryId = link?.inventory?.id;
+        const lvl = link?.inventory?.location_levels?.[0];
+        if (inventoryId && lvl?.location_id) {
+          await sdk.admin.inventoryItem.updateLevel(inventoryId, lvl.location_id, {
+            stocked_quantity: nextStock,
+          });
+        }
+      }
+
+      setNewThumbnailFile(null);
+      await load();
+      Alert.alert('Saved', 'Product updated.');
+    } catch (e: any) {
+      setError(e?.message || 'Could not save product.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    Alert.alert(
+      'Delete product?',
+      `"${title}" will be removed from the site. This can't be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: doDelete },
+      ]
+    );
+  };
+
+  const doDelete = async () => {
+    if (!id) return;
+    setSaving(true);
+    try {
+      await sdk.admin.product.delete(id);
+      router.replace('/(app)');
+    } catch (e: any) {
+      setError(e?.message || 'Could not delete product.');
+      setSaving(false);
+    }
+  };
+
+  const adjustStock = (delta: number) => {
+    const n = Math.max(0, Math.floor(Number(stock) || 0) + delta);
+    setStock(String(n));
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator color={theme.color.gold} size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Pressable onPress={pickImage} style={styles.imageWrap}>
+          {thumbnail ? (
+            <Image source={{ uri: thumbnail }} style={styles.image} />
+          ) : (
+            <View style={[styles.image, styles.imagePlaceholder]}>
+              <Text style={styles.imagePlaceholderText}>Tap to add photo</Text>
+            </View>
+          )}
+          <Text style={styles.imageHint}>Tap image to change</Text>
+        </Pressable>
+
+        <Text style={styles.label}>Title</Text>
+        <TextInput
+          value={title}
+          onChangeText={setTitle}
+          style={styles.input}
+          placeholderTextColor={theme.color.textDim}
+        />
+
+        <Text style={styles.label}>Description</Text>
+        <TextInput
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          style={[styles.input, styles.textarea]}
+          placeholderTextColor={theme.color.textDim}
+        />
+
+        <Text style={styles.label}>Price (USD)</Text>
+        <TextInput
+          value={price}
+          onChangeText={setPrice}
+          keyboardType="decimal-pad"
+          style={styles.input}
+          placeholder="0.00"
+          placeholderTextColor={theme.color.textDim}
+        />
+
+        <Text style={styles.label}>Inventory</Text>
+        <View style={styles.stepperRow}>
+          <Pressable onPress={() => adjustStock(-1)} style={styles.stepBtn}>
+            <Text style={styles.stepBtnText}>−</Text>
+          </Pressable>
+          <TextInput
+            value={stock}
+            onChangeText={setStock}
+            keyboardType="number-pad"
+            style={[styles.input, styles.stockInput]}
+          />
+          <Pressable onPress={() => adjustStock(1)} style={styles.stepBtn}>
+            <Text style={styles.stepBtnText}>+</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.switchRow}>
+          <Text style={styles.label}>Published (visible on website)</Text>
+          <Switch
+            value={published}
+            onValueChange={setPublished}
+            trackColor={{ false: theme.color.border, true: theme.color.gold }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <Pressable
+          onPress={save}
+          disabled={saving}
+          style={({ pressed }) => [styles.saveBtn, (saving || pressed) && styles.saveBtnPressed]}
+        >
+          {saving ? (
+            <ActivityIndicator color={theme.color.gold} />
+          ) : (
+            <Text style={styles.saveBtnText}>Save Changes</Text>
+          )}
+        </Pressable>
+
+        <Pressable
+          onPress={confirmDelete}
+          disabled={saving}
+          style={({ pressed }) => [styles.deleteBtn, pressed && styles.saveBtnPressed]}
+        >
+          <Text style={styles.deleteBtnText}>Delete Product</Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: theme.color.bg },
+  loader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.color.bg,
+  },
+  content: { padding: theme.space.lg, paddingBottom: theme.space.xxl },
+  imageWrap: { alignItems: 'center', marginBottom: theme.space.lg },
+  image: {
+    width: '100%',
+    aspectRatio: 1,
+    maxWidth: 360,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.color.card,
+  },
+  imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  imagePlaceholderText: { color: theme.color.textMuted },
+  imageHint: { color: theme.color.textDim, fontSize: theme.font.xs, marginTop: theme.space.xs },
+  label: {
+    color: theme.color.text,
+    fontSize: theme.font.sm,
+    marginTop: theme.space.md,
+    marginBottom: theme.space.xs,
+  },
+  input: {
+    backgroundColor: theme.color.card,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    borderRadius: theme.radius.md,
+    padding: theme.space.md,
+    color: theme.color.text,
+    fontSize: theme.font.md,
+  },
+  textarea: { minHeight: 100, textAlignVertical: 'top' },
+  stepperRow: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
+  stepBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.color.card,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepBtnText: { color: theme.color.gold, fontSize: theme.font.xl, fontWeight: '700' },
+  stockInput: { flex: 1, textAlign: 'center', fontSize: theme.font.lg },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: theme.space.lg,
+  },
+  error: { color: theme.color.danger, marginTop: theme.space.md },
+  saveBtn: {
+    marginTop: theme.space.xl,
+    backgroundColor: theme.color.text,
+    borderRadius: theme.radius.md,
+    padding: theme.space.md,
+    alignItems: 'center',
+  },
+  saveBtnPressed: { opacity: 0.85 },
+  saveBtnText: { color: theme.color.gold, fontSize: theme.font.md, fontWeight: '700' },
+  deleteBtn: {
+    marginTop: theme.space.md,
+    borderRadius: theme.radius.md,
+    padding: theme.space.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.color.danger,
+  },
+  deleteBtnText: { color: theme.color.danger, fontSize: theme.font.md, fontWeight: '600' },
+});
