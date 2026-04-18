@@ -14,9 +14,21 @@ import { sdk } from '@/lib/medusa';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
 
+type Role = 'admin' | 'employee';
+
 type Row =
-  | { kind: 'user'; id: string; email: string; name: string }
+  | {
+      kind: 'user';
+      id: string;
+      email: string;
+      name: string;
+      role: Role;
+      metadata: Record<string, unknown>;
+    }
   | { kind: 'invite'; id: string; email: string; expires: string };
+
+const roleFromMetadata = (metadata: Record<string, unknown> | null | undefined): Role =>
+  metadata?.role === 'admin' ? 'admin' : 'employee';
 
 export default function TeamScreen() {
   const { user: me } = useAuth();
@@ -39,6 +51,8 @@ export default function TeamScreen() {
         id: u.id,
         email: u.email,
         name: [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email,
+        role: roleFromMetadata(u.metadata),
+        metadata: (u.metadata ?? {}) as Record<string, unknown>,
       }));
       const invites: Row[] = ((invitesRes as any).invites || [])
         .filter((i: any) => i.status !== 'accepted')
@@ -111,6 +125,38 @@ export default function TeamScreen() {
     }
   };
 
+  const confirmRoleChange = (
+    row: Extract<Row, { kind: 'user' }>,
+    nextRole: Role,
+  ) => {
+    const label = nextRole === 'admin' ? 'Admin' : 'Employee';
+    Alert.alert(
+      `Set role to ${label}?`,
+      `${row.email} will ${
+        nextRole === 'admin'
+          ? 'gain full admin access including Team management.'
+          : 'lose admin privileges and see only employee-level screens.'
+      }`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: `Make ${label}`, onPress: () => setRole(row, nextRole) },
+      ],
+    );
+  };
+
+  const setRole = async (
+    row: Extract<Row, { kind: 'user' }>,
+    nextRole: Role,
+  ) => {
+    try {
+      const nextMetadata = { ...row.metadata, role: nextRole };
+      await (sdk.admin.user as any).update(row.id, { metadata: nextMetadata });
+      await load();
+    } catch (e: any) {
+      Alert.alert('Role update failed', e?.message || 'Could not update role.');
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loader}>
@@ -155,29 +201,70 @@ export default function TeamScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.color.gold} />
         }
-        renderItem={({ item }) => (
-          <View style={styles.row}>
-            <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>
-                {item.kind === 'user' ? item.name : item.email}
-              </Text>
-              <Text style={styles.rowSub}>
-                {item.kind === 'user'
-                  ? item.email
-                  : `Pending invite · expires ${new Date(item.expires).toLocaleDateString()}`}
-              </Text>
-            </View>
-            {item.kind === 'user' && me?.id === item.id ? (
-              <Text style={styles.youBadge}>You</Text>
-            ) : (
-              <Pressable onPress={() => confirmRemove(item)} style={styles.removeBtn}>
-                <Text style={styles.removeBtnText}>
-                  {item.kind === 'user' ? 'Remove' : 'Revoke'}
+        renderItem={({ item }) => {
+          const isSelf = item.kind === 'user' && me?.id === item.id;
+          return (
+            <View style={styles.row}>
+              <View style={styles.rowBody}>
+                <View style={styles.titleRow}>
+                  <Text style={styles.rowTitle}>
+                    {item.kind === 'user' ? item.name : item.email}
+                  </Text>
+                  {item.kind === 'user' && (
+                    <View
+                      style={[
+                        styles.roleBadge,
+                        item.role === 'admin' ? styles.roleBadgeAdmin : styles.roleBadgeEmployee,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.roleBadgeText,
+                          item.role === 'admin'
+                            ? styles.roleBadgeTextAdmin
+                            : styles.roleBadgeTextEmployee,
+                        ]}
+                      >
+                        {item.role === 'admin' ? 'Admin' : 'Employee'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.rowSub}>
+                  {item.kind === 'user'
+                    ? item.email
+                    : `Pending invite · expires ${new Date(item.expires).toLocaleDateString()}`}
                 </Text>
-              </Pressable>
-            )}
-          </View>
-        )}
+                {item.kind === 'user' && !isSelf && (
+                  <View style={styles.roleActions}>
+                    <Pressable
+                      onPress={() =>
+                        confirmRoleChange(item, item.role === 'admin' ? 'employee' : 'admin')
+                      }
+                      style={({ pressed }) => [
+                        styles.roleToggleBtn,
+                        pressed && styles.btnPressed,
+                      ]}
+                    >
+                      <Text style={styles.roleToggleBtnText}>
+                        {item.role === 'admin' ? 'Make Employee' : 'Make Admin'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+              {isSelf ? (
+                <Text style={styles.youBadge}>You</Text>
+              ) : (
+                <Pressable onPress={() => confirmRemove(item)} style={styles.removeBtn}>
+                  <Text style={styles.removeBtnText}>
+                    {item.kind === 'user' ? 'Remove' : 'Revoke'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          );
+        }}
       />
     </View>
   );
@@ -227,8 +314,29 @@ const styles = StyleSheet.create({
     gap: theme.space.md,
   },
   rowBody: { flex: 1 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm, flexWrap: 'wrap' },
   rowTitle: { color: theme.color.text, fontSize: theme.font.md, fontWeight: '600' },
   rowSub: { color: theme.color.textMuted, fontSize: theme.font.xs, marginTop: 2 },
+  roleBadge: {
+    paddingHorizontal: theme.space.sm,
+    paddingVertical: 2,
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+  },
+  roleBadgeAdmin: { borderColor: theme.color.gold, backgroundColor: 'rgba(212,175,55,0.12)' },
+  roleBadgeEmployee: { borderColor: theme.color.border, backgroundColor: theme.color.card },
+  roleBadgeText: { fontSize: theme.font.xs, fontWeight: '700', letterSpacing: 0.5 },
+  roleBadgeTextAdmin: { color: theme.color.gold },
+  roleBadgeTextEmployee: { color: theme.color.textMuted },
+  roleActions: { flexDirection: 'row', marginTop: theme.space.sm, gap: theme.space.sm },
+  roleToggleBtn: {
+    borderWidth: 1,
+    borderColor: theme.color.gold,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.space.md,
+    paddingVertical: theme.space.sm,
+  },
+  roleToggleBtnText: { color: theme.color.gold, fontSize: theme.font.sm, fontWeight: '600' },
   removeBtn: {
     borderWidth: 1,
     borderColor: theme.color.danger,

@@ -39,12 +39,16 @@ function StripePaymentForm({
   setProcessing,
   error,
   setError,
+  canSubmit,
+  submitBlockedMessage,
 }: {
   onComplete: () => Promise<void>;
   processing: boolean;
   setProcessing: (v: boolean) => void;
   error: string;
   setError: (v: string) => void;
+  canSubmit: boolean;
+  submitBlockedMessage: string | null;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -72,9 +76,12 @@ function StripePaymentForm({
     <div className="space-y-4">
       <PaymentElement />
       {error && <p className="text-red-400 text-sm">{error}</p>}
+      {submitBlockedMessage && (
+        <p className="text-amber-300 text-xs">{submitBlockedMessage}</p>
+      )}
       <button
         onClick={handleSubmit}
-        disabled={!stripe || processing}
+        disabled={!stripe || processing || !canSubmit}
         className="w-full py-4 bg-white hover:bg-white/10 text-[#d4af37] font-semibold text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed glow-white"
       >
         {processing ? "Processing payment..." : "Place Order"}
@@ -120,6 +127,7 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<"address" | "shipping" | "payment">(
     "address"
   );
+  const [liveAgreementAccepted, setLiveAgreementAccepted] = useState(false);
 
   const handleField = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -298,6 +306,59 @@ export default function CheckoutPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             <div className="lg:col-span-2 space-y-8">
+              {/* Live Animal Agreement */}
+              {hasLiveItems && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-6 glow-white">
+                  <h2 className="text-base font-bold text-amber-300 mb-4">
+                    Live Arrival Agreement
+                  </h2>
+                  <div className="text-sm text-white leading-relaxed space-y-3 mb-5">
+                    <p>
+                      Your cart contains live fish, coral, and/or invertebrates.
+                      Live animal orders require your acknowledgement of our
+                      arrival policy before we can ship.
+                    </p>
+                    <ul className="list-disc list-inside space-y-1.5 text-xs text-white/90">
+                      <li>
+                        Live animals ship <strong>Overnight only</strong>; we will
+                        coordinate the ship date based on weather and your
+                        availability.
+                      </li>
+                      <li>
+                        Someone must be present to receive the box at the
+                        delivery address. Unattended boxes are not covered by the
+                        arrival guarantee.
+                      </li>
+                      <li>
+                        Report any DOA (dead on arrival) losses within{" "}
+                        <strong>2 hours of delivery</strong> with clear photos of
+                        the unopened bag and deceased animal for store credit.
+                      </li>
+                      <li>
+                        You agree to properly drip-acclimate all livestock.
+                        Losses from improper acclimation, rapid parameter change,
+                        or incompatible tankmates are not refundable.
+                      </li>
+                      <li>
+                        Extreme temperature forecasts (below ~35°F or above ~95°F
+                        along the route) may delay shipment for animal safety.
+                      </li>
+                    </ul>
+                  </div>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={liveAgreementAccepted}
+                      onChange={(e) => setLiveAgreementAccepted(e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-amber-400"
+                    />
+                    <span className="text-sm text-white">
+                      I have read and agree to the Live Arrival Policy above.
+                    </span>
+                  </label>
+                </div>
+              )}
+
               {/* Contact & Shipping Address */}
               <div className="rounded-xl border border-white/10 bg-ocean-900 p-6 glow-white">
                 <h2 className="text-base font-bold text-[#d4af37] mb-5">
@@ -413,15 +474,26 @@ export default function CheckoutPage() {
                 </div>
 
                 {step === "address" && (
-                  <button
-                    onClick={saveAddress}
-                    disabled={!isAddressComplete || shippingLoading}
-                    className="mt-5 w-full py-3 bg-white hover:bg-white/90 text-[#d4af37] font-semibold text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed glow-white"
-                  >
-                    {shippingLoading
-                      ? "Saving..."
-                      : "Continue to Shipping"}
-                  </button>
+                  <>
+                    <button
+                      onClick={saveAddress}
+                      disabled={
+                        !isAddressComplete ||
+                        shippingLoading ||
+                        (hasLiveItems && !liveAgreementAccepted)
+                      }
+                      className="mt-5 w-full py-3 bg-white hover:bg-white/90 text-[#d4af37] font-semibold text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed glow-white"
+                    >
+                      {shippingLoading
+                        ? "Saving..."
+                        : "Continue to Shipping"}
+                    </button>
+                    {hasLiveItems && !liveAgreementAccepted && (
+                      <p className="mt-2 text-xs text-amber-300 text-center">
+                        Please acknowledge the Live Arrival Agreement above to continue.
+                      </p>
+                    )}
+                  </>
                 )}
 
                 {step !== "address" && (
@@ -564,6 +636,12 @@ export default function CheckoutPage() {
                       setProcessing={setProcessing}
                       error={error}
                       setError={setError}
+                      canSubmit={!hasLiveItems || liveAgreementAccepted}
+                      submitBlockedMessage={
+                        hasLiveItems && !liveAgreementAccepted
+                          ? "Please acknowledge the Live Arrival Agreement above before placing your order."
+                          : null
+                      }
                     />
                   </Elements>
                 </div>
