@@ -19,45 +19,36 @@ export default async function inviteCreatedHandler({
     const notificationModule: any = container.resolve(Modules.NOTIFICATION);
 
     const invite = await userModule.retrieveInvite(inviteId).catch((e: any) => {
-      console.error(`[invite-created] retrieveInvite failed: ${e?.message || e}`);
+      console.error(
+        `[invite-created] retrieveInvite failed: ${e?.message || e}`,
+      );
       return null;
     });
-    if (!invite) {
-      console.log(`[invite-created] invite ${inviteId} not found`);
-      return;
-    }
+    if (!invite) return;
 
     const backendUrl =
       process.env.MEDUSA_BACKEND_URL ||
       "https://seahorse-production.up.railway.app";
     const acceptUrl = `${backendUrl}/app/invite?token=${invite.token}`;
 
-    const subject =
-      "You've been invited to join Woody's Seahorse Aquarium & Supply";
-    const html = `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a;">
-        <h2 style="color:#d4af37;margin:0 0 16px;">Welcome to the team</h2>
-        <p>You've been invited to join the Woody's Seahorse Aquarium &amp; Supply staff dashboard.</p>
-        <p>Click the button below to create your password and finish setting up your account. This link expires in 7 days.</p>
-        <p style="margin:32px 0;">
-          <a href="${acceptUrl}" style="background:#0f172a;color:#d4af37;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:bold;">Accept Your Invite</a>
-        </p>
-        <p style="font-size:12px;color:#64748b;">If the button doesn't work, copy and paste this link into your browser:</p>
-        <p style="font-size:12px;color:#64748b;word-break:break-all;">${acceptUrl}</p>
-      </div>
-    `;
-
     await notificationModule
       .createNotifications({
         to: invite.email,
         channel: "email",
-        content: { subject, html },
-        data: { accept_url: acceptUrl, email: invite.email },
+        template: "staff-invite-created",
+        data: {
+          accept_url: acceptUrl,
+          email: invite.email,
+          expires_at: invite.expires_at,
+          company_name: "Woody's Seahorse Aquarium & Supply",
+        },
       })
-      .then(() => console.log(`[invite-created] email queued for ${invite.email}`))
+      .then(() =>
+        console.log(`[invite-created] event fired for ${invite.email}`),
+      )
       .catch((err: any) =>
         console.error(
-          `[invite-created] failed to queue email: ${err?.message || err}`,
+          `[invite-created] failed to fire event: ${err?.message || err}`,
         ),
       );
   } catch (err: any) {

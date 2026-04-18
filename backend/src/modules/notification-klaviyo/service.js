@@ -1,6 +1,9 @@
 "use strict";
 const { AbstractNotificationProviderService, MedusaError } = require("@medusajs/framework/utils");
 
+const KLAVIYO_API_REVISION = "2024-10-15";
+const KLAVIYO_EVENTS_URL = "https://a.klaviyo.com/api/events/";
+
 class KlaviyoNotificationService extends AbstractNotificationProviderService {
   static identifier = "notification-klaviyo";
 
@@ -27,149 +30,73 @@ class KlaviyoNotificationService extends AbstractNotificationProviderService {
       );
     }
 
-    if (notification.channel === "feed") {
+    if (notification.channel === "feed") return {};
+
+    const email = notification.to;
+    if (!email) {
+      this.logger?.warn(
+        `[klaviyo] skipped notification — no recipient (template: ${notification.template || "n/a"})`
+      );
       return {};
     }
 
-    const from = notification.from?.trim() || this.from;
+    const metricName =
+      notification.template || notification.channel || "medusa-notification";
 
-    if (notification.content?.subject && notification.content?.html) {
-      return this.sendTransactionalEmail({
-        to: notification.to,
-        from,
-        subject: notification.content.subject,
-        html: notification.content.html,
-        data: notification.data,
-      });
-    }
+    const properties = { ...(notification.data || {}) };
+    if (notification.content?.subject) properties.subject = notification.content.subject;
+    if (notification.content?.html) properties.html_body = notification.content.html;
+    if (notification.content?.text) properties.text_body = notification.content.text;
+    if (notification.from) properties.from = notification.from;
+    properties.to = email;
 
-    if (notification.template) {
-      return this.sendTemplateEmail({
-        to: notification.to,
-        from,
-        templateId: notification.template,
-        data: notification.data,
-      });
-    }
-
-    if (notification.data) {
-      return this.trackEvent({
-        email: notification.to,
-        eventName: notification.template || "medusa-notification",
-        data: notification.data,
-      });
-    }
-
-    return {};
-  }
-
-  async sendTransactionalEmail({ to, from, subject, html }) {
-    try {
-      const res = await fetch("https://a.klaviyo.com/api/emails/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Klaviyo-API-Key ${this.privateKey}`,
-          revision: "2024-10-15",
-        },
-        body: JSON.stringify({
-          data: {
-            type: "email-send",
-            attributes: {
-              recipients: {
-                to: [{ email: to }],
-              },
-              from: {
-                email: from,
-                name: this.companyName,
-              },
-              subject,
-              body: { html },
-            },
-          },
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        this.logger.error(`Klaviyo email send failed (${res.status}): ${text}`);
-      }
-
-      return {};
-    } catch (error) {
-      this.logger.error(`Klaviyo email error: ${error.message}`);
-      return {};
-    }
-  }
-
-  async sendTemplateEmail({ to, from, templateId, data }) {
-    try {
-      const res = await fetch("https://a.klaviyo.com/api/emails/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Klaviyo-API-Key ${this.privateKey}`,
-          revision: "2024-10-15",
-        },
-        body: JSON.stringify({
-          data: {
-            type: "email-send",
-            attributes: {
-              recipients: {
-                to: [{ email: to }],
-              },
-              from: {
-                email: from,
-                name: this.companyName,
-              },
-              template: { id: templateId },
-              custom_variables: data || {},
-            },
-          },
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        this.logger.error(`Klaviyo template send failed (${res.status}): ${text}`);
-      }
-
-      return {};
-    } catch (error) {
-      this.logger.error(`Klaviyo template error: ${error.message}`);
-      return {};
-    }
+    return this.trackEvent({ email, eventName: metricName, data: properties });
   }
 
   async trackEvent({ email, eventName, data }) {
+    const payload = {
+      data: {
+        type: "event",
+        attributes: {
+          metric: {
+            data: { type: "metric", attributes: { name: eventName } },
+          },
+          profile: {
+            data: { type: "profile", attributes: { email } },
+          },
+          properties: data || {},
+          unique_id: `${eventName}:${email}:${Date.now()}`,
+        },
+      },
+    };
+
     try {
-      const res = await fetch("https://a.klaviyo.com/api/events", {
+      const res = await fetch(KLAVIYO_EVENTS_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          accept: "application/json",
           Authorization: `Klaviyo-API-Key ${this.privateKey}`,
-          revision: "2024-10-15",
+          revision: KLAVIYO_API_REVISION,
         },
-        body: JSON.stringify({
-          data: {
-            type: "event",
-            attributes: {
-              metric: { data: { type: "metric", attributes: { name: eventName } } },
-              profile: { data: { type: "profile", attributes: { email } } },
-              properties: data || {},
-            },
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        this.logger.error(`Klaviyo event track failed (${res.status}): ${text}`);
+        this.logger?.error(
+          `[klaviyo] event "${eventName}" failed for ${email} (${res.status}): ${text}`
+        );
+      } else {
+        this.logger?.info(
+          `[klaviyo] event "${eventName}" fired for ${email}`
+        );
       }
-
       return {};
     } catch (error) {
-      this.logger.error(`Klaviyo event error: ${error.message}`);
+      this.logger?.error(
+        `[klaviyo] event "${eventName}" network error for ${email}: ${error.message}`
+      );
       return {};
     }
   }
