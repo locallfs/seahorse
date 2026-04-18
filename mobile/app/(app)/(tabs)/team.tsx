@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { sdk, BACKEND_URL } from '@/lib/medusa';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
@@ -32,13 +33,20 @@ const roleFromMetadata = (metadata: Record<string, unknown> | null | undefined):
   metadata?.role === 'admin' ? 'admin' : 'employee';
 
 export default function TeamScreen() {
-  const { user: me } = useAuth();
+  const { user: me, isAdmin, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      router.replace('/(app)/(tabs)/index');
+    }
+  }, [authLoading, isAdmin, router]);
 
   const load = useCallback(async () => {
     setError(null);
@@ -75,6 +83,12 @@ export default function TeamScreen() {
       setLoading(false);
     })();
   }, [load]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

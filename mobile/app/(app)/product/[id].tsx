@@ -227,8 +227,7 @@ export default function ProductEditScreen() {
       }
 
       setNewThumbnailFile(null);
-      await load();
-      Alert.alert('Saved', 'Product updated.');
+      router.replace('/(app)/(tabs)/index');
     } catch (e: any) {
       setError(e?.message || 'Could not save product.');
     } finally {

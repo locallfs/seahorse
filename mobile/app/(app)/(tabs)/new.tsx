@@ -117,7 +117,7 @@ export default function NewProductScreen() {
 
     setSaving(true);
     try {
-      const id = await createProduct({
+      await createProduct({
         title: title.trim(),
         description: description.trim(),
         priceUsd: priceNum,
@@ -129,7 +129,7 @@ export default function NewProductScreen() {
         attributes,
       });
       reset();
-      router.push({ pathname: '/(app)/product/[id]', params: { id } });
+      router.replace('/(app)/(tabs)/index');
     } catch (e: any) {
       setError(e?.message || 'Could not create product.');
     } finally {

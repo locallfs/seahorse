@@ -87,6 +87,7 @@ export default function AppLayout() {
           title: 'Team',
           href: isAdmin ? '/(app)/(tabs)/team' : null,
           tabBarIcon: ({ focused }) => <TabIcon label="◆" focused={focused} />,
+          tabBarButton: isAdmin ? undefined : () => null,
         }}
       />
     </Tabs>
