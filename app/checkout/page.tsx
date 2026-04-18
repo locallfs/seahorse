@@ -14,6 +14,7 @@ import { useCart } from "@/components/CartContext";
 import { medusa } from "@/lib/medusa";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LiveArrivalAgreementModal from "@/components/LiveArrivalAgreementModal";
 import Link from "next/link";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -128,6 +129,8 @@ export default function CheckoutPage() {
     "address"
   );
   const [liveAgreementAccepted, setLiveAgreementAccepted] = useState(false);
+  const [liveAgreementOpen, setLiveAgreementOpen] = useState(false);
+  const [liveAgreementAutoOpened, setLiveAgreementAutoOpened] = useState(false);
   const [distanceMiles, setDistanceMiles] = useState<number | null>(null);
 
   const PICKUP_RADIUS_MILES = 100;
@@ -352,6 +355,14 @@ export default function CheckoutPage() {
     };
   }, [items]);
 
+  useEffect(() => {
+    if (hasLiveItems && !liveAgreementAutoOpened && !liveAgreementAccepted) {
+      setLiveAgreementOpen(true);
+      setLiveAgreementAutoOpened(true);
+    }
+    if (!hasLiveItems) setLiveAgreementAccepted(false);
+  }, [hasLiveItems, liveAgreementAutoOpened, liveAgreementAccepted]);
+
   if (cartLoading || authLoading || !customer) {
     return (
       <>
@@ -395,57 +406,31 @@ export default function CheckoutPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             <div className="lg:col-span-2 space-y-8">
-              {/* Live Animal Agreement */}
               {hasLiveItems && (
-                <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-6 glow-white">
-                  <h2 className="text-base font-bold text-amber-300 mb-4">
-                    Live Arrival Agreement
-                  </h2>
-                  <div className="text-sm text-white leading-relaxed space-y-3 mb-5">
-                    <p>
-                      Your cart contains live fish, coral, and/or invertebrates.
-                      Live animal orders require your acknowledgement of our
-                      arrival policy before we can ship.
-                    </p>
-                    <ul className="list-disc list-inside space-y-1.5 text-xs text-white/90">
-                      <li>
-                        Live animals ship <strong>Overnight only</strong>; we will
-                        coordinate the ship date based on weather and your
-                        availability.
-                      </li>
-                      <li>
-                        Someone must be present to receive the box at the
-                        delivery address. Unattended boxes are not covered by the
-                        arrival guarantee.
-                      </li>
-                      <li>
-                        Report any DOA (dead on arrival) losses within{" "}
-                        <strong>2 hours of delivery</strong> with clear photos of
-                        the unopened bag and deceased animal for store credit.
-                      </li>
-                      <li>
-                        You agree to properly drip-acclimate all livestock.
-                        Losses from improper acclimation, rapid parameter change,
-                        or incompatible tankmates are not refundable.
-                      </li>
-                      <li>
-                        Extreme temperature forecasts (below ~35°F or above ~95°F
-                        along the route) may delay shipment for animal safety.
-                      </li>
-                    </ul>
-                  </div>
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={liveAgreementAccepted}
-                      onChange={(e) => setLiveAgreementAccepted(e.target.checked)}
-                      className="mt-1 w-4 h-4 accent-amber-400"
-                    />
-                    <span className="text-sm text-white">
-                      I have read and agree to the Live Arrival Policy above.
+                <button
+                  type="button"
+                  onClick={() => setLiveAgreementOpen(true)}
+                  className="w-full rounded-xl border-2 p-5 bg-ocean-900/70 text-left hover:bg-ocean-800/70 transition-colors"
+                  style={{
+                    borderColor: "#FFD700",
+                    boxShadow:
+                      "0 0 22px rgba(255, 255, 255, 0.45), 0 4px 14px rgba(0, 0, 0, 0.3)",
+                  }}
+                >
+                  <p
+                    className="text-base md:text-lg font-bold tracking-wide mb-1 flex items-center justify-between"
+                    style={{ color: "#FFD700" }}
+                  >
+                    <span>Live Arrival Agreement</span>
+                    <span className="text-xs text-white/70 font-normal">
+                      {liveAgreementAccepted ? "Agreed ✓" : "Tap to review"}
                     </span>
-                  </label>
-                </div>
+                  </p>
+                  <p className="text-white/85 text-sm leading-relaxed">
+                    Your cart contains live animals. Review and agree to the arrival policy
+                    before checkout.
+                  </p>
+                </button>
               )}
 
               {/* Contact & Shipping Address */}
@@ -578,9 +563,13 @@ export default function CheckoutPage() {
                         : "Continue to Shipping"}
                     </button>
                     {hasLiveItems && !liveAgreementAccepted && (
-                      <p className="mt-2 text-xs text-amber-300 text-center">
-                        Please acknowledge the Live Arrival Agreement above to continue.
-                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setLiveAgreementOpen(true)}
+                        className="mt-2 block w-full text-xs text-amber-300 text-center hover:text-amber-200 underline"
+                      >
+                        Please tap here to review the Live Arrival Agreement to continue.
+                      </button>
                     )}
                   </>
                 )}
@@ -834,6 +823,12 @@ export default function CheckoutPage() {
         </div>
       </main>
       <Footer />
+      <LiveArrivalAgreementModal
+        open={liveAgreementOpen}
+        onClose={() => setLiveAgreementOpen(false)}
+        onAgree={() => setLiveAgreementAccepted(true)}
+        agreed={liveAgreementAccepted}
+      />
     </>
   );
 }

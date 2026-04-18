@@ -68,20 +68,37 @@ export default function LiveArrivalAgreementModal({
 
         <div className="space-y-4 text-white/90 text-sm leading-relaxed mb-6">
           <p>
-            Your order contains <span className="font-semibold text-white">live animals</span>.
-            Overnight shipping is <span className="font-semibold text-white">REQUIRED</span> to
-            guarantee safe delivery.
+            Your order contains live fish, coral, and/or invertebrates. Live animal orders
+            require your acknowledgement of our arrival policy before we can ship.
           </p>
-          <p>
-            Live arrivals are guaranteed only when someone is available to receive the package
-            and acclimate the animals immediately upon delivery. Please ensure an adult is
-            present at the shipping address on the scheduled delivery day.
-          </p>
-          <p>
-            <span className="font-semibold text-white">Local pickup</span> is available at
-            checkout if you live within 100 miles of our Portland store — no shipping charges
-            apply for pickup orders.
-          </p>
+          <ul className="list-disc list-outside pl-5 space-y-2 text-xs text-white/90">
+            <li>
+              Live animals ship <span className="font-semibold text-white">Overnight only</span>;
+              we will coordinate the ship date based on weather and your availability.
+            </li>
+            <li>
+              Someone must be present to receive the box at the delivery address. Unattended
+              boxes are not covered by the arrival guarantee.
+            </li>
+            <li>
+              Report any DOA (dead on arrival) losses within{" "}
+              <span className="font-semibold text-white">2 hours of delivery</span> with clear
+              photos of the unopened bag and deceased animal for store credit.
+            </li>
+            <li>
+              You agree to properly drip-acclimate all livestock. Losses from improper
+              acclimation, rapid parameter change, or incompatible tankmates are not refundable.
+            </li>
+            <li>
+              Extreme temperature forecasts (below ~35°F or above ~95°F along the route) may
+              delay shipment for animal safety.
+            </li>
+            <li>
+              <span className="font-semibold text-white">Local pickup</span> is available at
+              checkout if you live within 100 miles of our Portland store — no shipping charges
+              apply.
+            </li>
+          </ul>
           <p className="text-white/70 text-xs">
             By proceeding to checkout you acknowledge these shipping requirements and our live
             arrival guarantee policy.
