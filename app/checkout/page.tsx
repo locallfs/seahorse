@@ -520,8 +520,8 @@ export default function CheckoutPage() {
                   {hasLiveItems && (
                     <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4 text-xs text-amber-200">
                       Your cart contains live animals. For the safety of your livestock,
-                      only Overnight shipping is available. We will contact you to
-                      confirm your ship date.
+                      only Overnight shipping or Local Pickup is available. We will
+                      contact you to confirm your ship or pickup date.
                     </div>
                   )}
 
@@ -531,12 +531,23 @@ export default function CheckoutPage() {
                           const name = (o.name || "").toLowerCase();
                           const dataId = (o.data?.id || "").toLowerCase();
                           const providerId = (o.provider_id || "").toLowerCase();
-                          const overnightKeywords = ["overnight", "next day", "next-day", "nextday", "1-day", "1 day"];
-                          return (
+                          const overnightKeywords = [
+                            "overnight",
+                            "next day",
+                            "next-day",
+                            "nextday",
+                            "1-day",
+                            "1 day",
+                          ];
+                          const pickupKeywords = ["pickup", "pick up", "pick-up", "in-store", "in store"];
+                          const isOvernight =
                             dataId === "shippo-overnight" ||
                             providerId.includes("overnight") ||
-                            overnightKeywords.some((kw) => name.includes(kw))
-                          );
+                            overnightKeywords.some((kw) => name.includes(kw));
+                          const isPickup =
+                            providerId.includes("manual") ||
+                            pickupKeywords.some((kw) => name.includes(kw));
+                          return isOvernight || isPickup;
                         })
                       : shippingOptions;
 
