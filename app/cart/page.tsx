@@ -17,7 +17,7 @@ function formatPrice(amount: number) {
 }
 
 export default function CartPage() {
-  const { cart, loading, removeItem, updateQuantity } = useCart();
+  const { cart, loading, removeItem, updateQuantity, clearCart } = useCart();
   const { customer, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -47,9 +47,23 @@ export default function CartPage() {
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="max-w-screen-xl mx-auto px-6 py-12">
-          <h1 className="text-3xl font-bold text-white mb-8 tracking-tight">
-            Your Cart
-          </h1>
+          <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+            <h1 className="text-3xl font-bold text-white tracking-tight">
+              Your Cart
+            </h1>
+            {items.length > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm("Remove all items from your cart?")) {
+                    clearCart();
+                  }
+                }}
+                className="text-xs tracking-[0.2em] uppercase font-medium text-white/70 hover:text-red-400 border border-white/20 hover:border-red-400/60 rounded px-4 py-2 transition-colors"
+              >
+                Clear Cart
+              </button>
+            )}
+          </div>
 
           {loading ? (
             <div className="text-center py-32">
