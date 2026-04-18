@@ -531,7 +531,7 @@ export default function CheckoutPage() {
                       setSelectedShipping("");
                       setShippingOptions([]);
                     }}
-                    className="mt-3 text-xs text-blue-light hover:text-white transition-colors"
+                    className="mt-3 text-xs text-[#FFD700] hover:text-white transition-colors"
                   >
                     Edit address
                   </button>
