@@ -31,7 +31,7 @@ export default function DeleteRequestsScreen() {
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
-      router.replace('/(app)/(tabs)');
+      router.navigate('/');
     }
   }, [authLoading, isAdmin, router]);
 
