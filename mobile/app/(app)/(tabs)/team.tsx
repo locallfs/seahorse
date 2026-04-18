@@ -5,12 +5,13 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  Share,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { sdk } from '@/lib/medusa';
+import { sdk, BACKEND_URL } from '@/lib/medusa';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
 
@@ -89,14 +90,54 @@ export default function TeamScreen() {
     }
     setInviting(true);
     try {
-      await sdk.admin.invite.create({ email } as any);
+      const res: any = await sdk.admin.invite.create({ email } as any);
       setInviteEmail('');
       await load();
-      Alert.alert('Invite sent', `${email} will receive a link to create their password.`);
+      const token = res?.invite?.token;
+      const acceptUrl = token ? `${BACKEND_URL}/app/invite?token=${token}` : null;
+      Alert.alert(
+        'Invite created',
+        acceptUrl
+          ? `${email} should receive an email shortly. You can also share the link directly.`
+          : `${email} should receive an email shortly.`,
+        acceptUrl
+          ? [
+              { text: 'Done', style: 'cancel' },
+              {
+                text: 'Share Link',
+                onPress: () =>
+                  Share.share({
+                    message: `You've been invited to join Woody's Seahorse team. Accept your invite: ${acceptUrl}`,
+                  }),
+              },
+            ]
+          : undefined,
+      );
     } catch (e: any) {
       Alert.alert('Invite failed', e?.message || 'Could not create invite.');
     } finally {
       setInviting(false);
+    }
+  };
+
+  const shareInviteLink = async (inviteId: string, email: string) => {
+    try {
+      const res: any = await sdk.admin.invite.retrieve(inviteId);
+      const token = res?.invite?.token;
+      if (!token) {
+        Alert.alert(
+          'No token available',
+          'This invite has no token. Revoke and recreate it.',
+        );
+        return;
+      }
+      const acceptUrl = `${BACKEND_URL}/app/invite?token=${token}`;
+      await Share.share({
+        message: `You've been invited to join Woody's Seahorse team. Accept your invite: ${acceptUrl}`,
+        url: acceptUrl,
+      });
+    } catch (e: any) {
+      Alert.alert('Share failed', e?.message || 'Could not load invite token.');
     }
   };
 
@@ -256,11 +297,21 @@ export default function TeamScreen() {
               {isSelf ? (
                 <Text style={styles.youBadge}>You</Text>
               ) : (
-                <Pressable onPress={() => confirmRemove(item)} style={styles.removeBtn}>
-                  <Text style={styles.removeBtnText}>
-                    {item.kind === 'user' ? 'Remove' : 'Revoke'}
-                  </Text>
-                </Pressable>
+                <View style={styles.rowActions}>
+                  {item.kind === 'invite' && (
+                    <Pressable
+                      onPress={() => shareInviteLink(item.id, item.email)}
+                      style={styles.shareBtn}
+                    >
+                      <Text style={styles.shareBtnText}>Share Link</Text>
+                    </Pressable>
+                  )}
+                  <Pressable onPress={() => confirmRemove(item)} style={styles.removeBtn}>
+                    <Text style={styles.removeBtnText}>
+                      {item.kind === 'user' ? 'Remove' : 'Revoke'}
+                    </Text>
+                  </Pressable>
+                </View>
               )}
             </View>
           );
@@ -345,5 +396,14 @@ const styles = StyleSheet.create({
     paddingVertical: theme.space.sm,
   },
   removeBtnText: { color: theme.color.danger, fontSize: theme.font.sm, fontWeight: '600' },
+  rowActions: { flexDirection: 'column', gap: theme.space.sm, alignItems: 'flex-end' },
+  shareBtn: {
+    borderWidth: 1,
+    borderColor: theme.color.gold,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.space.md,
+    paddingVertical: theme.space.sm,
+  },
+  shareBtnText: { color: theme.color.gold, fontSize: theme.font.sm, fontWeight: '600' },
   youBadge: { color: theme.color.gold, fontSize: theme.font.xs, fontWeight: '700' },
 });
