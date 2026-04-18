@@ -264,6 +264,102 @@ export async function createProduct(input: NewProductInput): Promise<string> {
   return product.id;
 }
 
+export type DeleteRequest = {
+  productId: string;
+  title: string;
+  thumbnail: string | null;
+  requestedByEmail: string;
+  requestedByName: string | null;
+  requestedAt: string;
+};
+
+type Requester = {
+  id: string;
+  email: string;
+  first_name?: string | null;
+  last_name?: string | null;
+};
+
+function readDeleteRequest(p: any): DeleteRequest | null {
+  const dr = p?.metadata?.delete_request;
+  if (!dr || typeof dr !== 'object') return null;
+  if (!dr.requested_by_email || !dr.requested_at) return null;
+  return {
+    productId: p.id,
+    title: p.title,
+    thumbnail: p.thumbnail || null,
+    requestedByEmail: String(dr.requested_by_email),
+    requestedByName: dr.requested_by_name ? String(dr.requested_by_name) : null,
+    requestedAt: String(dr.requested_at),
+  };
+}
+
+export async function requestDeleteProduct(
+  productId: string,
+  requester: Requester,
+): Promise<void> {
+  const { product } = await sdk.admin.product.retrieve(productId, {
+    fields: 'id,metadata',
+  } as any);
+  const current = (product as any).metadata || {};
+  const name =
+    [requester.first_name, requester.last_name].filter(Boolean).join(' ') ||
+    null;
+  await sdk.admin.product.update(productId, {
+    metadata: {
+      ...current,
+      delete_request: {
+        requested_by_id: requester.id,
+        requested_by_email: requester.email,
+        requested_by_name: name,
+        requested_at: new Date().toISOString(),
+      },
+    },
+  } as any);
+}
+
+export async function rejectDeleteProduct(productId: string): Promise<void> {
+  const { product } = await sdk.admin.product.retrieve(productId, {
+    fields: 'id,metadata',
+  } as any);
+  const current = { ...((product as any).metadata || {}) };
+  delete current.delete_request;
+  await sdk.admin.product.update(productId, {
+    metadata: current,
+  } as any);
+}
+
+export async function approveDeleteProduct(productId: string): Promise<void> {
+  await sdk.admin.product.delete(productId);
+}
+
+export async function listDeleteRequests(): Promise<DeleteRequest[]> {
+  const fields = 'id,title,thumbnail,metadata';
+  const pageSize = 200;
+  const results: DeleteRequest[] = [];
+  let offset = 0;
+  while (true) {
+    const res = (await sdk.admin.product.list({
+      limit: pageSize,
+      offset,
+      fields,
+    } as any)) as any;
+    const batch: any[] = res.products || [];
+    for (const p of batch) {
+      const dr = readDeleteRequest(p);
+      if (dr) results.push(dr);
+    }
+    const total = typeof res.count === 'number' ? res.count : offset + batch.length;
+    offset += batch.length;
+    if (batch.length === 0 || offset >= total) break;
+  }
+  results.sort(
+    (a, b) =>
+      new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime(),
+  );
+  return results;
+}
+
 export function formatPrice(amount: number | null, currency = 'usd'): string {
   if (amount == null) return '—';
   try {

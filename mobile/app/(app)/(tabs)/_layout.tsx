@@ -82,6 +82,16 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="delete-requests"
+        options={{
+          title: 'Delete Requests',
+          tabBarLabel: 'Deletes',
+          href: isAdmin ? '/(app)/(tabs)/delete-requests' : null,
+          tabBarIcon: ({ focused }) => <TabIcon label="✕" focused={focused} />,
+          tabBarButton: isAdmin ? undefined : () => null,
+        }}
+      />
+      <Tabs.Screen
         name="team"
         options={{
           title: 'Team',

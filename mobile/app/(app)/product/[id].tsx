@@ -21,10 +21,12 @@ import {
   COUNTRY_OF_ORIGIN,
   getStoreDefaults,
   listOrganizeOptions,
+  requestDeleteProduct,
   type OrganizeOptions,
   type ProductAttributes,
   type ProductOrganize,
 } from '@/lib/products';
+import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
 import { AttributeFields, OrganizeFields } from '@/lib/ProductFormFields';
 
@@ -48,10 +50,16 @@ type VariantShape = {
 export default function ProductEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user, isAdmin } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{
+    requestedByEmail: string;
+    requestedByName: string | null;
+    requestedAt: string;
+  } | null>(null);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -88,9 +96,19 @@ export default function ProductEditScreen() {
     try {
       const { product } = await sdk.admin.product.retrieve(id, {
         fields:
-          'id,title,description,status,thumbnail,height,width,length,weight,origin_country,*tags,*type,*collection,*categories,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels',
+          'id,title,description,status,thumbnail,height,width,length,weight,origin_country,metadata,*tags,*type,*collection,*categories,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels',
       } as any);
       const p: any = product;
+      const dr = p.metadata?.delete_request;
+      if (dr && dr.requested_by_email && dr.requested_at) {
+        setPendingDelete({
+          requestedByEmail: String(dr.requested_by_email),
+          requestedByName: dr.requested_by_name ? String(dr.requested_by_name) : null,
+          requestedAt: String(dr.requested_at),
+        });
+      } else {
+        setPendingDelete(null);
+      }
       setTitle(p.title || '');
       setDescription(p.description || '');
       setPublished(p.status === 'published');
@@ -236,17 +254,28 @@ export default function ProductEditScreen() {
   };
 
   const confirmDelete = () => {
-    Alert.alert(
-      'Delete product?',
-      `"${title}" will be removed from the site. This can't be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: doDelete },
-      ]
-    );
+    if (isAdmin) {
+      Alert.alert(
+        'Delete product?',
+        `"${title}" will be removed from the site. This can't be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: doAdminDelete },
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Request deletion?',
+        `"${title}" will be flagged for an admin to review. The product stays visible until approved.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Request Delete', style: 'destructive', onPress: doRequestDelete },
+        ]
+      );
+    }
   };
 
-  const doDelete = async () => {
+  const doAdminDelete = async () => {
     if (!id) return;
     setSaving(true);
     try {
@@ -254,6 +283,24 @@ export default function ProductEditScreen() {
       router.replace('/');
     } catch (e: any) {
       setError(e?.message || 'Could not delete product.');
+      setSaving(false);
+    }
+  };
+
+  const doRequestDelete = async () => {
+    if (!id || !user) return;
+    setSaving(true);
+    try {
+      await requestDeleteProduct(id, {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name ?? null,
+        last_name: user.last_name ?? null,
+      });
+      Alert.alert('Requested', 'An admin will review this deletion.');
+      router.replace('/');
+    } catch (e: any) {
+      setError(e?.message || 'Could not submit delete request.');
       setSaving(false);
     }
   };
@@ -277,6 +324,16 @@ export default function ProductEditScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        {pendingDelete ? (
+          <View style={styles.pendingBanner}>
+            <Text style={styles.pendingTitle}>Delete Pending</Text>
+            <Text style={styles.pendingSub}>
+              Requested by {pendingDelete.requestedByName || pendingDelete.requestedByEmail} on{' '}
+              {new Date(pendingDelete.requestedAt).toLocaleDateString()}
+            </Text>
+          </View>
+        ) : null}
+
         <Pressable onPress={pickImage} style={styles.imageWrap}>
           {thumbnail ? (
             <Image source={{ uri: thumbnail }} style={styles.image} />
@@ -379,10 +436,20 @@ export default function ProductEditScreen() {
 
         <Pressable
           onPress={confirmDelete}
-          disabled={saving}
-          style={({ pressed }) => [styles.deleteBtn, pressed && styles.saveBtnPressed]}
+          disabled={saving || (!isAdmin && !!pendingDelete)}
+          style={({ pressed }) => [
+            styles.deleteBtn,
+            pressed && styles.saveBtnPressed,
+            !isAdmin && !!pendingDelete && styles.deleteBtnDisabled,
+          ]}
         >
-          <Text style={styles.deleteBtnText}>Delete Product</Text>
+          <Text style={styles.deleteBtnText}>
+            {isAdmin
+              ? 'Delete Product'
+              : pendingDelete
+                ? 'Delete Already Requested'
+                : 'Request Delete'}
+          </Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -466,4 +533,21 @@ const styles = StyleSheet.create({
     borderColor: theme.color.danger,
   },
   deleteBtnText: { color: theme.color.danger, fontSize: theme.font.md, fontWeight: '600' },
+  deleteBtnDisabled: { opacity: 0.5 },
+  pendingBanner: {
+    borderWidth: 1,
+    borderColor: theme.color.gold,
+    borderRadius: theme.radius.md,
+    padding: theme.space.md,
+    marginBottom: theme.space.lg,
+    backgroundColor: 'rgba(212,175,55,0.08)',
+  },
+  pendingTitle: {
+    color: theme.color.gold,
+    fontWeight: '700',
+    fontSize: theme.font.md,
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  pendingSub: { color: theme.color.textMuted, fontSize: theme.font.xs },
 });
