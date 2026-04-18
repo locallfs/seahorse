@@ -37,7 +37,7 @@ export default function AddToCartButton({ variantId, disabled }: Props) {
       <button
         onClick={handleAdd}
         disabled={busy}
-        className={`w-full py-4 rounded font-medium text-sm tracking-wide transition-all duration-200 ${
+        className={`w-full py-4 rounded font-medium text-sm tracking-wide transition-all duration-200 glow-white ${
           added
             ? "bg-green-600 text-white"
             : busy
@@ -49,7 +49,7 @@ export default function AddToCartButton({ variantId, disabled }: Props) {
       </button>
       <a
         href="/cart"
-        className="w-full py-4 rounded font-medium text-sm tracking-wide text-center border border-white/20 text-white hover:text-white hover:border-white/40 transition-all duration-200"
+        className="w-full py-4 rounded font-medium text-sm tracking-wide text-center border border-white/20 text-white hover:text-white hover:border-white/40 transition-all duration-200 glow-white"
       >
         View Cart
       </a>

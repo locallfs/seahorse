@@ -25,7 +25,7 @@ function OrderConfirmationContent() {
         </svg>
       </div>
 
-      <p className="text-xs tracking-[0.25em] uppercase text-white font-medium mb-3">
+      <p className="text-sm md:text-base tracking-[0.25em] uppercase text-white font-medium mb-3">
         Order Placed
       </p>
       <h1 className="text-3xl font-bold text-white mb-4 tracking-tight">

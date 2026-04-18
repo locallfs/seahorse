@@ -184,7 +184,7 @@ export default function HomePage() {
 
         <section className="py-20 bg-ocean-950/80 backdrop-blur-sm border-t border-white/10">
           <div className="max-w-screen-xl mx-auto px-6">
-            <p className="text-xs tracking-[0.25em] uppercase font-medium mb-2 text-[#FFD700]">
+            <p className="text-sm md:text-base tracking-[0.25em] uppercase font-medium mb-2 text-[#FFD700]">
               Visit Us
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-8">

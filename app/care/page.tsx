@@ -12,7 +12,7 @@ export default function CarePage() {
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">
           <div className="max-w-screen-xl mx-auto px-6 py-20">
-            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
+            <p className="text-sm md:text-base tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-3">
               Guidance
             </p>
             <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight max-w-3xl">

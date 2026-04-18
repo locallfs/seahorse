@@ -142,7 +142,7 @@ export default function ProductPage({
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="max-w-screen-xl mx-auto px-6 py-12">
-          <nav className="text-xs text-white mb-8 flex items-center gap-2">
+          <nav className="text-base md:text-lg text-white mb-8 flex items-center gap-2 tracking-wide">
             <a href="/store" className="hover:text-white transition-colors">
               Store
             </a>

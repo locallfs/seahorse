@@ -11,7 +11,7 @@ export default function InvertsPage() {
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">
           <div className="max-w-screen-xl mx-auto px-6 py-12">
-            <p className="text-xs tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-2">
+            <p className="text-sm md:text-base tracking-[0.25em] uppercase font-medium text-[#FFD700] mb-2">
               Inverts
             </p>
             <h1 className="text-4xl font-bold text-white tracking-tight">
