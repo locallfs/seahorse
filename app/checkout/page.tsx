@@ -217,8 +217,9 @@ export default function CheckoutPage() {
 
   const selectShipping = async (optionId: string) => {
     if (!cart) return;
-    setSelectedShipping(optionId);
     setError("");
+    setClientSecret("");
+    setSelectedShipping(optionId);
 
     try {
       await medusa.store.cart.addShippingMethod(cart.id, {
@@ -241,12 +242,16 @@ export default function CheckoutPage() {
           provider_id: "pp_stripe_stripe",
         });
 
-      const session = payment_collection?.payment_sessions?.find(
+      const stripeSessions = (payment_collection?.payment_sessions || []).filter(
         (s: any) => s.provider_id === "pp_stripe_stripe"
       );
 
-      if (session?.data?.client_secret) {
-        setClientSecret(session.data.client_secret);
+      const activeSession =
+        stripeSessions.find((s: any) => s.status === "pending" || s.status === "authorized") ||
+        stripeSessions[stripeSessions.length - 1];
+
+      if (activeSession?.data?.client_secret) {
+        setClientSecret(activeSession.data.client_secret);
         setStep("payment");
       } else {
         setError("Could not initialize payment. Please try again.");
@@ -257,7 +262,7 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (step === "shipping" && selectedShipping) {
+    if (selectedShipping) {
       initPayment();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
