@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { cdn } from "@/lib/cdn";
 
 export default function VideoBackground() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -16,7 +15,7 @@ export default function VideoBackground() {
     <div className="fixed inset-0 -z-10">
       <video
         ref={videoRef}
-        src={cdn("/seedance2_Video_saltwater.mp4")}
+        src="/videos/hero.mp4"
         autoPlay
         muted
         loop
