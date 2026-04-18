@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ShippingNotice from "@/components/ShippingNotice";
+import LiveArrivalAgreementModal from "@/components/LiveArrivalAgreementModal";
 import Image from "next/image";
 import Link from "next/link";
 import { medusa } from "@/lib/medusa";
@@ -75,6 +76,20 @@ export default function CartPage() {
       (item.product_id && liveProductIds.has(item.product_id)) ||
       isLiveAnimal(item.product_title || item.title),
   );
+
+  const [agreementOpen, setAgreementOpen] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [autoOpened, setAutoOpened] = useState(false);
+
+  useEffect(() => {
+    if (hasLive && !autoOpened && items.length > 0) {
+      setAgreementOpen(true);
+      setAutoOpened(true);
+    }
+    if (!hasLive) {
+      setAgreed(false);
+    }
+  }, [hasLive, autoOpened, items.length]);
 
   if (authLoading || !customer) {
     return (
@@ -216,15 +231,50 @@ export default function CartPage() {
                   </div>
 
                   <div className="mb-6">
-                    <ShippingNotice hasLive={hasLive} />
+                    {hasLive ? (
+                      <button
+                        onClick={() => setAgreementOpen(true)}
+                        className="w-full rounded-xl border-2 p-4 bg-ocean-900/70 text-left hover:bg-ocean-800/70 transition-colors"
+                        style={{
+                          borderColor: "#FFD700",
+                          boxShadow:
+                            "0 0 22px rgba(255, 255, 255, 0.45), 0 4px 14px rgba(0, 0, 0, 0.3)",
+                        }}
+                      >
+                        <p
+                          className="text-sm md:text-base font-bold tracking-wide mb-1 flex items-center justify-between"
+                          style={{ color: "#FFD700" }}
+                        >
+                          <span>Live Arrival Agreement</span>
+                          <span className="text-xs text-white/70 font-normal">
+                            {agreed ? "Agreed ✓" : "Tap to review"}
+                          </span>
+                        </p>
+                        <p className="text-white/85 text-xs leading-relaxed">
+                          Overnight shipping required for live animals. Review and agree before
+                          checkout.
+                        </p>
+                      </button>
+                    ) : (
+                      <ShippingNotice hasLive={hasLive} />
+                    )}
                   </div>
 
-                  <Link
-                    href="/checkout"
-                    className="block w-full py-4 bg-blue-accent hover:bg-blue-light text-white text-center font-medium text-sm rounded transition-colors glow-white"
-                  >
-                    Proceed to Checkout
-                  </Link>
+                  {hasLive && !agreed ? (
+                    <button
+                      onClick={() => setAgreementOpen(true)}
+                      className="block w-full py-4 bg-white/10 border border-white/20 text-white text-center font-medium text-sm rounded hover:bg-white/15 transition-colors"
+                    >
+                      Review Live Arrival Agreement to Continue
+                    </button>
+                  ) : (
+                    <Link
+                      href="/checkout"
+                      className="block w-full py-4 bg-blue-accent hover:bg-blue-light text-white text-center font-medium text-sm rounded transition-colors glow-white"
+                    >
+                      Proceed to Checkout
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
@@ -232,6 +282,12 @@ export default function CartPage() {
         </div>
       </main>
       <Footer />
+      <LiveArrivalAgreementModal
+        open={agreementOpen}
+        onClose={() => setAgreementOpen(false)}
+        onAgree={() => setAgreed(true)}
+        agreed={agreed}
+      />
     </>
   );
 }
