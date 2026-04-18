@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/components/AuthContext";
 
-interface Product {
-  id: string;
-  title: string;
-  variants: { id: string; title: string }[];
-}
+type Props = {
+  variantId: string;
+  disabled?: boolean;
+};
 
-export default function AddToCartButton({ product }: { product: Product }) {
+export default function AddToCartButton({ variantId, disabled }: Props) {
   const { addItem, adding } = useCart();
   const { customer } = useAuth();
   const router = useRouter();
@@ -23,7 +22,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
       return;
     }
     try {
-      await addItem(product.variants[0].id, 1);
+      await addItem(variantId, 1);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
     } catch (error) {
@@ -31,15 +30,17 @@ export default function AddToCartButton({ product }: { product: Product }) {
     }
   };
 
+  const busy = adding || disabled;
+
   return (
     <div className="flex flex-col gap-3">
       <button
         onClick={handleAdd}
-        disabled={adding}
+        disabled={busy}
         className={`w-full py-4 rounded font-medium text-sm tracking-wide transition-all duration-200 ${
           added
             ? "bg-green-600 text-white"
-            : adding
+            : busy
               ? "bg-blue-accent/50 text-white/50 cursor-wait"
               : "bg-blue-accent hover:bg-blue-light text-white"
         }`}
