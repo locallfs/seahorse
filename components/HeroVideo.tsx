@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 export default function HeroVideo() {
@@ -9,18 +10,17 @@ export default function HeroVideo() {
         <p className="text-white uppercase font-medium mb-6 drop-shadow-lg text-sm md:text-base tracking-[0.25em]">
           Est. 1996 — Pacific Northwest
         </p>
-        <h1
-          className="font-blackchancery text-white leading-tight mb-8"
-          style={{
-            fontSize: "clamp(2.5rem, 7vw, 6rem)",
-            textShadow:
-              "0 0 3px rgba(255,255,255,0.9), 0 0 12px rgba(255,255,255,0.6), 0 2px 20px rgba(0,0,0,0.9)",
-          }}
-        >
-          Woody&apos;s Seahorse
-          <br />
-          Aquarium &amp; Supply
-        </h1>
+        <div className="mb-8 flex justify-center">
+          <Image
+            src="/Logo Full Name Only.svg"
+            alt="Woody's Seahorse Aquarium & Supply"
+            width={900}
+            height={450}
+            priority
+            unoptimized
+            className="w-full max-w-4xl h-auto drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] [filter:drop-shadow(0_0_3px_rgba(255,255,255,0.9))_drop-shadow(0_0_12px_rgba(255,255,255,0.6))]"
+          />
+        </div>
         <p className="text-white text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-lg">
           Premium live saltwater fish, WYSIWYG corals, invertebrates, and
           professional aquarium services.
