@@ -287,13 +287,70 @@ export default function CheckoutPage() {
 
   const items = cart?.items ?? [];
 
-  // Check if cart has live animals (fish, corals, inverts)
-  const hasLiveItems = items.some((item: any) => {
-    const handle = (item.product_handle || item.variant?.product?.handle || "").toLowerCase();
-    const title = (item.product_title || item.title || "").toLowerCase();
-    const liveKeywords = ["fish", "coral", "invert", "shrimp", "crab", "snail", "anemone", "seahorse", "clown", "tang", "wrasse", "goby", "angel", "urchin", "starfish"];
-    return liveKeywords.some((kw) => handle.includes(kw) || title.includes(kw));
-  });
+  // Check if cart has live animals — prefer category lookup, fall back to keyword.
+  const [hasLiveItems, setHasLiveItems] = useState(false);
+
+  useEffect(() => {
+    const LIVE_CATEGORY_HANDLES = new Set([
+      "corals",
+      "coral",
+      "fish",
+      "saltwater-fish",
+      "inverts",
+      "invertebrates",
+      "seahorses",
+    ]);
+    const LIVE_KEYWORDS = [
+      "fish", "coral", "invert", "shrimp", "crab", "snail", "anemone",
+      "seahorse", "clown", "tang", "wrasse", "goby", "angel", "urchin",
+      "starfish", "torch", "hammer", "duncan", "frogspawn", "acro",
+      "zoa", "zoanthid", "mushroom", "monti", "chalice", "euphyllia",
+      "gonio", "blasto", "candy cane", "leather", "xenia", "scoly",
+    ];
+
+    const keywordHit = items.some((item: any) => {
+      const handle = (item.product_handle || item.variant?.product?.handle || "").toLowerCase();
+      const title = (item.product_title || item.title || "").toLowerCase();
+      return LIVE_KEYWORDS.some((kw) => handle.includes(kw) || title.includes(kw));
+    });
+
+    if (keywordHit) {
+      setHasLiveItems(true);
+      return;
+    }
+
+    const productIds = Array.from(
+      new Set(items.map((i: any) => i.product_id).filter(Boolean)),
+    ) as string[];
+    if (productIds.length === 0) {
+      setHasLiveItems(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await medusa.store.product.list({
+          id: productIds,
+          fields: "id,categories.handle",
+        } as any);
+        if (cancelled) return;
+        const live = (res.products || []).some((p: any) =>
+          (p.categories || []).some((c: any) =>
+            LIVE_CATEGORY_HANDLES.has((c.handle || "").toLowerCase()),
+          ),
+        );
+        setHasLiveItems(live);
+      } catch {
+        if (cancelled) return;
+        setHasLiveItems(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
 
   if (cartLoading || authLoading || !customer) {
     return (
