@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ShippingNotice from "@/components/ShippingNotice";
 import LiveArrivalAgreementModal from "@/components/LiveArrivalAgreementModal";
+import ExpertCareAgreementModal from "@/components/ExpertCareAgreementModal";
 import Image from "next/image";
 import Link from "next/link";
 import { medusa } from "@/lib/medusa";
@@ -35,6 +36,7 @@ export default function CartPage() {
   const subtotal = cart?.subtotal ?? 0;
 
   const [liveProductIds, setLiveProductIds] = useState<Set<string>>(new Set());
+  const [expertProductIds, setExpertProductIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -47,23 +49,36 @@ export default function CartPage() {
     );
     if (productIds.length === 0) {
       setLiveProductIds(new Set());
+      setExpertProductIds(new Set());
       return;
     }
     (async () => {
       try {
         const res = await medusa.store.product.list({
           id: productIds,
-          fields: "id,*categories",
+          fields: "id,metadata,*categories",
           limit: productIds.length,
         } as any);
         if (cancelled) return;
-        const next = new Set<string>();
+        const liveSet = new Set<string>();
+        const expertSet = new Set<string>();
         for (const p of (res.products as any[]) || []) {
-          if (isLiveAnimalByCategories(p.categories)) next.add(p.id);
+          if (isLiveAnimalByCategories(p.categories)) liveSet.add(p.id);
+          const careLevel = p?.metadata?.pads?.care_level;
+          if (
+            typeof careLevel === "string" &&
+            careLevel.trim().toLowerCase() === "expert"
+          ) {
+            expertSet.add(p.id);
+          }
         }
-        setLiveProductIds(next);
+        setLiveProductIds(liveSet);
+        setExpertProductIds(expertSet);
       } catch {
-        if (!cancelled) setLiveProductIds(new Set());
+        if (!cancelled) {
+          setLiveProductIds(new Set());
+          setExpertProductIds(new Set());
+        }
       }
     })();
     return () => {
@@ -77,19 +92,46 @@ export default function CartPage() {
       isLiveAnimal(item.product_title || item.title),
   );
 
-  const [agreementOpen, setAgreementOpen] = useState(false);
-  const [agreed, setAgreed] = useState(false);
-  const [autoOpened, setAutoOpened] = useState(false);
+  const hasExpert = items.some(
+    (item: any) => item.product_id && expertProductIds.has(item.product_id),
+  );
+
+  const expertItemNames: string[] = Array.from(
+    new Set(
+      items
+        .filter(
+          (item: any) => item.product_id && expertProductIds.has(item.product_id),
+        )
+        .map((item: any) => item.product_title || item.title)
+        .filter((name: string | undefined): name is string => !!name),
+    ),
+  );
+
+  const [liveAgreementOpen, setLiveAgreementOpen] = useState(false);
+  const [liveAgreed, setLiveAgreed] = useState(false);
+  const [liveAutoOpened, setLiveAutoOpened] = useState(false);
+
+  const [expertAgreementOpen, setExpertAgreementOpen] = useState(false);
+  const [expertAgreed, setExpertAgreed] = useState(false);
+  const [expertAutoOpened, setExpertAutoOpened] = useState(false);
 
   useEffect(() => {
-    if (hasLive && !autoOpened && items.length > 0) {
-      setAgreementOpen(true);
-      setAutoOpened(true);
+    if (hasLive && !liveAutoOpened && items.length > 0) {
+      setLiveAgreementOpen(true);
+      setLiveAutoOpened(true);
     }
-    if (!hasLive) {
-      setAgreed(false);
+    if (!hasLive) setLiveAgreed(false);
+  }, [hasLive, liveAutoOpened, items.length]);
+
+  useEffect(() => {
+    if (hasExpert && !expertAutoOpened && items.length > 0 && !liveAgreementOpen) {
+      setExpertAgreementOpen(true);
+      setExpertAutoOpened(true);
     }
-  }, [hasLive, autoOpened, items.length]);
+    if (!hasExpert) setExpertAgreed(false);
+  }, [hasExpert, expertAutoOpened, items.length, liveAgreementOpen]);
+
+  const canCheckout = (!hasLive || liveAgreed) && (!hasExpert || expertAgreed);
 
   if (authLoading || !customer) {
     return (
@@ -230,10 +272,10 @@ export default function CartPage() {
                     <span className="text-white">{formatPrice(subtotal)}</span>
                   </div>
 
-                  <div className="mb-6">
+                  <div className="mb-6 space-y-3">
                     {hasLive ? (
                       <button
-                        onClick={() => setAgreementOpen(true)}
+                        onClick={() => setLiveAgreementOpen(true)}
                         className="w-full rounded-xl border-2 p-4 bg-ocean-900/70 text-left hover:bg-ocean-800/70 transition-colors"
                         style={{
                           borderColor: "#FFD700",
@@ -247,7 +289,7 @@ export default function CartPage() {
                         >
                           <span>Live Arrival Agreement</span>
                           <span className="text-xs text-white/70 font-normal">
-                            {agreed ? "Agreed ✓" : "Tap to review"}
+                            {liveAgreed ? "Agreed ✓" : "Tap to review"}
                           </span>
                         </p>
                         <p className="text-white/85 text-xs leading-relaxed">
@@ -258,14 +300,44 @@ export default function CartPage() {
                     ) : (
                       <ShippingNotice hasLive={hasLive} />
                     )}
+
+                    {hasExpert && (
+                      <button
+                        onClick={() => setExpertAgreementOpen(true)}
+                        className="w-full rounded-xl border-2 p-4 bg-ocean-900/70 text-left hover:bg-ocean-800/70 transition-colors"
+                        style={{
+                          borderColor: "#FF6B35",
+                          boxShadow:
+                            "0 0 22px rgba(255, 107, 53, 0.35), 0 4px 14px rgba(0, 0, 0, 0.3)",
+                        }}
+                      >
+                        <p
+                          className="text-sm md:text-base font-bold tracking-wide mb-1 flex items-center justify-between"
+                          style={{ color: "#FF6B35" }}
+                        >
+                          <span>Expert Level Care Agreement</span>
+                          <span className="text-xs text-white/70 font-normal">
+                            {expertAgreed ? "Agreed ✓" : "Tap to review"}
+                          </span>
+                        </p>
+                        <p className="text-white/85 text-xs leading-relaxed">
+                          Cart contains Expert-care species. Review and agree before checkout.
+                        </p>
+                      </button>
+                    )}
                   </div>
 
-                  {hasLive && !agreed ? (
+                  {!canCheckout ? (
                     <button
-                      onClick={() => setAgreementOpen(true)}
+                      onClick={() => {
+                        if (hasLive && !liveAgreed) setLiveAgreementOpen(true);
+                        else if (hasExpert && !expertAgreed) setExpertAgreementOpen(true);
+                      }}
                       className="block w-full py-4 bg-white/10 border border-white/20 text-white text-center font-medium text-sm rounded hover:bg-white/15 transition-colors"
                     >
-                      Review Live Arrival Agreement to Continue
+                      {hasLive && !liveAgreed
+                        ? "Review Live Arrival Agreement to Continue"
+                        : "Review Expert Care Agreement to Continue"}
                     </button>
                   ) : (
                     <Link
@@ -283,10 +355,23 @@ export default function CartPage() {
       </main>
       <Footer />
       <LiveArrivalAgreementModal
-        open={agreementOpen}
-        onClose={() => setAgreementOpen(false)}
-        onAgree={() => setAgreed(true)}
-        agreed={agreed}
+        open={liveAgreementOpen}
+        onClose={() => {
+          setLiveAgreementOpen(false);
+          if (hasExpert && !expertAutoOpened) {
+            setExpertAgreementOpen(true);
+            setExpertAutoOpened(true);
+          }
+        }}
+        onAgree={() => setLiveAgreed(true)}
+        agreed={liveAgreed}
+      />
+      <ExpertCareAgreementModal
+        open={expertAgreementOpen}
+        onClose={() => setExpertAgreementOpen(false)}
+        onAgree={() => setExpertAgreed(true)}
+        agreed={expertAgreed}
+        expertItemNames={expertItemNames}
       />
     </>
   );
