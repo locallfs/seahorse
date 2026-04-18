@@ -149,7 +149,7 @@ export default function NewProductScreen() {
         organizeOptions,
       });
       reset();
-      router.replace('/');
+      router.replace('/(app)/(tabs)');
     } catch (e: any) {
       setError(e?.message || 'Could not create product.');
     } finally {

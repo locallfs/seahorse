@@ -44,7 +44,7 @@ export default function TeamScreen() {
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
-      router.replace('/(app)/(tabs)/index');
+      router.replace('/(app)/(tabs)');
     }
   }, [authLoading, isAdmin, router]);
 

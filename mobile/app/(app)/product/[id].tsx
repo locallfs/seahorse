@@ -292,7 +292,7 @@ export default function ProductEditScreen() {
       }
 
       setNewThumbnailFile(null);
-      router.replace('/(app)/(tabs)/index');
+      router.replace('/(app)/(tabs)');
     } catch (e: any) {
       setError(e?.message || 'Could not save product.');
     } finally {
@@ -327,7 +327,7 @@ export default function ProductEditScreen() {
     setSaving(true);
     try {
       await sdk.admin.product.delete(id);
-      router.replace('/');
+      router.replace('/(app)/(tabs)');
     } catch (e: any) {
       setError(e?.message || 'Could not delete product.');
       setSaving(false);
@@ -345,7 +345,7 @@ export default function ProductEditScreen() {
         last_name: user.last_name ?? null,
       });
       Alert.alert('Requested', 'An admin will review this deletion.');
-      router.replace('/');
+      router.replace('/(app)/(tabs)');
     } catch (e: any) {
       setError(e?.message || 'Could not submit delete request.');
       setSaving(false);
