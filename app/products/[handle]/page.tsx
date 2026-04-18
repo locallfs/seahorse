@@ -16,6 +16,17 @@ type Variant = {
   };
 };
 
+type Pads = {
+  care_level?: string;
+  reef_safe?: string;
+  min_tank_size?: string;
+  max_size?: string;
+  diet?: string;
+  temperament?: string;
+  water_conditions?: string;
+  range?: string;
+};
+
 type StoreProduct = {
   id: string;
   handle: string;
@@ -23,7 +34,43 @@ type StoreProduct = {
   description: string | null;
   thumbnail: string | null;
   variants: Variant[];
+  metadata?: { pads?: Pads } | null;
 };
+
+const LIVE_KEYWORDS = [
+  "fish",
+  "coral",
+  "invert",
+  "shrimp",
+  "crab",
+  "snail",
+  "anemone",
+  "seahorse",
+  "clown",
+  "tang",
+  "wrasse",
+  "goby",
+  "angel",
+  "urchin",
+  "starfish",
+];
+
+const isLiveAnimal = (title: string | null | undefined) => {
+  if (!title) return false;
+  const t = title.toLowerCase();
+  return LIVE_KEYWORDS.some((kw) => t.includes(kw));
+};
+
+const PAD_ORDER: Array<{ key: keyof Pads; label: string }> = [
+  { key: "care_level", label: "Care Level" },
+  { key: "reef_safe", label: "Reef Safe" },
+  { key: "min_tank_size", label: "Min Tank Size" },
+  { key: "max_size", label: "Max Size" },
+  { key: "diet", label: "Diet" },
+  { key: "temperament", label: "Temperament" },
+  { key: "range", label: "Range" },
+  { key: "water_conditions", label: "Water Conditions" },
+];
 
 function formatPrice(amount: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
@@ -50,7 +97,7 @@ export default function ProductPage({
         const regionId = regionsRes.regions?.[0]?.id;
         const res = await medusa.store.product.list({
           handle,
-          fields: "id,handle,title,description,thumbnail,*variants.calculated_price",
+          fields: "id,handle,title,description,thumbnail,metadata,*variants.calculated_price",
           region_id: regionId,
         });
         if (cancelled) return;
@@ -70,6 +117,12 @@ export default function ProductPage({
 
   const variant = product?.variants?.[0];
   const price = variant?.calculated_price;
+  const live = isLiveAnimal(product?.title);
+  const pads = product?.metadata?.pads ?? {};
+  const padEntries = PAD_ORDER.filter(({ key }) => {
+    const v = pads[key];
+    return typeof v === "string" && v.trim().length > 0;
+  });
 
   return (
     <>
@@ -122,6 +175,45 @@ export default function ProductPage({
                   <p className="text-3xl font-bold text-white mb-6">
                     {formatPrice(price.calculated_amount, price.currency_code)}
                   </p>
+                )}
+
+                {live && (
+                  <div
+                    className="rounded-xl border-2 p-5 mb-6 bg-ocean-900/70"
+                    style={{
+                      borderColor: "#FFD700",
+                      boxShadow:
+                        "0 0 22px rgba(255, 255, 255, 0.45), 0 4px 14px rgba(0, 0, 0, 0.3)",
+                    }}
+                  >
+                    <p
+                      className="text-base md:text-lg font-bold tracking-wide mb-1"
+                      style={{ color: "#FFD700" }}
+                    >
+                      Live Animal Shipping — Overnight Shipping REQUIRED!
+                    </p>
+                    <p className="text-white/85 text-sm leading-relaxed">
+                      Local Pickup available at checkout if within 100 miles of our Portland store.
+                    </p>
+                  </div>
+                )}
+
+                {live && padEntries.length > 0 && (
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {padEntries.map(({ key, label }) => (
+                      <div
+                        key={key}
+                        className="rounded-lg border border-white/15 bg-ocean-800/60 px-4 py-3"
+                      >
+                        <p className="text-[10px] uppercase tracking-[0.12em] text-white/55 mb-1">
+                          {label}
+                        </p>
+                        <p className="text-sm text-white leading-snug">
+                          {pads[key]}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 )}
 
                 {product.description && (
