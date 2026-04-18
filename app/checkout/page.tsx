@@ -128,6 +128,9 @@ export default function CheckoutPage() {
     "address"
   );
   const [liveAgreementAccepted, setLiveAgreementAccepted] = useState(false);
+  const [distanceMiles, setDistanceMiles] = useState<number | null>(null);
+
+  const PICKUP_RADIUS_MILES = 100;
 
   const handleField = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -180,6 +183,30 @@ export default function CheckoutPage() {
         });
 
       setShippingOptions(shipping_options || []);
+
+      const addressQuery = [
+        form.address_1,
+        form.city,
+        form.province,
+        form.postal_code,
+        form.country_code,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      try {
+        const distRes = await fetch(
+          `/api/distance?address=${encodeURIComponent(addressQuery)}`,
+        );
+        if (distRes.ok) {
+          const { miles } = await distRes.json();
+          setDistanceMiles(typeof miles === "number" ? miles : null);
+        } else {
+          setDistanceMiles(null);
+        }
+      } catch {
+        setDistanceMiles(null);
+      }
+
       setStep("shipping");
     } catch (e: any) {
       setError(e.message || "Failed to save address");
@@ -524,10 +551,41 @@ export default function CheckoutPage() {
                       contact you to confirm your ship or pickup date.
                     </div>
                   )}
+                  {distanceMiles !== null && distanceMiles > PICKUP_RADIUS_MILES && (
+                    <div className="bg-blue-accent/10 border border-blue-accent/30 rounded-lg p-3 mb-4 text-xs text-white">
+                      Your address is about {Math.round(distanceMiles)} miles from
+                      our Portland shop, outside our {PICKUP_RADIUS_MILES}-mile
+                      pickup radius. If you&apos;d still like to pick up in person,
+                      please contact us before completing checkout.
+                    </div>
+                  )}
 
                   {(() => {
+                    const pickupKeywords = [
+                      "pickup",
+                      "pick up",
+                      "pick-up",
+                      "in-store",
+                      "in store",
+                    ];
+                    const isPickupOption = (o: any) => {
+                      const name = (o.name || "").toLowerCase();
+                      const providerId = (o.provider_id || "").toLowerCase();
+                      return (
+                        providerId.includes("manual") ||
+                        pickupKeywords.some((kw) => name.includes(kw))
+                      );
+                    };
+
+                    const pickupOutOfRange =
+                      distanceMiles !== null && distanceMiles > PICKUP_RADIUS_MILES;
+
+                    const rangeFiltered = pickupOutOfRange
+                      ? shippingOptions.filter((o: any) => !isPickupOption(o))
+                      : shippingOptions;
+
                     const filteredOptions = hasLiveItems
-                      ? shippingOptions.filter((o: any) => {
+                      ? rangeFiltered.filter((o: any) => {
                           const name = (o.name || "").toLowerCase();
                           const dataId = (o.data?.id || "").toLowerCase();
                           const providerId = (o.provider_id || "").toLowerCase();
@@ -539,17 +597,13 @@ export default function CheckoutPage() {
                             "1-day",
                             "1 day",
                           ];
-                          const pickupKeywords = ["pickup", "pick up", "pick-up", "in-store", "in store"];
                           const isOvernight =
                             dataId === "shippo-overnight" ||
                             providerId.includes("overnight") ||
                             overnightKeywords.some((kw) => name.includes(kw));
-                          const isPickup =
-                            providerId.includes("manual") ||
-                            pickupKeywords.some((kw) => name.includes(kw));
-                          return isOvernight || isPickup;
+                          return isOvernight || isPickupOption(o);
                         })
-                      : shippingOptions;
+                      : rangeFiltered;
 
                     return filteredOptions.length === 0 ? (
                       <p className="text-white text-sm py-4 text-center">
