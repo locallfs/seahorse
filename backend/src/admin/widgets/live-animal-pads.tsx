@@ -25,6 +25,8 @@ type Pads = {
   range?: string
 }
 
+const LIVE_CATEGORY_HANDLES = ["fish", "corals", "inverts"]
+
 const LIVE_KEYWORDS = [
   "fish",
   "coral",
@@ -43,10 +45,19 @@ const LIVE_KEYWORDS = [
   "starfish",
 ]
 
-const isLiveAnimal = (title: string | null | undefined) => {
+const isLiveAnimalByTitle = (title: string | null | undefined) => {
   if (!title) return false
   const t = title.toLowerCase()
   return LIVE_KEYWORDS.some((kw) => t.includes(kw))
+}
+
+const isLiveAnimalByCategories = (
+  categories: { handle?: string | null }[] | null | undefined,
+) => {
+  if (!categories?.length) return false
+  return categories.some(
+    (c) => !!c?.handle && LIVE_CATEGORY_HANDLES.includes(c.handle),
+  )
 }
 
 const padsFromMetadata = (metadata: Record<string, unknown> | null | undefined): Pads => {
@@ -65,7 +76,9 @@ const padsFromMetadata = (metadata: Record<string, unknown> | null | undefined):
 
 const LiveAnimalPadsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   const backendUrl = __BACKEND_URL__ ?? ""
-  const showWidget = isLiveAnimal(data.title)
+  const showWidget =
+    isLiveAnimalByCategories((data as any).categories) ||
+    isLiveAnimalByTitle(data.title)
   const initialPads = useMemo(
     () => padsFromMetadata(data.metadata as Record<string, unknown> | null | undefined),
     [data.metadata],

@@ -1,11 +1,14 @@
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { theme } from '@/lib/theme';
 import {
   COUNTRY_OF_ORIGIN_LABEL,
+  PRODUCT_TYPE_OPTIONS,
   type OrganizeOption,
   type OrganizeOptions,
   type ProductAttributes,
   type ProductOrganize,
+  type ProductTypeKey,
+  type SpeciesPads,
 } from '@/lib/products';
 
 type OrganizeProps = {
@@ -71,6 +74,180 @@ export function OrganizeFields({ options, value, onChange }: OrganizeProps) {
         onToggle={toggleCategory}
         emptyHint="No categories exist yet."
       />
+    </View>
+  );
+}
+
+type TypeCategoryProps = {
+  value: ProductTypeKey | null;
+  onChange: (next: ProductTypeKey | null) => void;
+  newArrival: boolean;
+  onNewArrivalChange: (next: boolean) => void;
+};
+
+export function TypeCategoryFields({
+  value,
+  onChange,
+  newArrival,
+  onNewArrivalChange,
+}: TypeCategoryProps) {
+  return (
+    <View>
+      <Text style={styles.sectionHeader}>Category</Text>
+      <Text style={styles.helpText}>
+        Pick one — controls shipping rules, live-animal detection, and which info pads show.
+      </Text>
+      <View style={styles.chipRow}>
+        {PRODUCT_TYPE_OPTIONS.map((opt) => {
+          const active = value === opt.key;
+          return (
+            <Pressable
+              key={opt.key}
+              onPress={() => onChange(active ? null : opt.key)}
+              style={[styles.chip, active && styles.chipActive]}
+            >
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={styles.switchRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.label}>Mark as New Arrival</Text>
+          <Text style={styles.helpText}>
+            Adds to the New Arrivals page in addition to its category.
+          </Text>
+        </View>
+        <Switch
+          value={newArrival}
+          onValueChange={onNewArrivalChange}
+          trackColor={{ false: theme.color.border, true: theme.color.gold }}
+          thumbColor="#fff"
+        />
+      </View>
+    </View>
+  );
+}
+
+type PadsProps = {
+  value: SpeciesPads;
+  onChange: (next: SpeciesPads) => void;
+};
+
+const CARE_LEVELS = ['Easy', 'Moderate', 'Difficult', 'Expert'];
+const REEF_SAFE = ['Yes', 'With Caution', 'No'];
+const TEMPERAMENTS = ['Peaceful', 'Semi-Aggressive', 'Aggressive'];
+
+export function PadFields({ value, onChange }: PadsProps) {
+  const set = (key: keyof SpeciesPads, next: string) => {
+    onChange({ ...value, [key]: next });
+  };
+
+  return (
+    <View>
+      <Text style={styles.sectionHeader}>Species Info</Text>
+      <Text style={styles.helpText}>
+        Leave a field blank to hide it on the storefront. Only filled fields render.
+      </Text>
+
+      <Text style={styles.label}>Care Level</Text>
+      <PillChoice
+        options={CARE_LEVELS}
+        value={value.care_level}
+        onChange={(v) => set('care_level', v)}
+      />
+
+      <Text style={styles.label}>Reef Safe</Text>
+      <PillChoice
+        options={REEF_SAFE}
+        value={value.reef_safe}
+        onChange={(v) => set('reef_safe', v)}
+      />
+
+      <Text style={styles.label}>Min Tank Size</Text>
+      <TextInput
+        value={value.min_tank_size}
+        onChangeText={(v) => set('min_tank_size', v)}
+        style={styles.input}
+        placeholder="e.g. 75 gallons"
+        placeholderTextColor={theme.color.textDim}
+      />
+
+      <Text style={styles.label}>Max Size</Text>
+      <TextInput
+        value={value.max_size}
+        onChangeText={(v) => set('max_size', v)}
+        style={styles.input}
+        placeholder={'e.g. 8"'}
+        placeholderTextColor={theme.color.textDim}
+      />
+
+      <Text style={styles.label}>Diet</Text>
+      <TextInput
+        value={value.diet}
+        onChangeText={(v) => set('diet', v)}
+        style={styles.input}
+        placeholder="e.g. Carnivore"
+        placeholderTextColor={theme.color.textDim}
+      />
+
+      <Text style={styles.label}>Temperament</Text>
+      <PillChoice
+        options={TEMPERAMENTS}
+        value={value.temperament}
+        onChange={(v) => set('temperament', v)}
+      />
+
+      <Text style={styles.label}>Range</Text>
+      <TextInput
+        value={value.range}
+        onChangeText={(v) => set('range', v)}
+        style={styles.input}
+        placeholder="e.g. Indo-Pacific"
+        placeholderTextColor={theme.color.textDim}
+      />
+
+      <Text style={styles.label}>Water Conditions</Text>
+      <TextInput
+        value={value.water_conditions}
+        onChangeText={(v) => set('water_conditions', v)}
+        multiline
+        style={[styles.input, styles.textarea]}
+        placeholder="e.g. 72-78°F, dKH 8-12, pH 8.1-8.4, sg 1.020-1.025"
+        placeholderTextColor={theme.color.textDim}
+      />
+    </View>
+  );
+}
+
+function PillChoice({
+  options,
+  value,
+  onChange,
+}: {
+  options: string[];
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  return (
+    <View style={styles.chipRow}>
+      {options.map((opt) => {
+        const active = value === opt;
+        return (
+          <Pressable
+            key={opt}
+            onPress={() => onChange(active ? '' : opt)}
+            style={[styles.chip, active && styles.chipActive]}
+          >
+            <Text style={[styles.chipText, active && styles.chipTextActive]}>
+              {opt}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -235,4 +412,16 @@ const styles = StyleSheet.create({
     fontSize: theme.font.xs,
     fontStyle: 'italic',
   },
+  helpText: {
+    color: theme.color.textDim,
+    fontSize: theme.font.xs,
+    marginBottom: theme.space.sm,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space.md,
+    marginTop: theme.space.md,
+  },
+  textarea: { minHeight: 80, textAlignVertical: 'top' },
 });

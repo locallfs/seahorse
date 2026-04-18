@@ -19,16 +19,29 @@ import { sdk } from '@/lib/medusa';
 import { uploadImage } from '@/lib/uploads';
 import {
   COUNTRY_OF_ORIGIN,
+  deriveTypeKeyFromCategories,
+  EMPTY_PADS,
   getStoreDefaults,
+  hasNewArrivalCategory,
+  isLiveType,
   listOrganizeOptions,
+  padsFromMetadata,
   requestDeleteProduct,
+  updateProductCategorization,
   type OrganizeOptions,
   type ProductAttributes,
   type ProductOrganize,
+  type ProductTypeKey,
+  type SpeciesPads,
 } from '@/lib/products';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
-import { AttributeFields, OrganizeFields } from '@/lib/ProductFormFields';
+import {
+  AttributeFields,
+  OrganizeFields,
+  PadFields,
+  TypeCategoryFields,
+} from '@/lib/ProductFormFields';
 
 type VariantShape = {
   id: string;
@@ -85,6 +98,15 @@ export default function ProductEditScreen() {
     length: null,
     weight: null,
   });
+  const [typeKey, setTypeKey] = useState<ProductTypeKey | null>(null);
+  const [newArrival, setNewArrival] = useState(false);
+  const [pads, setPads] = useState<SpeciesPads>(EMPTY_PADS);
+  const [currentCategoryHandles, setCurrentCategoryHandles] = useState<
+    Array<string | null>
+  >([]);
+  const [currentMetadata, setCurrentMetadata] = useState<
+    Record<string, unknown>
+  >({});
 
   useEffect(() => {
     listOrganizeOptions().then(setOrganizeOptions).catch(() => setOrganizeOptions(null));
@@ -96,9 +118,19 @@ export default function ProductEditScreen() {
     try {
       const { product } = await sdk.admin.product.retrieve(id, {
         fields:
-          'id,title,description,status,thumbnail,height,width,length,weight,origin_country,metadata,*tags,*type,*collection,*categories,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels',
+          'id,title,description,status,thumbnail,height,width,length,weight,origin_country,metadata,*tags,*type,*collection,categories.id,categories.name,categories.handle,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels',
       } as any);
       const p: any = product;
+      const categories = (p.categories || []) as Array<{
+        id: string;
+        name?: string;
+        handle?: string | null;
+      }>;
+      setCurrentCategoryHandles(categories.map((c) => c.handle ?? null));
+      setCurrentMetadata((p.metadata as Record<string, unknown>) || {});
+      setTypeKey(deriveTypeKeyFromCategories(categories));
+      setNewArrival(hasNewArrivalCategory(categories));
+      setPads(padsFromMetadata(p.metadata as Record<string, unknown> | null));
       const dr = p.metadata?.delete_request;
       if (dr && dr.requested_by_email && dr.requested_at) {
         setPendingDelete({
@@ -129,7 +161,7 @@ export default function ProductEditScreen() {
         tagIds: (p.tags || []).map((t: any) => t.id),
         typeId: p.type?.id || null,
         collectionId: p.collection?.id || null,
-        categoryIds: (p.categories || []).map((c: any) => c.id),
+        categoryIds: categories.map((c) => c.id),
       });
       setAttributes({
         height: p.height ?? null,
@@ -174,6 +206,10 @@ export default function ProductEditScreen() {
 
   const save = async () => {
     if (!id) return;
+    if (!typeKey) {
+      setError('Pick a category (Fish, Corals, Inverts, or Supplies).');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -207,6 +243,17 @@ export default function ProductEditScreen() {
       }
 
       await sdk.admin.product.update(id, payload);
+
+      await updateProductCategorization({
+        productId: id,
+        currentCategoryIds: organize.categoryIds,
+        currentCategoryHandles,
+        currentMetadata,
+        typeKey,
+        newArrival,
+        pads: isLiveType(typeKey) ? pads : undefined,
+        organizeOptions,
+      });
 
       const nextStock = Math.max(0, Math.floor(Number(stock)));
       const currentStock = (variant?.inventory_items || []).reduce((sum, link) => {
@@ -416,6 +463,15 @@ export default function ProductEditScreen() {
             thumbColor="#fff"
           />
         </View>
+
+        <TypeCategoryFields
+          value={typeKey}
+          onChange={setTypeKey}
+          newArrival={newArrival}
+          onNewArrivalChange={setNewArrival}
+        />
+
+        {isLiveType(typeKey) && <PadFields value={pads} onChange={setPads} />}
 
         <OrganizeFields options={organizeOptions} value={organize} onChange={setOrganize} />
         <AttributeFields value={attributes} onChange={setAttributes} />

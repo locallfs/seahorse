@@ -42,6 +42,7 @@ type StoreProduct = {
   variants: Variant[];
   options?: { id: string; title: string }[] | null;
   metadata?: { pads?: Pads } | null;
+  categories?: { id: string; handle: string }[] | null;
 };
 
 const PAD_ORDER: Array<{ key: keyof Pads; label: string }> = [
@@ -83,7 +84,7 @@ export default function ProductPage({
         const res = await medusa.store.product.list({
           handle,
           fields:
-            "id,handle,title,description,thumbnail,metadata,*images,*options,*variants.calculated_price,*variants.options",
+            "id,handle,title,description,thumbnail,metadata,*images,*options,*variants.calculated_price,*variants.options,*categories",
           region_id: regionId,
         });
         if (cancelled) return;
@@ -117,7 +118,7 @@ export default function ProductPage({
   }, [product, selectedVariantId]);
 
   const price = variant?.calculated_price;
-  const live = isLiveAnimal(product?.title);
+  const live = isLiveAnimal(product);
   const pads = product?.metadata?.pads ?? {};
   const padEntries = PAD_ORDER.filter(({ key }) => {
     const v = pads[key];

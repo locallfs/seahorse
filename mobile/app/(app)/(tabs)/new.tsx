@@ -16,13 +16,22 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {
   createProduct,
+  EMPTY_PADS,
+  isLiveType,
   listOrganizeOptions,
   type OrganizeOptions,
   type ProductAttributes,
   type ProductOrganize,
+  type ProductTypeKey,
+  type SpeciesPads,
 } from '@/lib/products';
 import { theme } from '@/lib/theme';
-import { AttributeFields, OrganizeFields } from '@/lib/ProductFormFields';
+import {
+  AttributeFields,
+  OrganizeFields,
+  PadFields,
+  TypeCategoryFields,
+} from '@/lib/ProductFormFields';
 
 export default function NewProductScreen() {
   const router = useRouter();
@@ -49,6 +58,9 @@ export default function NewProductScreen() {
     length: null,
     weight: null,
   });
+  const [typeKey, setTypeKey] = useState<ProductTypeKey | null>(null);
+  const [newArrival, setNewArrival] = useState(false);
+  const [pads, setPads] = useState<SpeciesPads>(EMPTY_PADS);
 
   useEffect(() => {
     listOrganizeOptions().then(setOrganizeOptions).catch(() => setOrganizeOptions(null));
@@ -105,11 +117,15 @@ export default function NewProductScreen() {
     setError(null);
     setOrganize({ tagIds: [], typeId: null, collectionId: null, categoryIds: [] });
     setAttributes({ height: null, width: null, length: null, weight: null });
+    setTypeKey(null);
+    setNewArrival(false);
+    setPads(EMPTY_PADS);
   };
 
   const submit = async () => {
     setError(null);
     if (!title.trim()) return setError('Title is required.');
+    if (!typeKey) return setError('Pick a category (Fish, Corals, Inverts, or Supplies).');
     const priceNum = Number(price);
     if (Number.isNaN(priceNum) || priceNum < 0) return setError('Enter a valid price.');
     const stockNum = Math.max(0, Math.floor(Number(stock)));
@@ -127,6 +143,10 @@ export default function NewProductScreen() {
         thumbnail: file,
         organize,
         attributes,
+        typeKey,
+        newArrival,
+        pads: isLiveType(typeKey) ? pads : undefined,
+        organizeOptions,
       });
       reset();
       router.replace('/(app)/(tabs)/index');
@@ -246,6 +266,15 @@ export default function NewProductScreen() {
             />
           </>
         ) : null}
+
+        <TypeCategoryFields
+          value={typeKey}
+          onChange={setTypeKey}
+          newArrival={newArrival}
+          onNewArrivalChange={setNewArrival}
+        />
+
+        {isLiveType(typeKey) && <PadFields value={pads} onChange={setPads} />}
 
         <OrganizeFields options={organizeOptions} value={organize} onChange={setOrganize} />
         <AttributeFields value={attributes} onChange={setAttributes} />

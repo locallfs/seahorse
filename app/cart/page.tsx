@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/components/AuthContext";
@@ -9,7 +9,8 @@ import Footer from "@/components/Footer";
 import ShippingNotice from "@/components/ShippingNotice";
 import Image from "next/image";
 import Link from "next/link";
-import { isLiveAnimal } from "@/lib/liveAnimal";
+import { medusa } from "@/lib/medusa";
+import { isLiveAnimal, isLiveAnimalByCategories } from "@/lib/liveAnimal";
 
 function formatPrice(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -31,8 +32,48 @@ export default function CartPage() {
 
   const items = cart?.items ?? [];
   const subtotal = cart?.subtotal ?? 0;
-  const hasLive = items.some((item: any) =>
-    isLiveAnimal(item.product_title || item.title),
+
+  const [liveProductIds, setLiveProductIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    const productIds: string[] = Array.from(
+      new Set(
+        items
+          .map((i: any) => i.product_id as string | undefined)
+          .filter((id: string | undefined): id is string => !!id),
+      ),
+    );
+    if (productIds.length === 0) {
+      setLiveProductIds(new Set());
+      return;
+    }
+    (async () => {
+      try {
+        const res = await medusa.store.product.list({
+          id: productIds,
+          fields: "id,*categories",
+          limit: productIds.length,
+        } as any);
+        if (cancelled) return;
+        const next = new Set<string>();
+        for (const p of (res.products as any[]) || []) {
+          if (isLiveAnimalByCategories(p.categories)) next.add(p.id);
+        }
+        setLiveProductIds(next);
+      } catch {
+        if (!cancelled) setLiveProductIds(new Set());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [items.map((i: any) => i.product_id).join(",")]);
+
+  const hasLive = items.some(
+    (item: any) =>
+      (item.product_id && liveProductIds.has(item.product_id)) ||
+      isLiveAnimal(item.product_title || item.title),
   );
 
   if (authLoading || !customer) {

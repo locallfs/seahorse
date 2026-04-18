@@ -146,20 +146,100 @@ export type OrganizeOptions = {
   types: OrganizeOption[];
   collections: OrganizeOption[];
   categories: OrganizeOption[];
+  categoriesByHandle: Record<string, OrganizeOption & { handle: string }>;
 };
+
+export type ProductTypeKey = 'fish' | 'corals' | 'inverts' | 'supplies';
+
+export const PRODUCT_TYPE_OPTIONS: Array<{
+  key: ProductTypeKey;
+  label: string;
+  handle: string;
+}> = [
+  { key: 'fish', label: 'Fish', handle: 'fish' },
+  { key: 'corals', label: 'Corals', handle: 'corals' },
+  { key: 'inverts', label: 'Inverts', handle: 'inverts' },
+  { key: 'supplies', label: 'Supplies', handle: 'supplies' },
+];
+
+export const LIVE_TYPE_KEYS: ProductTypeKey[] = ['fish', 'corals', 'inverts'];
+export const NEW_ARRIVALS_HANDLE = 'new-arrivals';
+
+export function isLiveType(key: ProductTypeKey | null): boolean {
+  return !!key && LIVE_TYPE_KEYS.includes(key);
+}
+
+export type SpeciesPads = {
+  care_level: string;
+  reef_safe: string;
+  min_tank_size: string;
+  max_size: string;
+  diet: string;
+  temperament: string;
+  water_conditions: string;
+  range: string;
+};
+
+export const EMPTY_PADS: SpeciesPads = {
+  care_level: '',
+  reef_safe: '',
+  min_tank_size: '',
+  max_size: '',
+  diet: '',
+  temperament: '',
+  water_conditions: '',
+  range: '',
+};
+
+export function padsFromMetadata(
+  metadata: Record<string, unknown> | null | undefined,
+): SpeciesPads {
+  const raw = (metadata?.pads ?? {}) as Record<string, unknown>;
+  return {
+    care_level: typeof raw.care_level === 'string' ? raw.care_level : '',
+    reef_safe: typeof raw.reef_safe === 'string' ? raw.reef_safe : '',
+    min_tank_size:
+      typeof raw.min_tank_size === 'string' ? raw.min_tank_size : '',
+    max_size: typeof raw.max_size === 'string' ? raw.max_size : '',
+    diet: typeof raw.diet === 'string' ? raw.diet : '',
+    temperament: typeof raw.temperament === 'string' ? raw.temperament : '',
+    water_conditions:
+      typeof raw.water_conditions === 'string' ? raw.water_conditions : '',
+    range: typeof raw.range === 'string' ? raw.range : '',
+  };
+}
+
+export function cleanedPads(pads: SpeciesPads): Record<string, string> {
+  const out: Record<string, string> = {};
+  (Object.keys(pads) as (keyof SpeciesPads)[]).forEach((k) => {
+    const v = pads[k].trim();
+    if (v) out[k] = v;
+  });
+  return out;
+}
 
 export async function listOrganizeOptions(): Promise<OrganizeOptions> {
   const [tagsRes, typesRes, collectionsRes, categoriesRes] = await Promise.all([
     sdk.admin.productTag.list({ limit: 200 } as any).catch(() => ({ product_tags: [] })),
     sdk.admin.productType.list({ limit: 200 } as any).catch(() => ({ product_types: [] })),
     sdk.admin.productCollection.list({ limit: 200 } as any).catch(() => ({ collections: [] })),
-    sdk.admin.productCategory.list({ limit: 200 } as any).catch(() => ({ product_categories: [] })),
+    sdk.admin.productCategory
+      .list({ limit: 200, fields: 'id,name,handle' } as any)
+      .catch(() => ({ product_categories: [] })),
   ]);
+  const categoryRows: any[] = (categoriesRes as any).product_categories || [];
+  const categoriesByHandle: Record<string, OrganizeOption & { handle: string }> = {};
+  for (const c of categoryRows) {
+    if (c.handle) {
+      categoriesByHandle[c.handle] = { id: c.id, label: c.name, handle: c.handle };
+    }
+  }
   return {
     tags: ((tagsRes as any).product_tags || []).map((t: any) => ({ id: t.id, label: t.value })),
     types: ((typesRes as any).product_types || []).map((t: any) => ({ id: t.id, label: t.value })),
     collections: ((collectionsRes as any).collections || []).map((c: any) => ({ id: c.id, label: c.title })),
-    categories: ((categoriesRes as any).product_categories || []).map((c: any) => ({ id: c.id, label: c.name })),
+    categories: categoryRows.map((c: any) => ({ id: c.id, label: c.name })),
+    categoriesByHandle,
   };
 }
 
@@ -190,7 +270,29 @@ export type NewProductInput = {
   thumbnail?: { uri: string; name: string; type: string } | null;
   organize?: ProductOrganize;
   attributes?: ProductAttributes;
+  typeKey?: ProductTypeKey | null;
+  newArrival?: boolean;
+  pads?: SpeciesPads;
+  organizeOptions?: OrganizeOptions | null;
 };
+
+function resolveTypeCategoryIds(
+  opts: OrganizeOptions | null | undefined,
+  typeKey: ProductTypeKey | null | undefined,
+  newArrival: boolean | undefined,
+): string[] {
+  if (!opts) return [];
+  const ids: string[] = [];
+  if (typeKey) {
+    const match = opts.categoriesByHandle[typeKey];
+    if (match) ids.push(match.id);
+  }
+  if (newArrival) {
+    const na = opts.categoriesByHandle[NEW_ARRIVALS_HANDLE];
+    if (na) ids.push(na.id);
+  }
+  return ids;
+}
 
 export async function createProduct(input: NewProductInput): Promise<string> {
   const defaults = await getStoreDefaults();
@@ -220,14 +322,29 @@ export async function createProduct(input: NewProductInput): Promise<string> {
   if (defaults.shippingProfileId) payload.shipping_profile_id = defaults.shippingProfileId;
   if (defaults.salesChannelId) payload.sales_channels = [{ id: defaults.salesChannelId }];
 
+  const typeCatIds = resolveTypeCategoryIds(
+    input.organizeOptions,
+    input.typeKey ?? null,
+    input.newArrival,
+  );
+  const mergedCategoryIds = Array.from(
+    new Set([...(input.organize?.categoryIds ?? []), ...typeCatIds]),
+  );
+
   if (input.organize) {
     if (input.organize.tagIds.length) {
       payload.tags = input.organize.tagIds.map((id) => ({ id }));
     }
     if (input.organize.typeId) payload.type_id = input.organize.typeId;
     if (input.organize.collectionId) payload.collection_id = input.organize.collectionId;
-    if (input.organize.categoryIds.length) {
-      payload.categories = input.organize.categoryIds.map((id) => ({ id }));
+  }
+  if (mergedCategoryIds.length) {
+    payload.categories = mergedCategoryIds.map((id) => ({ id }));
+  }
+  if (input.pads) {
+    const cleaned = cleanedPads(input.pads);
+    if (Object.keys(cleaned).length) {
+      payload.metadata = { pads: cleaned };
     }
   }
   if (input.attributes) {
@@ -262,6 +379,86 @@ export async function createProduct(input: NewProductInput): Promise<string> {
   }
 
   return product.id;
+}
+
+export function deriveTypeKeyFromCategories(
+  categories: Array<{ handle?: string | null }> | null | undefined,
+): ProductTypeKey | null {
+  if (!categories?.length) return null;
+  for (const c of categories) {
+    const h = c?.handle;
+    if (!h) continue;
+    const match = PRODUCT_TYPE_OPTIONS.find((o) => o.handle === h);
+    if (match) return match.key;
+  }
+  return null;
+}
+
+export function hasNewArrivalCategory(
+  categories: Array<{ handle?: string | null }> | null | undefined,
+): boolean {
+  if (!categories?.length) return false;
+  return categories.some((c) => c?.handle === NEW_ARRIVALS_HANDLE);
+}
+
+export type CategorizationInput = {
+  productId: string;
+  currentCategoryIds: string[];
+  currentCategoryHandles: Array<string | null | undefined>;
+  currentMetadata: Record<string, unknown> | null | undefined;
+  typeKey: ProductTypeKey | null;
+  newArrival: boolean;
+  pads?: SpeciesPads;
+  organizeOptions: OrganizeOptions | null;
+};
+
+// Replaces the product's type category + new-arrival membership without
+// disturbing unrelated categories the admin may have set in Medusa directly.
+export async function updateProductCategorization(
+  input: CategorizationInput,
+): Promise<void> {
+  const opts = input.organizeOptions;
+  if (!opts) return;
+
+  const managedHandles = [
+    ...PRODUCT_TYPE_OPTIONS.map((o) => o.handle),
+    NEW_ARRIVALS_HANDLE,
+  ];
+
+  // Drop any managed category the admin previously had assigned — we rebuild.
+  const preservedIds: string[] = [];
+  input.currentCategoryIds.forEach((id, idx) => {
+    const handle = input.currentCategoryHandles[idx];
+    if (!handle || !managedHandles.includes(handle)) {
+      preservedIds.push(id);
+    }
+  });
+
+  const nextManagedIds = resolveTypeCategoryIds(
+    opts,
+    input.typeKey,
+    input.newArrival,
+  );
+  const nextCategoryIds = Array.from(
+    new Set([...preservedIds, ...nextManagedIds]),
+  );
+
+  const payload: any = {
+    categories: nextCategoryIds.map((id) => ({ id })),
+  };
+
+  if (input.pads) {
+    const cleaned = cleanedPads(input.pads);
+    const currentMetadata = { ...(input.currentMetadata || {}) };
+    if (Object.keys(cleaned).length) {
+      payload.metadata = { ...currentMetadata, pads: cleaned };
+    } else if ('pads' in currentMetadata) {
+      const { pads: _drop, ...rest } = currentMetadata;
+      payload.metadata = rest;
+    }
+  }
+
+  await sdk.admin.product.update(input.productId, payload);
 }
 
 export type DeleteRequest = {
