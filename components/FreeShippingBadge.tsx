@@ -9,7 +9,7 @@ export default function FreeShippingBadge({ amount, className = "" }: Props) {
     <div
       className={`absolute top-2 right-2 z-10 px-2.5 py-1 rounded-md bg-[#FFD700] text-black text-[10px] font-bold tracking-wider uppercase shadow-lg ${className}`}
     >
-      Free Shipping
+      Free Shipping!!
     </div>
   );
 }
