@@ -18,7 +18,7 @@ export default function HeroVideo() {
             height={450}
             priority
             unoptimized
-            className="w-full max-w-4xl h-auto [filter:drop-shadow(0_0_14px_rgba(188,182,216,0.95))_drop-shadow(0_0_32px_rgba(184,153,216,0.7))]"
+            className="w-full max-w-4xl h-auto [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]"
           />
         </div>
         <p className="text-white text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-lg">
