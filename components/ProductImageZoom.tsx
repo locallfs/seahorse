@@ -39,7 +39,7 @@ export default function ProductImageZoom({ src, alt }: ProductImageZoomProps) {
         src={src}
         alt={alt}
         fill
-        className="object-cover"
+        className="object-contain"
         sizes="(max-width: 1024px) 100vw, 50vw"
         unoptimized
       />
