@@ -30,8 +30,20 @@ export default function HomePage() {
           <SideScrollGallery
             title="Saltwater Fish"
             subtitle="Live Fish"
-            typeValues={["Fish", "WYSIWYG Fish"]}
+            typeValues={["Fish"]}
             viewAllHref="/fish"
+          />
+
+          <div className="max-w-screen-xl mx-auto px-6">
+            <div className="border-t border-white/5" />
+          </div>
+
+          <SideScrollGallery
+            title="WYSIWYG Fish"
+            subtitle="What You See Is What You Get"
+            typeValues={["WYSIWYG Fish"]}
+            viewAllHref="/fish"
+            tag="WYSIWYG"
           />
 
           <div className="max-w-screen-xl mx-auto px-6">
@@ -41,8 +53,20 @@ export default function HomePage() {
           <SideScrollGallery
             title="Corals"
             subtitle="Reef-Ready Livestock"
-            typeValues={["Coral", "WYSIWYG Coral"]}
+            typeValues={["Coral"]}
             viewAllHref="/corals"
+          />
+
+          <div className="max-w-screen-xl mx-auto px-6">
+            <div className="border-t border-white/5" />
+          </div>
+
+          <SideScrollGallery
+            title="WYSIWYG Corals"
+            subtitle="What You See Is What You Get"
+            typeValues={["WYSIWYG Coral"]}
+            viewAllHref="/corals"
+            tag="WYSIWYG"
           />
 
           <div className="max-w-screen-xl mx-auto px-6">
