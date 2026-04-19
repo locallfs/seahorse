@@ -54,7 +54,7 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
     if (images.length <= 1) return;
     const id = setInterval(() => {
       setIndex((i) => (i + 1) % images.length);
-    }, 3000);
+    }, 5000);
     return () => clearInterval(id);
   }, [images.length]);
 
