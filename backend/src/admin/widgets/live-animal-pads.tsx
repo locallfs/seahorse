@@ -31,6 +31,7 @@ type Pads = {
   phosphates?: string
   temperature?: string
   ph?: string
+  salinity?: string
 }
 
 const MULTI_KEYS = ["flow", "placement", "lighting"] as const
@@ -47,6 +48,7 @@ const WATER_FIELDS: Array<{ key: keyof Pads; label: string; placeholder: string 
   { key: "phosphates", label: "Phosphates", placeholder: "e.g. < 0.05 ppm" },
   { key: "temperature", label: "Temperature", placeholder: "e.g. 75-78°F" },
   { key: "ph", label: "PH", placeholder: "e.g. 8.1-8.4" },
+  { key: "salinity", label: "Salinity", placeholder: "e.g. 1.023-1.025 sg" },
 ]
 
 const LIVE_CATEGORY_HANDLES = ["fish", "corals", "inverts"]
@@ -109,6 +111,7 @@ const padsFromMetadata = (metadata: Record<string, unknown> | null | undefined):
     phosphates: typeof raw.phosphates === "string" ? raw.phosphates : "",
     temperature: typeof raw.temperature === "string" ? raw.temperature : "",
     ph: typeof raw.ph === "string" ? raw.ph : "",
+    salinity: typeof raw.salinity === "string" ? raw.salinity : "",
   }
 }
 

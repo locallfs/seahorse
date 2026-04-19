@@ -187,6 +187,7 @@ export type SpeciesPads = {
   phosphates: string;
   temperature: string;
   ph: string;
+  salinity: string;
 };
 
 export const FLOW_OPTIONS = ['Low', 'Moderate', 'Indirect', 'Heavy'];
@@ -205,6 +206,7 @@ export const WATER_PARAM_FIELDS: Array<{
   { key: 'phosphates', label: 'Phosphates', placeholder: 'e.g. < 0.05 ppm' },
   { key: 'temperature', label: 'Temperature', placeholder: 'e.g. 75-78°F' },
   { key: 'ph', label: 'PH', placeholder: 'e.g. 8.1-8.4' },
+  { key: 'salinity', label: 'Salinity', placeholder: 'e.g. 1.023-1.025 sg' },
 ];
 
 export const EMPTY_PADS: SpeciesPads = {
@@ -225,6 +227,7 @@ export const EMPTY_PADS: SpeciesPads = {
   phosphates: '',
   temperature: '',
   ph: '',
+  salinity: '',
 };
 
 function stringArrayFrom(value: unknown): string[] {
@@ -257,6 +260,7 @@ export function padsFromMetadata(
     phosphates: typeof raw.phosphates === 'string' ? raw.phosphates : '',
     temperature: typeof raw.temperature === 'string' ? raw.temperature : '',
     ph: typeof raw.ph === 'string' ? raw.ph : '',
+    salinity: typeof raw.salinity === 'string' ? raw.salinity : '',
   };
 }
 

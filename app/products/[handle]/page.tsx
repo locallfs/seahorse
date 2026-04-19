@@ -40,6 +40,7 @@ type Pads = {
   phosphates?: string;
   temperature?: string;
   ph?: string;
+  salinity?: string;
 };
 
 const WATER_ORDER: Array<{ key: keyof Pads; label: string }> = [
@@ -50,6 +51,7 @@ const WATER_ORDER: Array<{ key: keyof Pads; label: string }> = [
   { key: "phosphates", label: "Phosphates" },
   { key: "temperature", label: "Temperature" },
   { key: "ph", label: "PH" },
+  { key: "salinity", label: "Salinity" },
 ];
 
 type StoreProduct = {

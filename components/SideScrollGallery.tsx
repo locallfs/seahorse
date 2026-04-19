@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { medusa } from "@/lib/medusa";
@@ -11,6 +11,7 @@ type StoreProduct = {
   handle: string;
   title: string;
   thumbnail: string | null;
+  images?: Array<{ id?: string; url: string; rank?: number }> | null;
   variants: Array<{
     calculated_price?: {
       calculated_amount: number;
@@ -36,22 +37,54 @@ function formatPrice(amount: number, currency: string) {
 
 function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) {
   const price = product.variants?.[0]?.calculated_price;
+
+  const images = useMemo(() => {
+    const imgs = (product.images || [])
+      .slice()
+      .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+      .map((i) => i.url)
+      .filter(Boolean);
+    if (imgs.length === 0 && product.thumbnail) return [product.thumbnail];
+    return Array.from(new Set(imgs));
+  }, [product.images, product.thumbnail]);
+
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const id = setInterval(() => {
+      setIndex((i) => (i + 1) % images.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [images.length]);
+
   return (
     <Link
       href={`/products/${product.handle}`}
       className="flex-shrink-0 w-44 sm:w-56 md:w-64 group"
     >
       <div className="relative overflow-hidden rounded-lg border border-white/10 group-hover:border-white/25 transition-all duration-300 glow-purple">
-        <div className="w-full aspect-[3/4] relative bg-black">
-          {product.thumbnail ? (
-            <Image
-              src={product.thumbnail}
-              alt={product.title}
-              fill
-              className="object-contain group-hover:scale-105 transition-transform duration-500"
-              sizes="(max-width: 768px) 224px, 256px"
-              unoptimized
-            />
+        <div className="w-full aspect-[3/4] relative bg-black overflow-hidden">
+          {images.length > 0 ? (
+            images.map((src, i) => {
+              const active = i === index;
+              return (
+                <Image
+                  key={src}
+                  src={src}
+                  alt={product.title}
+                  fill
+                  className={`object-contain transition-all duration-[1100ms] ease-in-out group-hover:scale-105 ${
+                    active
+                      ? "opacity-100 translate-x-0"
+                      : "opacity-0 translate-x-3"
+                  }`}
+                  sizes="(max-width: 768px) 224px, 256px"
+                  unoptimized
+                  priority={i === 0}
+                />
+              );
+            })
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-white text-xs">
               No image
@@ -102,7 +135,7 @@ export default function SideScrollGallery({
         const regionId = regionsRes.regions?.[0]?.id;
 
         const res = await medusa.store.product.list({
-          fields: "id,handle,title,thumbnail,tags.value,*variants.calculated_price",
+          fields: "id,handle,title,thumbnail,tags.value,*images,*variants.calculated_price",
           region_id: regionId,
           limit: 200,
         } as any);
