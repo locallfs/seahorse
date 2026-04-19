@@ -237,3 +237,116 @@ Medusa admin will live at `admin.seahorseaquariumsupply.com`.
 - Categories: Fish, Coral, Equipment
 - Search and filtering required from day one (by category, price, availability)
 - Product import via CSV will be used for initial bulk upload into Medusa admin (faster than entering one by one)
+
+
+---
+
+
+## QuickBooks Online — Inventory Sync (Phase 3)
+
+Keep item-level stock counts identical between the physical store (QuickBooks Online) and the website (Medusa). When a sale happens in one place, the other updates within seconds. When staff manually adjust inventory in either place, the other follows.
+
+### Source of truth
+There is **no single source of truth** — both sides are authoritative for events that happen on their side. Sync is **event-driven**, not periodic. The SKU is the common identifier.
+
+### Matching products — SKU strategy (Option A)
+Products do not yet have SKUs on either side. Before any sync can run:
+
+1. **One-time SKU generation script** (`backend/src/scripts/assign-skus.ts`)
+   - Runs against Medusa
+   - Every product variant missing a SKU gets one auto-generated from the product handle, e.g. `WS-ELECTRIC-FLAME-SCALLOP-01`
+   - Collisions get a numeric suffix
+   - Writes SKUs back to Medusa
+2. **One-time QuickBooks seed script** (`backend/src/scripts/seed-quickbooks-items.ts`)
+   - Reads every Medusa product with its SKU
+   - Creates a matching QBO Item (type: Inventory) with that SKU and current stock
+   - If a QBO Item with that SKU already exists, updates it instead
+3. After both scripts run once, every product has the same SKU in both systems.
+
+### Connection & credentials
+- A **new Intuit Developer app** gets created (free, developer.intuit.com). Owner: website developer account.
+- The **store's QuickBooks Online account** goes through a one-time OAuth "Connect to QuickBooks" flow hosted on an admin page (`/admin/integrations/quickbooks`).
+- Tokens stored encrypted in Medusa backend (new `quickbooks_connection` custom module with `access_token`, `refresh_token`, `realm_id`, `expires_at`). Refresh token auto-rotated before expiry by a scheduled job.
+
+### Live sync flow
+
+**Medusa → QuickBooks**
+- Medusa subscriber listens for `inventory.updated` and `order.placed` events
+- On event, looks up the variant's SKU, finds the matching QBO Item, calls `POST /items/:id?operation=update` to set `QtyOnHand`
+- Retries on failure with exponential backoff (1s → 5s → 30s, then a dead-letter row for manual review)
+
+**QuickBooks → Medusa**
+- Intuit webhooks point at `https://admin.seahorseaquariumsupply.com/api/webhooks/quickbooks`
+- On `Item` entity change events, the handler fetches the latest item from QBO, looks up the Medusa variant by SKU, and updates `inventory_levels.stocked_quantity`
+- Signature verified against the webhook verifier token
+
+### New products created on either side
+- **New product in Medusa** → subscriber creates matching QBO Item
+- **New item in QuickBooks** → webhook creates matching Medusa product (draft/unpublished so staff can add photos and description before it appears on site)
+
+### Conflict resolution
+- "Last write wins" at the SKU level. Timestamps on both sides; if clocks drift we trust the event timestamp we received.
+- Simultaneous sales on both sides: both events fire, both decrement, result is correct.
+- Simultaneous manual edits on both sides within the same few seconds: last write wins. Rare in practice; acceptable trade-off.
+
+### Admin visibility
+A small page at `/admin/integrations/quickbooks` inside the Medusa admin:
+- Connect / disconnect button
+- Connection status (healthy / token expired / disconnected)
+- Last successful sync timestamp
+- Recent sync log (last 50 events, green/red)
+- Manual "Resync all" button (runs the seed script again, safe to re-run)
+
+### Failure handling
+- Every sync attempt logged to `quickbooks_sync_log` table (id, direction, sku, event_type, status, error_message, created_at)
+- Failed events retried automatically
+- After 3 failed retries, event marked as `needs_manual_review` and shown on the admin page
+
+### Railway environment variables needed (to set BEFORE code is deployed)
+| Variable | Value source | What it's for |
+|---|---|---|
+| `QUICKBOOKS_CLIENT_ID` | Intuit Developer app → Keys & credentials | Identifies our app to Intuit |
+| `QUICKBOOKS_CLIENT_SECRET` | Intuit Developer app → Keys & credentials | Secret matching the client ID |
+| `QUICKBOOKS_REDIRECT_URI` | `https://admin.seahorseaquariumsupply.com/api/quickbooks/oauth/callback` | Where Intuit sends the user after they authorize |
+| `QUICKBOOKS_ENVIRONMENT` | `sandbox` during build, `production` at go-live | Tells the SDK which API to hit |
+| `QUICKBOOKS_WEBHOOK_VERIFIER_TOKEN` | Intuit Developer app → Webhooks tab | Validates incoming webhook signatures |
+| `QUICKBOOKS_ENCRYPTION_KEY` | 32-byte random string, we'll generate one | Encrypts OAuth tokens at rest in Postgres |
+
+### Build order (phased)
+1. **Phase A — SKUs**
+   - Write and run `assign-skus.ts` script
+   - Verify every Medusa product has a SKU
+2. **Phase B — Developer app + OAuth**
+   - User creates Intuit Developer account + app
+   - User sets all 6 env vars on Railway
+   - Build `/admin/integrations/quickbooks` page with Connect button
+   - Test OAuth round-trip in sandbox mode
+3. **Phase C — Seed QuickBooks**
+   - Run `seed-quickbooks-items.ts` — creates QBO Items for every Medusa product
+   - Verify in QuickBooks UI that items appear with correct SKUs and stock
+4. **Phase D — Medusa → QBO sync**
+   - Subscriber + QBO client library + retry logic + log table
+   - Test by adjusting stock in Medusa admin, confirm QBO updates
+5. **Phase E — QBO → Medusa sync**
+   - Webhook endpoint + signature verification + handler
+   - Test by adjusting item in QBO, confirm Medusa updates
+6. **Phase F — Admin visibility page**
+   - Status, log, resync button
+7. **Phase G — Go live**
+   - Switch `QUICKBOOKS_ENVIRONMENT` to `production`
+   - User re-authorizes with the store's real QBO account
+   - Monitor for 48 hours
+
+### Out of scope for v1
+- Price sync (prices stay managed in Medusa; QBO prices updated manually or ignored)
+- Customer sync (website customers do NOT get pushed to QuickBooks)
+- Invoice / sales receipt creation in QuickBooks when website orders complete (can be added later)
+- Multi-location inventory (QBO Plus feature; both sides treat stock as single-location)
+
+### Done means
+- Sale at the register in QuickBooks → website stock count drops within 30 seconds
+- Sale on the website → QuickBooks stock count drops within 30 seconds
+- Manual stock adjustment in either system → other side catches up within 30 seconds
+- Admin page shows "Connected, last sync 2 min ago" in green
+- Token refresh happens silently in background with no user action
+- If the connection breaks, the admin page shows red and exactly what to do to fix it
