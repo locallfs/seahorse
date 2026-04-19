@@ -32,6 +32,8 @@ const products = [
   "Glass hole drilling",
   "Consultations",
   "Onsite water testing, home & ICP test kits",
+  "Par Meter Rental",
+  "Mojano Wand Rental",
 ];
 
 const values = [
