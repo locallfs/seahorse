@@ -7,7 +7,6 @@ import {
   Input,
   Select,
   Text,
-  Textarea,
   toast,
 } from "@medusajs/ui"
 import { useMemo, useState } from "react"
@@ -21,11 +20,17 @@ type Pads = {
   max_size?: string
   diet?: string
   temperament?: string
-  water_conditions?: string
   range?: string
   flow?: string[]
   placement?: string[]
   lighting?: string[]
+  calcium?: string
+  magnesium?: string
+  alkalinity?: string
+  nitrates?: string
+  phosphates?: string
+  temperature?: string
+  ph?: string
 }
 
 const MULTI_KEYS = ["flow", "placement", "lighting"] as const
@@ -33,6 +38,16 @@ type MultiKey = (typeof MULTI_KEYS)[number]
 const FLOW_OPTIONS = ["Low", "Moderate", "Indirect", "Heavy"]
 const PLACEMENT_OPTIONS = ["Low", "Mid-Low", "Mid", "Mid-High", "High"]
 const LIGHTING_OPTIONS = ["Low", "Low-Mid", "Mid", "Mid-High", "High"]
+
+const WATER_FIELDS: Array<{ key: keyof Pads; label: string; placeholder: string }> = [
+  { key: "calcium", label: "Calcium", placeholder: "e.g. 420 ppm" },
+  { key: "magnesium", label: "Magnesium", placeholder: "e.g. 1350 ppm" },
+  { key: "alkalinity", label: "Alkalinity", placeholder: "e.g. 8-10 dKH" },
+  { key: "nitrates", label: "Nitrates", placeholder: "e.g. < 10 ppm" },
+  { key: "phosphates", label: "Phosphates", placeholder: "e.g. < 0.05 ppm" },
+  { key: "temperature", label: "Temperature", placeholder: "e.g. 75-78°F" },
+  { key: "ph", label: "PH", placeholder: "e.g. 8.1-8.4" },
+]
 
 const LIVE_CATEGORY_HANDLES = ["fish", "corals", "inverts"]
 
@@ -83,11 +98,17 @@ const padsFromMetadata = (metadata: Record<string, unknown> | null | undefined):
     max_size: typeof raw.max_size === "string" ? raw.max_size : "",
     diet: typeof raw.diet === "string" ? raw.diet : "",
     temperament: typeof raw.temperament === "string" ? raw.temperament : "",
-    water_conditions: typeof raw.water_conditions === "string" ? raw.water_conditions : "",
     range: typeof raw.range === "string" ? raw.range : "",
     flow: stringArrayFromRaw(raw.flow),
     placement: stringArrayFromRaw(raw.placement),
     lighting: stringArrayFromRaw(raw.lighting),
+    calcium: typeof raw.calcium === "string" ? raw.calcium : "",
+    magnesium: typeof raw.magnesium === "string" ? raw.magnesium : "",
+    alkalinity: typeof raw.alkalinity === "string" ? raw.alkalinity : "",
+    nitrates: typeof raw.nitrates === "string" ? raw.nitrates : "",
+    phosphates: typeof raw.phosphates === "string" ? raw.phosphates : "",
+    temperature: typeof raw.temperature === "string" ? raw.temperature : "",
+    ph: typeof raw.ph === "string" ? raw.ph : "",
   }
 }
 
@@ -239,19 +260,20 @@ const LiveAnimalPadsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
           {selectField("temperament", "Temperament", ["Peaceful", "Semi-Aggressive", "Aggressive"])}
           {textField("range", "Range", "e.g. Indo-Pacific")}
         </div>
-        <div className="flex flex-col gap-1">
-          <Text size="small" className="text-ui-fg-subtle">Water Conditions</Text>
-          <Textarea
-            value={pendingPads.water_conditions ?? ""}
-            onChange={(e) => update("water_conditions", e.target.value)}
-            placeholder="e.g. 72-78°F, dKH 8-12, pH 8.1-8.4, sg 1.020-1.025"
-            disabled={saving}
-            rows={2}
-          />
-        </div>
         {multiField("flow", "Flow", FLOW_OPTIONS)}
         {multiField("placement", "Placement", PLACEMENT_OPTIONS)}
         {multiField("lighting", "Lighting", LIGHTING_OPTIONS)}
+        <div className="flex flex-col gap-3 pt-4 border-t border-ui-border-base">
+          <Heading level="h3">Water Conditions</Heading>
+          <Text size="small" className="text-ui-fg-subtle">
+            Target parameters for this species. Only filled fields render on the storefront.
+          </Text>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {WATER_FIELDS.map(({ key, label, placeholder }) => (
+              <div key={key}>{textField(key, label, placeholder)}</div>
+            ))}
+          </div>
+        </div>
         <div className="flex items-center justify-end gap-3">
           <Button
             variant="primary"

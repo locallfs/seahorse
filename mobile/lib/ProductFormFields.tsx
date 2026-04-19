@@ -6,6 +6,7 @@ import {
   LIGHTING_OPTIONS,
   PLACEMENT_OPTIONS,
   PRODUCT_TYPE_OPTIONS,
+  WATER_PARAM_FIELDS,
   type OrganizeOption,
   type OrganizeOptions,
   type ProductAttributes,
@@ -225,16 +226,6 @@ export function PadFields({ value, onChange }: PadsProps) {
         placeholderTextColor={theme.color.textDim}
       />
 
-      <Text style={styles.label}>Water Conditions</Text>
-      <TextInput
-        value={value.water_conditions}
-        onChangeText={(v) => set('water_conditions', v)}
-        multiline
-        style={[styles.input, styles.textarea]}
-        placeholder="e.g. 72-78°F, dKH 8-12, pH 8.1-8.4, sg 1.020-1.025"
-        placeholderTextColor={theme.color.textDim}
-      />
-
       <Text style={styles.label}>Flow (multi-select)</Text>
       <MultiPillChoice
         options={FLOW_OPTIONS}
@@ -255,6 +246,25 @@ export function PadFields({ value, onChange }: PadsProps) {
         selected={value.lighting}
         onToggle={(v) => toggleMulti('lighting', v)}
       />
+
+      <Text style={styles.sectionHeader}>Water Conditions</Text>
+      <Text style={styles.helpText}>
+        Target parameters for this species. Only filled fields render on the storefront.
+      </Text>
+      {WATER_PARAM_FIELDS.map((field) => (
+        <View key={field.key}>
+          <Text style={styles.label}>{field.label}</Text>
+          <TextInput
+            value={value[field.key] as string}
+            onChangeText={(v) =>
+              set(field.key as Exclude<keyof SpeciesPads, MultiKey>, v)
+            }
+            style={styles.input}
+            placeholder={field.placeholder}
+            placeholderTextColor={theme.color.textDim}
+          />
+        </View>
+      ))}
     </View>
   );
 }

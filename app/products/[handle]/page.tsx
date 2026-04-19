@@ -29,12 +29,28 @@ type Pads = {
   max_size?: string;
   diet?: string;
   temperament?: string;
-  water_conditions?: string;
   range?: string;
   flow?: string[];
   placement?: string[];
   lighting?: string[];
+  calcium?: string;
+  magnesium?: string;
+  alkalinity?: string;
+  nitrates?: string;
+  phosphates?: string;
+  temperature?: string;
+  ph?: string;
 };
+
+const WATER_ORDER: Array<{ key: keyof Pads; label: string }> = [
+  { key: "calcium", label: "Calcium" },
+  { key: "magnesium", label: "Magnesium" },
+  { key: "alkalinity", label: "Alkalinity" },
+  { key: "nitrates", label: "Nitrates" },
+  { key: "phosphates", label: "Phosphates" },
+  { key: "temperature", label: "Temperature" },
+  { key: "ph", label: "PH" },
+];
 
 type StoreProduct = {
   id: string;
@@ -60,7 +76,6 @@ const PAD_ORDER: Array<{ key: keyof Pads; label: string }> = [
   { key: "placement", label: "Placement" },
   { key: "lighting", label: "Lighting" },
   { key: "range", label: "Range" },
-  { key: "water_conditions", label: "Water Conditions" },
 ];
 
 function padDisplayValue(raw: unknown): string | null {
@@ -137,6 +152,9 @@ export default function ProductPage({
   const live = isLiveAnimal(product);
   const pads = (product?.metadata?.pads ?? {}) as Record<string, unknown>;
   const padEntries = PAD_ORDER.filter(({ key }) => {
+    return padDisplayValue(pads[key]) !== null;
+  });
+  const waterEntries = WATER_ORDER.filter(({ key }) => {
     return padDisplayValue(pads[key]) !== null;
   });
 
@@ -254,6 +272,29 @@ export default function ProductPage({
                         </p>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {live && waterEntries.length > 0 && (
+                  <div className="mb-6">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-[#FFD700] mb-3">
+                      Water Conditions
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {waterEntries.map(({ key, label }) => (
+                        <div
+                          key={key}
+                          className="rounded-md border border-white/15 bg-ocean-800/60 px-3 py-2"
+                        >
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-white/55 mb-0.5">
+                            {label}
+                          </p>
+                          <p className="text-sm text-white leading-snug">
+                            {padDisplayValue(pads[key])}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

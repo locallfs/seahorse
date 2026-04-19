@@ -176,16 +176,36 @@ export type SpeciesPads = {
   max_size: string;
   diet: string;
   temperament: string;
-  water_conditions: string;
   range: string;
   flow: string[];
   placement: string[];
   lighting: string[];
+  calcium: string;
+  magnesium: string;
+  alkalinity: string;
+  nitrates: string;
+  phosphates: string;
+  temperature: string;
+  ph: string;
 };
 
 export const FLOW_OPTIONS = ['Low', 'Moderate', 'Indirect', 'Heavy'];
 export const PLACEMENT_OPTIONS = ['Low', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
 export const LIGHTING_OPTIONS = ['Low', 'Low-Mid', 'Mid', 'Mid-High', 'High'];
+
+export const WATER_PARAM_FIELDS: Array<{
+  key: keyof SpeciesPads;
+  label: string;
+  placeholder: string;
+}> = [
+  { key: 'calcium', label: 'Calcium', placeholder: 'e.g. 420 ppm' },
+  { key: 'magnesium', label: 'Magnesium', placeholder: 'e.g. 1350 ppm' },
+  { key: 'alkalinity', label: 'Alkalinity', placeholder: 'e.g. 8-10 dKH' },
+  { key: 'nitrates', label: 'Nitrates', placeholder: 'e.g. < 10 ppm' },
+  { key: 'phosphates', label: 'Phosphates', placeholder: 'e.g. < 0.05 ppm' },
+  { key: 'temperature', label: 'Temperature', placeholder: 'e.g. 75-78°F' },
+  { key: 'ph', label: 'PH', placeholder: 'e.g. 8.1-8.4' },
+];
 
 export const EMPTY_PADS: SpeciesPads = {
   care_level: '',
@@ -194,11 +214,17 @@ export const EMPTY_PADS: SpeciesPads = {
   max_size: '',
   diet: '',
   temperament: '',
-  water_conditions: '',
   range: '',
   flow: [],
   placement: [],
   lighting: [],
+  calcium: '',
+  magnesium: '',
+  alkalinity: '',
+  nitrates: '',
+  phosphates: '',
+  temperature: '',
+  ph: '',
 };
 
 function stringArrayFrom(value: unknown): string[] {
@@ -220,12 +246,17 @@ export function padsFromMetadata(
     max_size: typeof raw.max_size === 'string' ? raw.max_size : '',
     diet: typeof raw.diet === 'string' ? raw.diet : '',
     temperament: typeof raw.temperament === 'string' ? raw.temperament : '',
-    water_conditions:
-      typeof raw.water_conditions === 'string' ? raw.water_conditions : '',
     range: typeof raw.range === 'string' ? raw.range : '',
     flow: stringArrayFrom(raw.flow),
     placement: stringArrayFrom(raw.placement),
     lighting: stringArrayFrom(raw.lighting),
+    calcium: typeof raw.calcium === 'string' ? raw.calcium : '',
+    magnesium: typeof raw.magnesium === 'string' ? raw.magnesium : '',
+    alkalinity: typeof raw.alkalinity === 'string' ? raw.alkalinity : '',
+    nitrates: typeof raw.nitrates === 'string' ? raw.nitrates : '',
+    phosphates: typeof raw.phosphates === 'string' ? raw.phosphates : '',
+    temperature: typeof raw.temperature === 'string' ? raw.temperature : '',
+    ph: typeof raw.ph === 'string' ? raw.ph : '',
   };
 }
 
