@@ -21,6 +21,7 @@ module.exports = defineConfig({
   admin: {
     disable: false,
     backendUrl: process.env.MEDUSA_BACKEND_URL || "https://seahorse-production.up.railway.app",
+    maxUploadFileSize: 30 * 1024 * 1024,
   },
   modules: {
     cache: {
