@@ -79,6 +79,18 @@ body {
   width: max-content;
 }
 
+@keyframes gallery-marquee-single {
+  0% { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+
+.gallery-marquee-single {
+  display: inline-flex;
+  gap: 1rem;
+  width: max-content;
+  animation: gallery-marquee-single var(--marquee-duration, 22s) linear infinite;
+}
+
 .reviews-auto-scroll {
   animation: trust-scroll 45s linear infinite;
   width: max-content;
@@ -86,6 +98,7 @@ body {
 
 @media (pointer: coarse) {
   .gallery-auto-scroll,
+  .gallery-marquee-single,
   .reviews-auto-scroll {
     animation: none;
     width: auto;
@@ -95,10 +108,12 @@ body {
     scrollbar-width: none;
   }
   .gallery-auto-scroll::-webkit-scrollbar,
+  .gallery-marquee-single::-webkit-scrollbar,
   .reviews-auto-scroll::-webkit-scrollbar {
     display: none;
   }
   .gallery-auto-scroll > *,
+  .gallery-marquee-single > *,
   .reviews-auto-scroll > * {
     scroll-snap-align: start;
   }

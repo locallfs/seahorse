@@ -135,9 +135,9 @@ export default function SideScrollGallery({
     return null;
   }
 
-  const minForLoop = 6;
-  const repeatCount = products.length > 0 ? Math.max(2, Math.ceil(minForLoop / products.length) * 2) : 0;
-  const displayItems = Array.from({ length: repeatCount }).flatMap(() => products);
+  const useMarquee = products.length > 0 && products.length < 5;
+  const displayItems = useMarquee ? products : [...products, ...products];
+  const marqueeDuration = useMarquee ? `${18 + products.length * 4}s` : undefined;
 
   return (
     <section className="py-20 overflow-hidden">
@@ -180,7 +180,18 @@ export default function SideScrollGallery({
           ))}
         </div>
       ) : (
-        <div className="gallery-auto-scroll flex gap-4 px-6">
+        <div
+          className={
+            useMarquee
+              ? "gallery-marquee-single px-6"
+              : "gallery-auto-scroll flex gap-4 px-6"
+          }
+          style={
+            marqueeDuration
+              ? ({ ["--marquee-duration" as any]: marqueeDuration } as React.CSSProperties)
+              : undefined
+          }
+        >
           {displayItems.map((product, i) => (
             <ProductCard key={`${product.id}-${i}`} product={product} tag={tag} />
           ))}
