@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AddToCartButton from "@/components/AddToCartButton";
 import ShippingNotice from "@/components/ShippingNotice";
+import ProductImageZoom from "@/components/ProductImageZoom";
 import { medusa } from "@/lib/medusa";
 import { isLiveAnimal } from "@/lib/liveAnimal";
 
@@ -164,22 +165,13 @@ export default function ProductPage({
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="flex flex-col gap-3">
-                <div className="w-full aspect-square rounded-xl border border-white/10 overflow-hidden relative bg-ocean-800 glow-white">
-                  {selectedImageUrl ? (
-                    <Image
-                      src={selectedImageUrl}
-                      alt={product.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white text-xs">
-                      No image
-                    </div>
-                  )}
-                </div>
+                {selectedImageUrl ? (
+                  <ProductImageZoom src={selectedImageUrl} alt={product.title} />
+                ) : (
+                  <div className="w-full aspect-square rounded-xl border border-white/10 overflow-hidden relative bg-ocean-800 glow-white flex items-center justify-center text-white text-xs">
+                    No image
+                  </div>
+                )}
                 {gallery.length > 1 && (
                   <div className="flex gap-2 flex-wrap">
                     {gallery.map((img) => {
