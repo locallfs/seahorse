@@ -18,7 +18,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="New Arrivals"
             subtitle="Just In"
-            categoryHandle="new-arrivals"
+            typeValue="New Arrival"
             viewAllHref="/new-arrivals"
             tag="New"
           />
@@ -30,7 +30,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="Saltwater Fish"
             subtitle="Live Fish"
-            categoryHandle="fish"
+            typeValue="Fish"
             viewAllHref="/fish"
           />
 
@@ -41,7 +41,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="Invertebrates"
             subtitle="Inverts"
-            categoryHandle="inverts"
+            typeValue="Invertebrate"
             viewAllHref="/inverts"
           />
 
@@ -52,7 +52,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="WYSIWYG Corals"
             subtitle="What You See Is What You Get"
-            categoryHandle="corals"
+            typeValue="Coral"
             viewAllHref="/corals"
             tag="WYSIWYG"
           />
@@ -64,7 +64,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="Aquarium Supplies"
             subtitle="Equipment & Accessories"
-            categoryHandle="supplies"
+            typeValue="Supply"
             viewAllHref="/supplies"
           />
         </div>

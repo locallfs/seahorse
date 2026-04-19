@@ -21,7 +21,7 @@ type StoreProduct = {
 interface SideScrollGalleryProps {
   title: string;
   subtitle?: string;
-  categoryHandle: string;
+  typeValue: string;
   viewAllHref: string;
   tag?: string;
 }
@@ -81,7 +81,7 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
 export default function SideScrollGallery({
   title,
   subtitle,
-  categoryHandle,
+  typeValue,
   viewAllHref,
   tag,
 }: SideScrollGalleryProps) {
@@ -95,10 +95,13 @@ export default function SideScrollGallery({
         const regionsRes = await medusa.store.region.list();
         const regionId = regionsRes.regions?.[0]?.id;
 
-        const catRes = await medusa.store.category.list({ handle: categoryHandle });
-        const categoryId = (catRes as any).product_categories?.[0]?.id;
-
-        if (!categoryId) {
+        const typesRes: any = await medusa.client.fetch("/store/product-types", {
+          query: { limit: 100 },
+        });
+        const matched = (typesRes?.product_types ?? []).find(
+          (t: any) => t?.value?.toLowerCase() === typeValue.toLowerCase()
+        );
+        if (!matched) {
           if (!cancelled) setLoading(false);
           return;
         }
@@ -106,7 +109,7 @@ export default function SideScrollGallery({
         const res = await medusa.store.product.list({
           fields: "id,handle,title,thumbnail,*variants.calculated_price",
           region_id: regionId,
-          category_id: [categoryId],
+          type_id: [matched.id],
           limit: 12,
         } as any);
 
@@ -120,14 +123,15 @@ export default function SideScrollGallery({
     return () => {
       cancelled = true;
     };
-  }, [categoryHandle]);
+  }, [typeValue]);
 
   if (!loading && products.length === 0) {
     return null;
   }
 
-  const shouldLoop = products.length >= 5;
-  const displayItems = shouldLoop ? [...products, ...products] : products;
+  const minForLoop = 6;
+  const repeatCount = products.length > 0 ? Math.max(2, Math.ceil(minForLoop / products.length) * 2) : 0;
+  const displayItems = Array.from({ length: repeatCount }).flatMap(() => products);
 
   return (
     <section className="py-20 overflow-hidden">
@@ -170,13 +174,7 @@ export default function SideScrollGallery({
           ))}
         </div>
       ) : (
-        <div
-          className={
-            shouldLoop
-              ? "gallery-auto-scroll flex gap-4 px-6"
-              : "flex gap-4 px-6 max-w-screen-xl mx-auto flex-wrap"
-          }
-        >
+        <div className="gallery-auto-scroll flex gap-4 px-6">
           {displayItems.map((product, i) => (
             <ProductCard key={`${product.id}-${i}`} product={product} tag={tag} />
           ))}
