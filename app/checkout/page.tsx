@@ -363,6 +363,32 @@ export default function CheckoutPage() {
     if (!hasLiveItems) setLiveAgreementAccepted(false);
   }, [hasLiveItems, liveAgreementAutoOpened, liveAgreementAccepted]);
 
+  const [autoFilled, setAutoFilled] = useState(false);
+
+  useEffect(() => {
+    if (autoFilled || step !== "address") return;
+    if (!customer) return;
+    if (hasLiveItems && !liveAgreementAccepted) return;
+
+    const defaultAddress =
+      (customer as any).addresses?.find((a: any) => a.is_default_shipping) ||
+      (customer as any).addresses?.[0];
+
+    setForm((prev) => ({
+      ...prev,
+      email: prev.email || customer.email || "",
+      first_name: prev.first_name || defaultAddress?.first_name || customer.first_name || "",
+      last_name: prev.last_name || defaultAddress?.last_name || customer.last_name || "",
+      phone: prev.phone || defaultAddress?.phone || (customer as any).phone || "",
+      address_1: prev.address_1 || defaultAddress?.address_1 || "",
+      city: prev.city || defaultAddress?.city || "",
+      province: prev.province || defaultAddress?.province || "",
+      postal_code: prev.postal_code || defaultAddress?.postal_code || "",
+      country_code: prev.country_code || defaultAddress?.country_code || "us",
+    }));
+    setAutoFilled(true);
+  }, [customer, hasLiveItems, liveAgreementAccepted, autoFilled, step]);
+
   if (cartLoading || authLoading || !customer) {
     return (
       <>

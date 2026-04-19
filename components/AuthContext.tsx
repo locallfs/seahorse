@@ -9,11 +9,39 @@ import {
 } from "react";
 import { medusa } from "@/lib/medusa";
 
+interface CustomerAddress {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  address_1?: string;
+  address_2?: string;
+  city?: string;
+  province?: string;
+  postal_code?: string;
+  country_code?: string;
+  is_default_shipping?: boolean;
+  is_default_billing?: boolean;
+}
+
 interface Customer {
   id: string;
   email: string;
   first_name?: string;
   last_name?: string;
+  phone?: string;
+  addresses?: CustomerAddress[];
+}
+
+export interface RegisterProfile {
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  address1?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  countryCode?: string;
 }
 
 interface AuthContextValue {
@@ -23,8 +51,7 @@ interface AuthContextValue {
   register: (
     email: string,
     password: string,
-    firstName: string,
-    lastName: string
+    profile: RegisterProfile
   ) => Promise<void>;
   logout: () => Promise<void>;
   refetch: () => Promise<void>;
@@ -38,7 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCustomer = useCallback(async () => {
     try {
-      const { customer } = await medusa.store.customer.retrieve();
+      const { customer } = await medusa.store.customer.retrieve({
+        fields: "id,email,first_name,last_name,phone,*addresses",
+      });
       setCustomer(customer as Customer);
     } catch {
       setCustomer(null);
@@ -72,12 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const register = useCallback(
-    async (
-      email: string,
-      password: string,
-      firstName: string,
-      lastName: string
-    ) => {
+    async (email: string, password: string, profile: RegisterProfile) => {
       let needsLogin = false;
       try {
         await medusa.auth.register("customer", "emailpass", {
@@ -99,10 +123,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       await medusa.store.customer.create({
-        first_name: firstName,
-        last_name: lastName,
+        first_name: profile.firstName,
+        last_name: profile.lastName,
         email,
+        phone: profile.phone,
       });
+
+      const hasAddress =
+        profile.address1 &&
+        profile.city &&
+        profile.province &&
+        profile.postalCode;
+
+      if (hasAddress) {
+        try {
+          await medusa.store.customer.createAddress({
+            first_name: profile.firstName,
+            last_name: profile.lastName,
+            phone: profile.phone,
+            address_1: profile.address1,
+            city: profile.city,
+            province: profile.province,
+            postal_code: profile.postalCode,
+            country_code: (profile.countryCode || "us").toLowerCase(),
+            is_default_shipping: true,
+            is_default_billing: true,
+          });
+        } catch {
+          // Address save is best-effort; account is already created.
+        }
+      }
 
       await fetchCustomer();
     },
