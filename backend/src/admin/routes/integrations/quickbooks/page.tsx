@@ -26,6 +26,7 @@ interface StatusPayload {
   connected: boolean
   connection: Connection | null
   environment: string
+  env_check?: Record<string, string | null>
 }
 
 const QuickbooksPage = () => {
@@ -130,12 +131,33 @@ const QuickbooksPage = () => {
         {loading && <Text size="small">Loading…</Text>}
 
         {!loading && status && !status.configured && (
-          <div className="rounded border border-ui-border-error bg-ui-bg-base p-4">
+          <div className="rounded border border-ui-border-error bg-ui-bg-base p-4 flex flex-col gap-2">
             <Text className="text-ui-fg-error">
-              Backend is missing one or more QuickBooks env vars:
-              QUICKBOOKS_CLIENT_ID, QUICKBOOKS_CLIENT_SECRET, QUICKBOOKS_REDIRECT_URI.
+              Backend is missing one or more QuickBooks env vars.
               Set them on Railway, redeploy, then return here.
             </Text>
+            {status.env_check && (
+              <div className="rounded bg-ui-bg-subtle p-3 font-mono text-xs">
+                {Object.entries(status.env_check).map(([key, preview]) => (
+                  <div key={key} className="flex justify-between gap-4">
+                    <span>{key}</span>
+                    <span
+                      className={
+                        preview === null || preview === ""
+                          ? "text-ui-fg-error"
+                          : "text-ui-fg-subtle"
+                      }
+                    >
+                      {preview === null
+                        ? "(not set)"
+                        : preview === ""
+                        ? "(empty)"
+                        : preview}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
