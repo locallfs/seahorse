@@ -94,7 +94,7 @@ export default function Header() {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-7">
-          {navLinks.map((link) => (
+          {navLinks.slice(0, 1).map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -128,6 +128,19 @@ export default function Header() {
               </div>
             </div>
           </div>
+          {navLinks.slice(1).map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-glow-gold ${
+                link.flash
+                  ? "text-blue-accent hover:text-blue-light"
+                  : "text-blue-dim hover:text-blue-accent"
+              } ${link.flash ? "nav-grow" : ""}`}
+            >
+              {link.label}
+            </Link>
+          ))}
           <div className="relative group">
             <button className="text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-blue-dim hover:text-blue-accent flex items-center gap-1 text-glow-gold">
               Services
@@ -295,7 +308,7 @@ export default function Header() {
       {menuOpen && (
         <div className="lg:hidden bg-white border-t border-white/20">
           <nav className="max-w-screen-xl mx-auto px-6 py-4 flex flex-col gap-1">
-            {navLinks.map((link) => (
+            {navLinks.slice(0, 1).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -312,6 +325,16 @@ export default function Header() {
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
                 className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium pl-6 text-glow-gold"
+              >
+                {link.label}
+              </Link>
+            ))}
+            {navLinks.slice(1).map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium text-glow-gold"
               >
                 {link.label}
               </Link>
