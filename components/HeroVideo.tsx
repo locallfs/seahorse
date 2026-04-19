@@ -28,13 +28,13 @@ export default function HeroVideo() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/new-arrivals"
-            className="px-8 py-4 bg-blue-accent hover:bg-blue-light text-white font-medium rounded transition-colors duration-200 tracking-wide text-sm [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]"
+            className="px-8 py-4 bg-blue-accent hover:bg-blue-light text-[#FFD700] font-medium rounded transition-colors duration-200 tracking-wide text-sm [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]"
           >
             View New Arrivals
           </Link>
           <Link
             href="/store"
-            className="px-8 py-4 bg-white/15 hover:bg-white/25 text-white font-medium rounded backdrop-blur-sm border border-white/30 transition-colors duration-200 tracking-wide text-sm [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]"
+            className="px-8 py-4 bg-white/15 hover:bg-white/25 text-[#FFD700] font-medium rounded backdrop-blur-sm border border-white/30 transition-colors duration-200 tracking-wide text-sm [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]"
           >
             Shop All Products
           </Link>
