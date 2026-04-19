@@ -31,6 +31,9 @@ type Pads = {
   temperament?: string;
   water_conditions?: string;
   range?: string;
+  flow?: string[];
+  placement?: string[];
+  lighting?: string[];
 };
 
 type StoreProduct = {
@@ -53,9 +56,21 @@ const PAD_ORDER: Array<{ key: keyof Pads; label: string }> = [
   { key: "max_size", label: "Max Size" },
   { key: "diet", label: "Diet" },
   { key: "temperament", label: "Temperament" },
+  { key: "flow", label: "Flow" },
+  { key: "placement", label: "Placement" },
+  { key: "lighting", label: "Lighting" },
   { key: "range", label: "Range" },
   { key: "water_conditions", label: "Water Conditions" },
 ];
+
+function padDisplayValue(raw: unknown): string | null {
+  if (Array.isArray(raw)) {
+    const items = raw.filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+    return items.length ? items.join(" • ") : null;
+  }
+  if (typeof raw === "string" && raw.trim().length > 0) return raw;
+  return null;
+}
 
 function formatPrice(amount: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
@@ -120,10 +135,9 @@ export default function ProductPage({
 
   const price = variant?.calculated_price;
   const live = isLiveAnimal(product);
-  const pads = product?.metadata?.pads ?? {};
+  const pads = (product?.metadata?.pads ?? {}) as Record<string, unknown>;
   const padEntries = PAD_ORDER.filter(({ key }) => {
-    const v = pads[key];
-    return typeof v === "string" && v.trim().length > 0;
+    return padDisplayValue(pads[key]) !== null;
   });
 
   const gallery: ProductImage[] = useMemo(() => {
@@ -236,7 +250,7 @@ export default function ProductPage({
                           {label}
                         </p>
                         <p className="text-sm text-white leading-snug">
-                          {pads[key]}
+                          {padDisplayValue(pads[key])}
                         </p>
                       </div>
                     ))}

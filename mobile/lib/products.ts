@@ -178,7 +178,14 @@ export type SpeciesPads = {
   temperament: string;
   water_conditions: string;
   range: string;
+  flow: string[];
+  placement: string[];
+  lighting: string[];
 };
+
+export const FLOW_OPTIONS = ['Low', 'Moderate', 'Indirect', 'Heavy'];
+export const PLACEMENT_OPTIONS = ['Low', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
+export const LIGHTING_OPTIONS = ['Low', 'Low-Mid', 'Mid', 'Mid-High', 'High'];
 
 export const EMPTY_PADS: SpeciesPads = {
   care_level: '',
@@ -189,7 +196,17 @@ export const EMPTY_PADS: SpeciesPads = {
   temperament: '',
   water_conditions: '',
   range: '',
+  flow: [],
+  placement: [],
+  lighting: [],
 };
+
+function stringArrayFrom(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (v): v is string => typeof v === 'string' && v.trim().length > 0,
+  );
+}
 
 export function padsFromMetadata(
   metadata: Record<string, unknown> | null | undefined,
@@ -206,14 +223,24 @@ export function padsFromMetadata(
     water_conditions:
       typeof raw.water_conditions === 'string' ? raw.water_conditions : '',
     range: typeof raw.range === 'string' ? raw.range : '',
+    flow: stringArrayFrom(raw.flow),
+    placement: stringArrayFrom(raw.placement),
+    lighting: stringArrayFrom(raw.lighting),
   };
 }
 
-export function cleanedPads(pads: SpeciesPads): Record<string, string> {
-  const out: Record<string, string> = {};
+export function cleanedPads(
+  pads: SpeciesPads,
+): Record<string, string | string[]> {
+  const out: Record<string, string | string[]> = {};
   (Object.keys(pads) as (keyof SpeciesPads)[]).forEach((k) => {
-    const v = pads[k].trim();
-    if (v) out[k] = v;
+    const v = pads[k];
+    if (Array.isArray(v)) {
+      if (v.length) out[k] = v;
+    } else {
+      const trimmed = v.trim();
+      if (trimmed) out[k] = trimmed;
+    }
   });
   return out;
 }

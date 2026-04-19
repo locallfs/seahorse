@@ -23,7 +23,16 @@ type Pads = {
   temperament?: string
   water_conditions?: string
   range?: string
+  flow?: string[]
+  placement?: string[]
+  lighting?: string[]
 }
+
+const MULTI_KEYS = ["flow", "placement", "lighting"] as const
+type MultiKey = (typeof MULTI_KEYS)[number]
+const FLOW_OPTIONS = ["Low", "Moderate", "Indirect", "Heavy"]
+const PLACEMENT_OPTIONS = ["Low", "Mid-Low", "Mid", "Mid-High", "High"]
+const LIGHTING_OPTIONS = ["Low", "Low-Mid", "Mid", "Mid-High", "High"]
 
 const LIVE_CATEGORY_HANDLES = ["fish", "corals", "inverts"]
 
@@ -60,6 +69,11 @@ const isLiveAnimalByCategories = (
   )
 }
 
+const stringArrayFromRaw = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return []
+  return value.filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+}
+
 const padsFromMetadata = (metadata: Record<string, unknown> | null | undefined): Pads => {
   const raw = (metadata?.pads ?? {}) as Record<string, unknown>
   return {
@@ -71,6 +85,9 @@ const padsFromMetadata = (metadata: Record<string, unknown> | null | undefined):
     temperament: typeof raw.temperament === "string" ? raw.temperament : "",
     water_conditions: typeof raw.water_conditions === "string" ? raw.water_conditions : "",
     range: typeof raw.range === "string" ? raw.range : "",
+    flow: stringArrayFromRaw(raw.flow),
+    placement: stringArrayFromRaw(raw.placement),
+    lighting: stringArrayFromRaw(raw.lighting),
   }
 }
 
@@ -95,13 +112,27 @@ const LiveAnimalPadsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
     setPendingPads((prev) => ({ ...prev, [key]: value }))
   }
 
+  const toggleMulti = (key: MultiKey, value: string) => {
+    setPendingPads((prev) => {
+      const current = (prev[key] as string[] | undefined) ?? []
+      const next = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value]
+      return { ...prev, [key]: next }
+    })
+  }
+
   const save = async () => {
     setSaving(true)
     try {
       const cleaned: Pads = {}
       ;(Object.keys(pendingPads) as (keyof Pads)[]).forEach((k) => {
-        const v = pendingPads[k]?.trim()
-        if (v) cleaned[k] = v
+        const v = pendingPads[k]
+        if (Array.isArray(v)) {
+          if (v.length) (cleaned as any)[k] = v
+        } else if (typeof v === "string" && v.trim()) {
+          (cleaned as any)[k] = v.trim()
+        }
       })
       const nextMetadata = {
         ...(data.metadata as Record<string, unknown> | null ?? {}),
@@ -133,7 +164,7 @@ const LiveAnimalPadsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
     <div className="flex flex-col gap-1">
       <Text size="small" className="text-ui-fg-subtle">{label}</Text>
       <Select
-        value={pendingPads[key] ?? ""}
+        value={(pendingPads[key] as string | undefined) ?? ""}
         onValueChange={(v) => update(key, v === "__none__" ? "" : v)}
         disabled={saving}
       >
@@ -154,13 +185,41 @@ const LiveAnimalPadsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
     <div className="flex flex-col gap-1">
       <Text size="small" className="text-ui-fg-subtle">{label}</Text>
       <Input
-        value={pendingPads[key] ?? ""}
+        value={(pendingPads[key] as string | undefined) ?? ""}
         onChange={(e) => update(key, e.target.value)}
         placeholder={placeholder}
         disabled={saving}
       />
     </div>
   )
+
+  const multiField = (key: MultiKey, label: string, options: string[]) => {
+    const selected = (pendingPads[key] as string[] | undefined) ?? []
+    return (
+      <div className="flex flex-col gap-2">
+        <Text size="small" className="text-ui-fg-subtle">
+          {label} <span className="text-ui-fg-muted">(multi-select)</span>
+        </Text>
+        <div className="flex flex-wrap gap-2">
+          {options.map((opt) => {
+            const active = selected.includes(opt)
+            return (
+              <Button
+                key={opt}
+                type="button"
+                variant={active ? "primary" : "secondary"}
+                size="small"
+                onClick={() => toggleMulti(key, opt)}
+                disabled={saving}
+              >
+                {opt}
+              </Button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <Container className="divide-y p-0">
@@ -190,6 +249,9 @@ const LiveAnimalPadsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
             rows={2}
           />
         </div>
+        {multiField("flow", "Flow", FLOW_OPTIONS)}
+        {multiField("placement", "Placement", PLACEMENT_OPTIONS)}
+        {multiField("lighting", "Lighting", LIGHTING_OPTIONS)}
         <div className="flex items-center justify-end gap-3">
           <Button
             variant="primary"

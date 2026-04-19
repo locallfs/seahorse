@@ -2,6 +2,9 @@ import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-nati
 import { theme } from '@/lib/theme';
 import {
   COUNTRY_OF_ORIGIN_LABEL,
+  FLOW_OPTIONS,
+  LIGHTING_OPTIONS,
+  PLACEMENT_OPTIONS,
   PRODUCT_TYPE_OPTIONS,
   type OrganizeOption,
   type OrganizeOptions,
@@ -141,8 +144,20 @@ const CARE_LEVELS = ['Easy', 'Moderate', 'Difficult', 'Expert'];
 const REEF_SAFE = ['Yes', 'With Caution', 'No'];
 const TEMPERAMENTS = ['Peaceful', 'Semi-Aggressive', 'Aggressive'];
 
+type MultiKey = 'flow' | 'placement' | 'lighting';
+
 export function PadFields({ value, onChange }: PadsProps) {
-  const set = (key: keyof SpeciesPads, next: string) => {
+  const set = (
+    key: Exclude<keyof SpeciesPads, MultiKey>,
+    next: string,
+  ) => {
+    onChange({ ...value, [key]: next });
+  };
+  const toggleMulti = (key: MultiKey, option: string) => {
+    const current = value[key];
+    const next = current.includes(option)
+      ? current.filter((v) => v !== option)
+      : [...current, option];
     onChange({ ...value, [key]: next });
   };
 
@@ -219,6 +234,56 @@ export function PadFields({ value, onChange }: PadsProps) {
         placeholder="e.g. 72-78°F, dKH 8-12, pH 8.1-8.4, sg 1.020-1.025"
         placeholderTextColor={theme.color.textDim}
       />
+
+      <Text style={styles.label}>Flow (multi-select)</Text>
+      <MultiPillChoice
+        options={FLOW_OPTIONS}
+        selected={value.flow}
+        onToggle={(v) => toggleMulti('flow', v)}
+      />
+
+      <Text style={styles.label}>Placement (multi-select)</Text>
+      <MultiPillChoice
+        options={PLACEMENT_OPTIONS}
+        selected={value.placement}
+        onToggle={(v) => toggleMulti('placement', v)}
+      />
+
+      <Text style={styles.label}>Lighting (multi-select)</Text>
+      <MultiPillChoice
+        options={LIGHTING_OPTIONS}
+        selected={value.lighting}
+        onToggle={(v) => toggleMulti('lighting', v)}
+      />
+    </View>
+  );
+}
+
+function MultiPillChoice({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: string[];
+  selected: string[];
+  onToggle: (next: string) => void;
+}) {
+  return (
+    <View style={styles.chipRow}>
+      {options.map((opt) => {
+        const active = selected.includes(opt);
+        return (
+          <Pressable
+            key={opt}
+            onPress={() => onToggle(opt)}
+            style={[styles.chip, active && styles.chipActive]}
+          >
+            <Text style={[styles.chipText, active && styles.chipTextActive]}>
+              {opt}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
