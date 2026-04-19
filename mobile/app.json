@@ -15,7 +15,8 @@
         "NSCameraUsageDescription": "ReefNerds uses the camera to take product photos.",
         "NSPhotoLibraryUsageDescription": "ReefNerds uses your photo library to attach product images.",
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "3"
     },
     "android": {
       "package": "com.pwnership.reefnerds",
@@ -30,7 +31,8 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "versionCode": 3
     },
     "web": {
       "output": "static",
