@@ -36,7 +36,15 @@ type Pads = {
 
 const MULTI_KEYS = ["flow", "placement", "lighting"] as const
 type MultiKey = (typeof MULTI_KEYS)[number]
-const FLOW_OPTIONS = ["Low", "Moderate", "Indirect", "Heavy"]
+const FLOW_OPTIONS = [
+  "Low",
+  "Low to Moderate",
+  "Moderate",
+  "Moderate to High",
+  "Heavy",
+  "Indirect",
+  "Direct",
+]
 const PLACEMENT_OPTIONS = ["Low", "Mid-Low", "Mid", "Mid-High", "High"]
 const LIGHTING_OPTIONS = ["Low", "Low-Mid", "Mid", "Mid-High", "High"]
 

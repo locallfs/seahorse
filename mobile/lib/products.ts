@@ -190,7 +190,15 @@ export type SpeciesPads = {
   salinity: string;
 };
 
-export const FLOW_OPTIONS = ['Low', 'Moderate', 'Indirect', 'Heavy'];
+export const FLOW_OPTIONS = [
+  'Low',
+  'Low to Moderate',
+  'Moderate',
+  'Moderate to High',
+  'Heavy',
+  'Indirect',
+  'Direct',
+];
 export const PLACEMENT_OPTIONS = ['Low', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
 export const LIGHTING_OPTIONS = ['Low', 'Low-Mid', 'Mid', 'Mid-High', 'High'];
 
