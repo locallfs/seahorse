@@ -44,7 +44,7 @@ export default function Header() {
         scrolled ? "shadow-md shadow-black/10" : ""
       }`}
     >
-      <div className="bg-black overflow-hidden">
+      <div className="bg-purple-950 overflow-hidden">
         <div className="trust-bar-scroll flex whitespace-nowrap py-2">
           {[...Array(10)].map((_, i) => (
             <span key={i} className="inline-flex items-center gap-8 px-8 text-sm font-semibold tracking-wide" style={{ color: "#FFD700" }}>
