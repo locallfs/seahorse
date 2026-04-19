@@ -42,7 +42,7 @@ export default function HomePage() {
             title="WYSIWYG Fish"
             subtitle="What You See Is What You Get"
             tagValues={["WYSIWYG Fish"]}
-            viewAllHref="/fish"
+            viewAllHref="/wysiwyg-fish"
             tag="WYSIWYG"
           />
 
@@ -65,7 +65,7 @@ export default function HomePage() {
             title="WYSIWYG Corals"
             subtitle="What You See Is What You Get"
             tagValues={["WYSIWYG Coral"]}
-            viewAllHref="/corals"
+            viewAllHref="/wysiwyg-corals"
             tag="WYSIWYG"
           />
 

@@ -25,20 +25,47 @@ function formatPrice(amount: number, currency: string) {
   }).format(amount);
 }
 
-export default function ProductGrid({ category }: { category: string }) {
+export default function ProductGrid({
+  category,
+  tagValues,
+}: {
+  category?: string;
+  tagValues?: string[];
+}) {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const tagKey = tagValues?.join("|") ?? "";
 
   useEffect(() => {
     let cancelled = false;
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+    const wanted = new Set((tagValues ?? []).map(normalize));
+
     (async () => {
       try {
         const regionsRes = await medusa.store.region.list();
         const regionId = regionsRes.regions?.[0]?.id;
 
+        if (tagValues && tagValues.length > 0) {
+          const res = await medusa.store.product.list({
+            fields: "id,handle,title,thumbnail,tags.value,*variants.calculated_price",
+            region_id: regionId,
+            limit: 200,
+          } as any);
+          if (cancelled) return;
+          const filtered = (res.products as any[]).filter((p) => {
+            const tags: Array<{ value?: string }> = p?.tags || [];
+            return tags.some((t) => t?.value && wanted.has(normalize(t.value)));
+          });
+          const unique = Array.from(new Map(filtered.map((p: any) => [p.id, p])).values());
+          setProducts(unique as StoreProduct[]);
+          setLoading(false);
+          return;
+        }
+
         let categoryId: string | undefined;
-        if (category !== "all") {
+        if (category && category !== "all") {
           const catRes = await medusa.store.category.list({ handle: category });
           categoryId = (catRes as any).product_categories?.[0]?.id;
         }
@@ -64,7 +91,7 @@ export default function ProductGrid({ category }: { category: string }) {
     return () => {
       cancelled = true;
     };
-  }, [category]);
+  }, [category, tagKey]);
 
   if (loading) {
     return (
