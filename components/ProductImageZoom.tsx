@@ -8,8 +8,8 @@ interface ProductImageZoomProps {
   alt: string;
 }
 
-const ZOOM_SCALE = 2.5;
-const LENS_SIZE = 200;
+const ZOOM_SCALE = 3.5;
+const LENS_SIZE = 400;
 
 export default function ProductImageZoom({ src, alt }: ProductImageZoomProps) {
   const containerRef = useRef<HTMLDivElement>(null);
