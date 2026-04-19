@@ -7,7 +7,7 @@ export default function HeroVideo() {
   return (
     <section className="relative w-full h-screen min-h-[600px] flex items-center justify-center">
       <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-        <p className="text-white uppercase font-medium mb-6 drop-shadow-lg text-sm md:text-base tracking-[0.25em]">
+        <p className="text-white uppercase font-medium mb-6 text-sm md:text-base tracking-[0.25em] [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]">
           Est. 1996 — Pacific Northwest
         </p>
         <div className="mb-8 flex justify-center">
@@ -21,20 +21,20 @@ export default function HeroVideo() {
             className="w-full max-w-4xl h-auto [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]"
           />
         </div>
-        <p className="text-white text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-lg">
+        <p className="text-white text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]">
           Premium live saltwater fish, WYSIWYG corals, invertebrates, and
           professional aquarium services.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/new-arrivals"
-            className="px-8 py-4 bg-blue-accent hover:bg-blue-light text-white font-medium rounded transition-colors duration-200 tracking-wide text-sm"
+            className="px-8 py-4 bg-blue-accent hover:bg-blue-light text-white font-medium rounded transition-colors duration-200 tracking-wide text-sm [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]"
           >
             View New Arrivals
           </Link>
           <Link
             href="/store"
-            className="px-8 py-4 bg-white/15 hover:bg-white/25 text-white font-medium rounded backdrop-blur-sm border border-white/30 transition-colors duration-200 tracking-wide text-sm"
+            className="px-8 py-4 bg-white/15 hover:bg-white/25 text-white font-medium rounded backdrop-blur-sm border border-white/30 transition-colors duration-200 tracking-wide text-sm [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]"
           >
             Shop All Products
           </Link>
