@@ -8,7 +8,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "bump": "node scripts/bump-version.js",
+    "build:ios": "node scripts/bump-version.js && eas build --platform ios --profile preview --non-interactive --no-wait",
+    "build:android": "node scripts/bump-version.js && eas build --platform android --profile preview --non-interactive --no-wait"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
