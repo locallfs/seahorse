@@ -213,7 +213,7 @@ export default function ProductPage({
                     </p>
                     {price.calculated_amount >= 500 && (
                       <span className="px-3 py-1.5 rounded-md bg-[#FFD700] text-black text-xs font-bold tracking-wider uppercase">
-                        Free Shipping!!
+                        ★ Free Shipping ★
                       </span>
                     )}
                   </div>
