@@ -98,7 +98,7 @@ export default function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-glow-gold ${
+              className={`text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-glow-gold mr-6 ${
                 link.flash
                   ? "text-blue-accent hover:text-blue-light"
                   : "text-blue-dim hover:text-blue-accent"
