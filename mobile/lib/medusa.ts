@@ -8,9 +8,23 @@ const BACKEND_URL =
 const TOKEN_KEY = 'reefnerds.jwt';
 
 const storage = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+  getItem: async (key: string) => {
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: async (key: string, value: string) => {
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch {}
+  },
+  removeItem: async (key: string) => {
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {}
+  },
 };
 
 export const sdk = new Medusa({

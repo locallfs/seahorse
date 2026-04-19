@@ -44,19 +44,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const token = await SecureStore.getItemAsync(TOKEN_KEY);
-      if (!token) {
+      try {
+        let token: string | null = null;
+        try {
+          token = await SecureStore.getItemAsync(TOKEN_KEY);
+        } catch {
+          token = null;
+        }
+        if (!token) {
+          return;
+        }
+        const me = await fetchCurrentUser();
+        if (me) {
+          setUser(me);
+          setIsAdmin(resolveIsAdmin(me));
+        } else {
+          try {
+            await SecureStore.deleteItemAsync(TOKEN_KEY);
+          } catch {}
+        }
+      } catch {
+        // Swallow any startup error so the app always renders
+      } finally {
         setLoading(false);
-        return;
       }
-      const me = await fetchCurrentUser();
-      if (me) {
-        setUser(me);
-        setIsAdmin(resolveIsAdmin(me));
-      } else {
-        await SecureStore.deleteItemAsync(TOKEN_KEY);
-      }
-      setLoading(false);
     })();
   }, []);
 
