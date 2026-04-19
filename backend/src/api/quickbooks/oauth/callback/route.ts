@@ -4,7 +4,7 @@ import type QuickbooksModuleService from "../../../../modules/quickbooks/service
 export async function GET(req: any, res: any) {
   const { code, realmId, state, error } = req.query as Record<string, string>
   const adminUrl = process.env.MEDUSA_ADMIN_URL || process.env.MEDUSA_BACKEND_URL || ""
-  const redirectPath = "/app/settings/integrations/quickbooks"
+  const redirectPath = "/app/integrations/quickbooks"
 
   if (error) {
     return res.redirect(`${adminUrl}${redirectPath}?qb_error=${encodeURIComponent(error)}`)
