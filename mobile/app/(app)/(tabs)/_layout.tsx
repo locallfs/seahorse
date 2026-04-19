@@ -88,7 +88,6 @@ export default function AppLayout() {
           tabBarLabel: 'Deletes',
           href: isAdmin ? '/(app)/(tabs)/delete-requests' : null,
           tabBarIcon: ({ focused }) => <TabIcon label="✕" focused={focused} />,
-          tabBarButton: isAdmin ? undefined : () => null,
         }}
       />
       <Tabs.Screen
@@ -97,7 +96,6 @@ export default function AppLayout() {
           title: 'Team',
           href: isAdmin ? '/(app)/(tabs)/team' : null,
           tabBarIcon: ({ focused }) => <TabIcon label="◆" focused={focused} />,
-          tabBarButton: isAdmin ? undefined : () => null,
         }}
       />
     </Tabs>
