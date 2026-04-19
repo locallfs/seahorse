@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/components/AuthContext";
 
@@ -29,6 +30,10 @@ const rightLinks = [
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
   const { count } = useCart();
   const { customer } = useAuth();
 
@@ -37,6 +42,21 @@ export default function Header() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (searchOpen) {
+      searchInputRef.current?.focus();
+    }
+  }, [searchOpen]);
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchOpen(false);
+    setMenuOpen(false);
+    router.push(`/search?q=${encodeURIComponent(q)}`);
+  };
 
   return (
     <header
@@ -115,6 +135,17 @@ export default function Header() {
         </nav>
 
         <div className="hidden lg:flex items-center gap-6">
+          <button
+            type="button"
+            onClick={() => setSearchOpen((o) => !o)}
+            className="p-2 text-blue-dim hover:text-blue-accent transition-colors"
+            aria-label="Search"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="9" cy="9" r="6" />
+              <path d="M14 14l4 4" />
+            </svg>
+          </button>
           <Link
             href={customer ? "/account" : "/login"}
             className="p-2 text-blue-dim hover:text-blue-accent transition-colors"
@@ -169,6 +200,18 @@ export default function Header() {
         </div>
 
         <button
+          type="button"
+          onClick={() => setSearchOpen((o) => !o)}
+          className="lg:hidden p-2 text-blue-dim hover:text-blue-accent transition-colors"
+          aria-label="Search"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="9" cy="9" r="6" />
+            <path d="M14 14l4 4" />
+          </svg>
+        </button>
+
+        <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="lg:hidden flex flex-col gap-1.5 p-2 group"
           aria-label="Toggle menu"
@@ -184,6 +227,44 @@ export default function Header() {
           />
         </button>
       </div>
+
+      {searchOpen && (
+        <div className="bg-white border-t border-white/20">
+          <form
+            onSubmit={submitSearch}
+            className="max-w-screen-xl mx-auto px-6 py-4 flex items-center gap-3"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-dim flex-shrink-0">
+              <circle cx="9" cy="9" r="6" />
+              <path d="M14 14l4 4" />
+            </svg>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search fish, corals, inverts, supplies…"
+              className="flex-1 bg-transparent text-blue-dim placeholder:text-blue-dim/50 text-base outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setSearchOpen(false);
+                setSearchQuery("");
+              }}
+              className="text-xs tracking-wider uppercase text-blue-dim hover:text-blue-accent transition-colors px-2 py-1"
+            >
+              Close
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium bg-blue-accent hover:bg-blue-light text-white rounded transition-colors"
+            >
+              Search
+            </button>
+          </form>
+        </div>
+      )}
 
       {menuOpen && (
         <div className="lg:hidden bg-white border-t border-white/20">

@@ -1,69 +1,132 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { medusa } from "@/lib/medusa";
 
-export interface GalleryItem {
-  id: number;
-  name: string;
-  price: string;
-  gradient: string;
-  tag?: string;
-  img?: string;
-  handle?: string;
-}
+type StoreProduct = {
+  id: string;
+  handle: string;
+  title: string;
+  thumbnail: string | null;
+  variants: Array<{
+    calculated_price?: {
+      calculated_amount: number;
+      currency_code: string;
+    };
+  }>;
+};
 
 interface SideScrollGalleryProps {
   title: string;
   subtitle?: string;
-  items: GalleryItem[];
+  categoryHandle: string;
   viewAllHref: string;
-  accentColor?: string;
+  tag?: string;
 }
 
-function PlaceholderCard({ item }: { item: GalleryItem }) {
+function formatPrice(amount: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(amount);
+}
+
+function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) {
+  const price = product.variants?.[0]?.calculated_price;
   return (
-    <div className="flex-shrink-0 w-44 sm:w-56 md:w-64 group cursor-pointer">
-      <div className="relative overflow-hidden rounded-lg border border-white/10 group-hover:border-white/25 transition-all duration-300">
+    <Link
+      href={`/products/${product.handle}`}
+      className="flex-shrink-0 w-44 sm:w-56 md:w-64 group"
+    >
+      <div className="relative overflow-hidden rounded-lg border border-white/10 group-hover:border-white/25 transition-all duration-300 glow-purple">
         <div className="w-full aspect-[3/4] relative bg-ocean-800">
-          {item.img ? (
+          {product.thumbnail ? (
             <Image
-              src={item.img}
-              alt={item.name}
+              src={product.thumbnail}
+              alt={product.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
               sizes="(max-width: 768px) 224px, 256px"
+              unoptimized
             />
           ) : (
-            <div className="absolute inset-0" style={{ background: item.gradient }} />
+            <div className="absolute inset-0 flex items-center justify-center text-white text-xs">
+              No image
+            </div>
           )}
-          {item.tag && (
+          {tag && (
             <span className="absolute top-3 left-3 text-[10px] font-medium tracking-widest uppercase bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded z-10">
-              {item.tag}
+              {tag}
             </span>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
           <div className="absolute bottom-4 left-4 right-4 z-10">
-            <p className="text-white font-medium text-sm leading-snug">
-              {item.name}
+            <p className="text-white font-medium text-sm leading-snug line-clamp-2">
+              {product.title}
             </p>
-            <p className="text-white text-sm font-semibold mt-1">
-              {item.price}
-            </p>
+            {price && (
+              <p className="text-white text-sm font-semibold mt-1">
+                {formatPrice(price.calculated_amount, price.currency_code)}
+              </p>
+            )}
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
 export default function SideScrollGallery({
   title,
   subtitle,
-  items,
+  categoryHandle,
   viewAllHref,
+  tag,
 }: SideScrollGalleryProps) {
-  const doubled = [...items, ...items];
+  const [products, setProducts] = useState<StoreProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const regionsRes = await medusa.store.region.list();
+        const regionId = regionsRes.regions?.[0]?.id;
+
+        const catRes = await medusa.store.category.list({ handle: categoryHandle });
+        const categoryId = (catRes as any).product_categories?.[0]?.id;
+
+        if (!categoryId) {
+          if (!cancelled) setLoading(false);
+          return;
+        }
+
+        const res = await medusa.store.product.list({
+          fields: "id,handle,title,thumbnail,*variants.calculated_price",
+          region_id: regionId,
+          category_id: [categoryId],
+          limit: 12,
+        } as any);
+
+        if (cancelled) return;
+        setProducts(res.products as StoreProduct[]);
+        setLoading(false);
+      } catch {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [categoryHandle]);
+
+  if (!loading && products.length === 0) {
+    return null;
+  }
+
+  const displayItems = products.length > 0 ? [...products, ...products] : [];
 
   return (
     <section className="py-20 overflow-hidden">
@@ -96,11 +159,22 @@ export default function SideScrollGallery({
         </div>
       </div>
 
-      <div className="gallery-auto-scroll flex gap-4 px-6">
-        {doubled.map((item, i) => (
-          <PlaceholderCard key={`${item.id}-${i}`} item={item} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex gap-4 px-6">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="flex-shrink-0 w-44 sm:w-56 md:w-64 aspect-[3/4] rounded-lg bg-ocean-800/60 animate-pulse"
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="gallery-auto-scroll flex gap-4 px-6">
+          {displayItems.map((product, i) => (
+            <ProductCard key={`${product.id}-${i}`} product={product} tag={tag} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
