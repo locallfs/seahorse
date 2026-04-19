@@ -21,7 +21,7 @@ type StoreProduct = {
 interface SideScrollGalleryProps {
   title: string;
   subtitle?: string;
-  typeValue: string;
+  typeValues: string[];
   viewAllHref: string;
   tag?: string;
 }
@@ -81,12 +81,13 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
 export default function SideScrollGallery({
   title,
   subtitle,
-  typeValue,
+  typeValues,
   viewAllHref,
   tag,
 }: SideScrollGalleryProps) {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const typeKey = typeValues.join("|");
 
   useEffect(() => {
     let cancelled = false;
@@ -98,10 +99,12 @@ export default function SideScrollGallery({
         const typesRes: any = await medusa.client.fetch("/store/product-types", {
           query: { limit: 100 },
         });
-        const matched = (typesRes?.product_types ?? []).find(
-          (t: any) => t?.value?.toLowerCase() === typeValue.toLowerCase()
-        );
-        if (!matched) {
+        const wanted = typeValues.map((v) => v.toLowerCase());
+        const matchedIds = (typesRes?.product_types ?? [])
+          .filter((t: any) => t?.value && wanted.includes(t.value.toLowerCase()))
+          .map((t: any) => t.id);
+
+        if (matchedIds.length === 0) {
           if (!cancelled) setLoading(false);
           return;
         }
@@ -109,12 +112,15 @@ export default function SideScrollGallery({
         const res = await medusa.store.product.list({
           fields: "id,handle,title,thumbnail,*variants.calculated_price",
           region_id: regionId,
-          type_id: [matched.id],
-          limit: 12,
+          type_id: matchedIds,
+          limit: 24,
         } as any);
 
         if (cancelled) return;
-        setProducts(res.products as StoreProduct[]);
+        const unique = Array.from(
+          new Map((res.products as StoreProduct[]).map((p) => [p.id, p])).values()
+        );
+        setProducts(unique);
         setLoading(false);
       } catch {
         if (!cancelled) setLoading(false);
@@ -123,7 +129,7 @@ export default function SideScrollGallery({
     return () => {
       cancelled = true;
     };
-  }, [typeValue]);
+  }, [typeKey]);
 
   if (!loading && products.length === 0) {
     return null;
