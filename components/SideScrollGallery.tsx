@@ -41,7 +41,7 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
       className="flex-shrink-0 w-44 sm:w-56 md:w-64 group"
     >
       <div className="relative overflow-hidden rounded-lg border border-white/10 group-hover:border-white/25 transition-all duration-300 glow-purple">
-        <div className="w-full aspect-[3/4] relative bg-ocean-800">
+        <div className="w-full aspect-[3/4] relative bg-black">
           {product.thumbnail ? (
             <Image
               src={product.thumbnail}

@@ -30,7 +30,7 @@ export default function ProductImageZoom({ src, alt }: ProductImageZoomProps) {
   return (
     <div
       ref={containerRef}
-      className="w-full aspect-square rounded-xl border border-white/10 overflow-hidden relative bg-ocean-800 glow-purple md:cursor-crosshair"
+      className="w-full aspect-square rounded-xl border border-white/10 overflow-hidden relative bg-black glow-purple md:cursor-crosshair"
       onMouseEnter={() => setShowLens(true)}
       onMouseLeave={() => setShowLens(false)}
       onMouseMove={handleMouseMove}

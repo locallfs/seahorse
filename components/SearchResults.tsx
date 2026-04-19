@@ -116,7 +116,7 @@ export default function SearchResults({ query }: { query: string }) {
           return (
             <Link key={product.id} href={`/products/${product.handle}`} className="group">
               <div className="rounded-lg border border-white/10 group-hover:border-white/30 overflow-hidden transition-all duration-300 glow-purple">
-                <div className="w-full aspect-square relative bg-ocean-800">
+                <div className="w-full aspect-square relative bg-black">
                   {product.thumbnail ? (
                     <Image
                       src={product.thumbnail}
