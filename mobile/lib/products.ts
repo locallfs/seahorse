@@ -200,7 +200,13 @@ export const FLOW_OPTIONS = [
   'Direct',
 ];
 export const PLACEMENT_OPTIONS = ['Low', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
-export const LIGHTING_OPTIONS = ['Low', 'Low-Mid', 'Mid', 'Mid-High', 'High'];
+export const LIGHTING_OPTIONS = [
+  'Low',
+  'Low to Moderate',
+  'Moderate',
+  'Moderate to High',
+  'High',
+];
 
 export const WATER_PARAM_FIELDS: Array<{
   key: keyof SpeciesPads;

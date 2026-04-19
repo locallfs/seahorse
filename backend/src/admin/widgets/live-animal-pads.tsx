@@ -46,7 +46,13 @@ const FLOW_OPTIONS = [
   "Direct",
 ]
 const PLACEMENT_OPTIONS = ["Low", "Mid-Low", "Mid", "Mid-High", "High"]
-const LIGHTING_OPTIONS = ["Low", "Low-Mid", "Mid", "Mid-High", "High"]
+const LIGHTING_OPTIONS = [
+  "Low",
+  "Low to Moderate",
+  "Moderate",
+  "Moderate to High",
+  "High",
+]
 
 const WATER_FIELDS: Array<{ key: keyof Pads; label: string; placeholder: string }> = [
   { key: "calcium", label: "Calcium", placeholder: "e.g. 420 ppm" },
