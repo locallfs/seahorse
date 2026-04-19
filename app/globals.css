@@ -126,6 +126,10 @@ body {
   filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.35));
 }
 
+.glow-purple {
+  box-shadow: 0 0 22px rgba(46, 16, 101, 0.9), 0 0 42px rgba(46, 16, 101, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 .text-glow-gold {
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.65);
 }
