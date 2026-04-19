@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { medusa } from "@/lib/medusa";
+import FreeShippingBadge from "./FreeShippingBadge";
 
 type StoreProduct = {
   id: string;
@@ -143,6 +144,7 @@ export default function ProductGrid({
                     No image
                   </div>
                 )}
+                <FreeShippingBadge amount={price?.calculated_amount} />
               </div>
               <div className="p-3 bg-ocean-900">
                 <p className="text-sm text-white font-medium leading-snug mb-1">

@@ -207,9 +207,16 @@ export default function ProductPage({
                   {product.title}
                 </h1>
                 {price && (
-                  <p className="text-3xl font-bold text-white mb-6">
-                    {formatPrice(price.calculated_amount, price.currency_code)}
-                  </p>
+                  <div className="flex items-center gap-3 mb-6 flex-wrap">
+                    <p className="text-3xl font-bold text-white">
+                      {formatPrice(price.calculated_amount, price.currency_code)}
+                    </p>
+                    {price.calculated_amount >= 500 && (
+                      <span className="px-3 py-1.5 rounded-md bg-[#FFD700] text-black text-xs font-bold tracking-wider uppercase">
+                        Free Shipping
+                      </span>
+                    )}
+                  </div>
                 )}
 
                 {live && (

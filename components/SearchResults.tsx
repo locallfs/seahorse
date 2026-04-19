@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { medusa } from "@/lib/medusa";
+import FreeShippingBadge from "./FreeShippingBadge";
 
 type StoreProduct = {
   id: string;
@@ -117,6 +118,7 @@ export default function SearchResults({ query }: { query: string }) {
             <Link key={product.id} href={`/products/${product.handle}`} className="group">
               <div className="rounded-lg border border-white/10 group-hover:border-white/30 overflow-hidden transition-all duration-300 glow-purple">
                 <div className="w-full aspect-square relative bg-black">
+                  <FreeShippingBadge amount={price?.calculated_amount} />
                   {product.thumbnail ? (
                     <Image
                       src={product.thumbnail}

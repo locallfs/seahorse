@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { medusa } from "@/lib/medusa";
+import FreeShippingBadge from "./FreeShippingBadge";
 
 type StoreProduct = {
   id: string;
@@ -61,6 +62,7 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
               {tag}
             </span>
           )}
+          <FreeShippingBadge amount={price?.calculated_amount} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
           <div className="absolute bottom-4 left-4 right-4 z-10">
             <p className="text-white font-medium text-sm leading-snug line-clamp-2">
