@@ -126,7 +126,8 @@ export default function SideScrollGallery({
     return null;
   }
 
-  const displayItems = products.length > 0 ? [...products, ...products] : [];
+  const shouldLoop = products.length >= 5;
+  const displayItems = shouldLoop ? [...products, ...products] : products;
 
   return (
     <section className="py-20 overflow-hidden">
@@ -169,7 +170,13 @@ export default function SideScrollGallery({
           ))}
         </div>
       ) : (
-        <div className="gallery-auto-scroll flex gap-4 px-6">
+        <div
+          className={
+            shouldLoop
+              ? "gallery-auto-scroll flex gap-4 px-6"
+              : "flex gap-4 px-6 max-w-screen-xl mx-auto flex-wrap"
+          }
+        >
           {displayItems.map((product, i) => (
             <ProductCard key={`${product.id}-${i}`} product={product} tag={tag} />
           ))}
