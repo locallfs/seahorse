@@ -91,36 +91,31 @@ export default function SideScrollGallery({
 
   useEffect(() => {
     let cancelled = false;
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+    const wanted = new Set(typeValues.map(normalize));
+
     (async () => {
       try {
         const regionsRes = await medusa.store.region.list();
         const regionId = regionsRes.regions?.[0]?.id;
 
-        const typesRes: any = await medusa.client.fetch("/store/product-types", {
-          query: { limit: 100 },
-        });
-        const wanted = typeValues.map((v) => v.toLowerCase());
-        const matchedIds = (typesRes?.product_types ?? [])
-          .filter((t: any) => t?.value && wanted.includes(t.value.toLowerCase()))
-          .map((t: any) => t.id);
-
-        if (matchedIds.length === 0) {
-          if (!cancelled) setLoading(false);
-          return;
-        }
-
         const res = await medusa.store.product.list({
-          fields: "id,handle,title,thumbnail,*variants.calculated_price",
+          fields: "id,handle,title,thumbnail,type.value,*variants.calculated_price",
           region_id: regionId,
-          type_id: matchedIds,
-          limit: 24,
+          limit: 200,
         } as any);
 
         if (cancelled) return;
-        const unique = Array.from(
-          new Map((res.products as StoreProduct[]).map((p) => [p.id, p])).values()
+
+        const filtered = (res.products as any[]).filter(
+          (p) => p?.type?.value && wanted.has(normalize(p.type.value))
         );
-        setProducts(unique);
+
+        const unique = Array.from(
+          new Map(filtered.map((p: any) => [p.id, p])).values()
+        ).slice(0, 12);
+
+        setProducts(unique as StoreProduct[]);
         setLoading(false);
       } catch {
         if (!cancelled) setLoading(false);
