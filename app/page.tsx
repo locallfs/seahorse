@@ -39,10 +39,10 @@ export default function HomePage() {
           </div>
 
           <SideScrollGallery
-            title="Invertebrates"
-            subtitle="Inverts"
-            typeValues={["Invert"]}
-            viewAllHref="/inverts"
+            title="Corals"
+            subtitle="Reef-Ready Livestock"
+            typeValues={["Coral", "WYSIWYG Coral"]}
+            viewAllHref="/corals"
           />
 
           <div className="max-w-screen-xl mx-auto px-6">
@@ -50,11 +50,10 @@ export default function HomePage() {
           </div>
 
           <SideScrollGallery
-            title="WYSIWYG Corals"
-            subtitle="What You See Is What You Get"
-            typeValues={["Coral", "WYSIWYG Coral"]}
-            viewAllHref="/corals"
-            tag="WYSIWYG"
+            title="Invertebrates"
+            subtitle="Inverts"
+            typeValues={["Invert"]}
+            viewAllHref="/inverts"
           />
 
           <div className="max-w-screen-xl mx-auto px-6">
