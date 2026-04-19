@@ -47,7 +47,7 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
               src={product.thumbnail}
               alt={product.title}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              className="object-contain group-hover:scale-105 transition-transform duration-500"
               sizes="(max-width: 768px) 224px, 256px"
               unoptimized
             />
