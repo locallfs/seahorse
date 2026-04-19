@@ -2,7 +2,7 @@
   "expo": {
     "name": "ReefNerds",
     "slug": "reefnerds",
-    "version": "1.0.0",
+    "version": "0.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/ReefNerds.png",
     "scheme": "reefnerds",
