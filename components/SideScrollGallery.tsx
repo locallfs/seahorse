@@ -21,7 +21,7 @@ type StoreProduct = {
 interface SideScrollGalleryProps {
   title: string;
   subtitle?: string;
-  typeValues: string[];
+  tagValues: string[];
   viewAllHref: string;
   tag?: string;
 }
@@ -81,18 +81,18 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
 export default function SideScrollGallery({
   title,
   subtitle,
-  typeValues,
+  tagValues,
   viewAllHref,
   tag,
 }: SideScrollGalleryProps) {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const typeKey = typeValues.join("|");
+  const tagKey = tagValues.join("|");
 
   useEffect(() => {
     let cancelled = false;
     const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-    const wanted = new Set(typeValues.map(normalize));
+    const wanted = new Set(tagValues.map(normalize));
 
     (async () => {
       try {
@@ -100,16 +100,17 @@ export default function SideScrollGallery({
         const regionId = regionsRes.regions?.[0]?.id;
 
         const res = await medusa.store.product.list({
-          fields: "id,handle,title,thumbnail,type.value,*variants.calculated_price",
+          fields: "id,handle,title,thumbnail,tags.value,*variants.calculated_price",
           region_id: regionId,
           limit: 200,
         } as any);
 
         if (cancelled) return;
 
-        const filtered = (res.products as any[]).filter(
-          (p) => p?.type?.value && wanted.has(normalize(p.type.value))
-        );
+        const filtered = (res.products as any[]).filter((p) => {
+          const tags: Array<{ value?: string }> = p?.tags || [];
+          return tags.some((t) => t?.value && wanted.has(normalize(t.value)));
+        });
 
         const unique = Array.from(
           new Map(filtered.map((p: any) => [p.id, p])).values()
@@ -124,7 +125,7 @@ export default function SideScrollGallery({
     return () => {
       cancelled = true;
     };
-  }, [typeKey]);
+  }, [tagKey]);
 
   if (!loading && products.length === 0) {
     return null;

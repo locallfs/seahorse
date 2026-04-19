@@ -18,7 +18,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="New Arrivals"
             subtitle="Just In"
-            typeValues={["New Arrival"]}
+            tagValues={["New Arrival"]}
             viewAllHref="/new-arrivals"
             tag="New"
           />
@@ -30,7 +30,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="Saltwater Fish"
             subtitle="Live Fish"
-            typeValues={["Fish"]}
+            tagValues={["Fish"]}
             viewAllHref="/fish"
           />
 
@@ -41,7 +41,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="WYSIWYG Fish"
             subtitle="What You See Is What You Get"
-            typeValues={["WYSIWYG Fish"]}
+            tagValues={["WYSIWYG Fish"]}
             viewAllHref="/fish"
             tag="WYSIWYG"
           />
@@ -53,7 +53,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="Corals"
             subtitle="Reef-Ready Livestock"
-            typeValues={["Coral"]}
+            tagValues={["Coral"]}
             viewAllHref="/corals"
           />
 
@@ -64,7 +64,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="WYSIWYG Corals"
             subtitle="What You See Is What You Get"
-            typeValues={["WYSIWYG Coral"]}
+            tagValues={["WYSIWYG Coral"]}
             viewAllHref="/corals"
             tag="WYSIWYG"
           />
@@ -76,7 +76,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="Invertebrates"
             subtitle="Inverts"
-            typeValues={["Invert"]}
+            tagValues={["Invert"]}
             viewAllHref="/inverts"
           />
 
@@ -87,7 +87,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="Aquarium Supplies"
             subtitle="Equipment & Accessories"
-            typeValues={["Supplies"]}
+            tagValues={["Supplies"]}
             viewAllHref="/supplies"
           />
         </div>
