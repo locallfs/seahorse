@@ -172,7 +172,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/10">
+      <div className="bg-[#1a0733] border-t border-white/10">
         <div className="max-w-screen-xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-white">
             &copy; {new Date().getFullYear()} Secret Reef LLC — All rights reserved.
