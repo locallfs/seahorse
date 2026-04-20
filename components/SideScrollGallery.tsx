@@ -134,22 +134,38 @@ export default function SideScrollGallery({
         const regionsRes = await medusa.store.region.list();
         const regionId = regionsRes.regions?.[0]?.id;
 
-        const res = await medusa.store.product.list({
-          fields: "id,handle,title,thumbnail,tags.value,*images,*variants.calculated_price",
-          region_id: regionId,
-          limit: 200,
-        } as any);
+        const pageSize = 200;
+        const collected: any[] = [];
+        let offset = 0;
+        while (!cancelled) {
+          const res = await medusa.store.product.list({
+            fields:
+              "id,handle,title,thumbnail,tags.value,*images,*variants.calculated_price",
+            region_id: regionId,
+            limit: pageSize,
+            offset,
+          } as any);
+          const page = (res.products as any[]) || [];
+          collected.push(...page);
+          const total =
+            typeof (res as any).count === "number"
+              ? (res as any).count
+              : collected.length;
+          offset += page.length;
+          if (page.length === 0 || offset >= total) break;
+          if (offset > 5000) break;
+        }
 
         if (cancelled) return;
 
-        const filtered = (res.products as any[]).filter((p) => {
+        const filtered = collected.filter((p) => {
           const tags: Array<{ value?: string }> = p?.tags || [];
           return tags.some((t) => t?.value && wanted.has(normalize(t.value)));
         });
 
         const unique = Array.from(
           new Map(filtered.map((p: any) => [p.id, p])).values()
-        ).slice(0, 12);
+        ).slice(0, 100);
 
         setProducts(unique as StoreProduct[]);
         setLoading(false);
