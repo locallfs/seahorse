@@ -15,7 +15,8 @@ export default function ProductImageZoom({ src, alt }: ProductImageZoomProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showLens, setShowLens] = useState(false);
   const [cursor, setCursor] = useState({ x: 0, y: 0 });
-  const [bgPos, setBgPos] = useState({ x: 50, y: 50 });
+  const [bgSize, setBgSize] = useState({ w: LENS_SIZE * ZOOM_SCALE, h: LENS_SIZE * ZOOM_SCALE });
+  const [bgPosPx, setBgPosPx] = useState({ x: 0, y: 0 });
   const [imgAspect, setImgAspect] = useState(1);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -39,12 +40,15 @@ export default function ProductImageZoom({ src, alt }: ProductImageZoomProps) {
     const offsetX = (rect.width - imgW) / 2;
     const offsetY = (rect.height - imgH) / 2;
 
-    const x = ((cx - offsetX) / imgW) * 100;
-    const y = ((cy - offsetY) / imgH) * 100;
+    const fracX = Math.max(0, Math.min(1, (cx - offsetX) / imgW));
+    const fracY = Math.max(0, Math.min(1, (cy - offsetY) / imgH));
 
-    setBgPos({
-      x: Math.max(0, Math.min(100, x)),
-      y: Math.max(0, Math.min(100, y)),
+    const bgW = imgW * ZOOM_SCALE;
+    const bgH = imgH * ZOOM_SCALE;
+    setBgSize({ w: bgW, h: bgH });
+    setBgPosPx({
+      x: LENS_SIZE / 2 - bgW * fracX,
+      y: LENS_SIZE / 2 - bgH * fracY,
     });
   };
 
@@ -71,15 +75,15 @@ export default function ProductImageZoom({ src, alt }: ProductImageZoomProps) {
       />
       {showLens && (
         <div
-          className="absolute pointer-events-none rounded-full border-2 border-white/70 shadow-2xl hidden md:block"
+          className="absolute pointer-events-none rounded-full border-2 border-white/70 shadow-2xl hidden md:block bg-black"
           style={{
             width: `${LENS_SIZE}px`,
             height: `${LENS_SIZE}px`,
             left: `${cursor.x - LENS_SIZE / 2}px`,
             top: `${cursor.y - LENS_SIZE / 2}px`,
             backgroundImage: `url(${src})`,
-            backgroundSize: `${ZOOM_SCALE * 100}%`,
-            backgroundPosition: `${bgPos.x}% ${bgPos.y}%`,
+            backgroundSize: `${bgSize.w}px ${bgSize.h}px`,
+            backgroundPosition: `${bgPosPx.x}px ${bgPosPx.y}px`,
             backgroundRepeat: "no-repeat",
           }}
         />
