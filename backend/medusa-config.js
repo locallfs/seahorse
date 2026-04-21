@@ -122,5 +122,8 @@ module.exports = defineConfig({
     quickbooks: {
       resolve: mod("src/modules/quickbooks"),
     },
+    auctions: {
+      resolve: mod("src/modules/auctions"),
+    },
   },
 });
