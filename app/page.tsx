@@ -3,7 +3,6 @@ import Header from "@/components/Header";
 import HeroVideo from "@/components/HeroVideo";
 import VideoBackground from "@/components/VideoBackground";
 import SideScrollGallery from "@/components/SideScrollGallery";
-import HomeLiveAuctions from "@/components/HomeLiveAuctions";
 import GoogleReviews from "@/components/GoogleReviews";
 import Footer from "@/components/Footer";
 
@@ -16,8 +15,6 @@ export default function HomePage() {
         <HeroVideo />
 
         <div className="bg-ocean-950/80 backdrop-blur-sm">
-          <HomeLiveAuctions />
-
           <SideScrollGallery
             title="New Arrivals"
             subtitle="Just In"

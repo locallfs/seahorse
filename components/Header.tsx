@@ -8,7 +8,6 @@ import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/components/AuthContext";
 
 const navLinks: { label: string; href: string; flash?: boolean }[] = [
-  { label: "Live Auctions!", href: "/auctions", flash: true },
   { label: "New Arrivals", href: "/new-arrivals", flash: true },
   { label: "Fish", href: "/fish" },
   { label: "Corals", href: "/corals" },
@@ -97,7 +96,7 @@ export default function Header() {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-7">
-          {navLinks.slice(0, 2).map((link) => (
+          {navLinks.slice(0, 1).map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -131,7 +130,7 @@ export default function Header() {
               </div>
             </div>
           </div>
-          {navLinks.slice(2).map((link) => (
+          {navLinks.slice(1).map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -311,7 +310,7 @@ export default function Header() {
       {menuOpen && (
         <div className="lg:hidden bg-white border-t border-white/20">
           <nav className="max-w-screen-xl mx-auto px-6 py-4 flex flex-col gap-1">
-            {navLinks.slice(0, 2).map((link) => (
+            {navLinks.slice(0, 1).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -332,7 +331,7 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
-            {navLinks.slice(2).map((link) => (
+            {navLinks.slice(1).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
