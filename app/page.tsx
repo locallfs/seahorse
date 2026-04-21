@@ -65,7 +65,7 @@ export default function HomePage() {
           <SideScrollGallery
             title="WYSIWYG Corals"
             subtitle="What You See Is What You Get"
-            tagValues={["WYSIWYG Coral"]}
+            tagValues={["WYSIWYG Corals"]}
             viewAllHref="/wysiwyg-corals"
             tag="WYSIWYG"
           />

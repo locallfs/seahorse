@@ -20,7 +20,7 @@ export default function WysiwygCoralsPage() {
           </div>
         </div>
         <div className="max-w-screen-xl mx-auto px-6 py-12">
-          <ProductGrid tagValues={["WYSIWYG Coral"]} />
+          <ProductGrid tagValues={["WYSIWYG Corals"]} />
         </div>
       </main>
       <Footer />
