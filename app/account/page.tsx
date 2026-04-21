@@ -86,6 +86,23 @@ export default function AccountPage() {
             </button>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+            <Link
+              href="/account/payment-methods"
+              className="flex items-center justify-between rounded-xl border border-white/10 bg-ocean-900 hover:border-white/25 transition-colors px-6 py-5"
+            >
+              <div>
+                <p className="text-white font-medium">Payment Methods</p>
+                <p className="text-white/60 text-xs mt-1">
+                  Saved cards for auctions and checkout
+                </p>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/70">
+                <path d="M2 6h8M7 3l3 3-3 3" />
+              </svg>
+            </Link>
+          </div>
+
           <h2 className="text-xl font-bold text-white mb-6">Order History</h2>
 
           {ordersLoading ? (
