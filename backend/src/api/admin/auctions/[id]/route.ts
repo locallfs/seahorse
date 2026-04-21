@@ -1,3 +1,4 @@
+import { Modules } from "@medusajs/utils"
 import { AUCTIONS_MODULE } from "../../../../modules/auctions"
 
 export async function GET(req: any, res: any) {
@@ -9,6 +10,9 @@ export async function GET(req: any, res: any) {
   }
   try {
     const auctionsModule: any = req.scope.resolve(AUCTIONS_MODULE)
+    const productModule: any = req.scope.resolve(Modules.PRODUCT)
+    const customerModule: any = req.scope.resolve(Modules.CUSTOMER)
+
     const [auction] = await auctionsModule.listAuctions(
       { id: auctionId },
       { relations: ["bids"] }
@@ -17,7 +21,49 @@ export async function GET(req: any, res: any) {
       res.status(404).json({ error: "Auction not found" })
       return
     }
-    res.json({ auction })
+
+    const [product] = auction.product_id
+      ? await productModule.listProducts({ id: auction.product_id })
+      : [null]
+
+    const bidderIds = Array.from(
+      new Set((auction.bids || []).map((b: any) => b.customer_id).filter(Boolean))
+    ) as string[]
+    let customerById = new Map<string, any>()
+    if (bidderIds.length) {
+      const customers = await customerModule.listCustomers({ id: bidderIds })
+      customerById = new Map(customers.map((c: any) => [c.id, c]))
+    }
+
+    res.json({
+      auction: {
+        ...auction,
+        product: product
+          ? { id: product.id, title: product.title, thumbnail: product.thumbnail }
+          : null,
+        bids: (auction.bids || [])
+          .slice()
+          .sort(
+            (a: any, b: any) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+          )
+          .map((b: any) => {
+            const c = customerById.get(b.customer_id)
+            return {
+              ...b,
+              bidder: c
+                ? {
+                    id: c.id,
+                    email: c.email,
+                    first_name: c.first_name,
+                    last_name: c.last_name,
+                  }
+                : null,
+            }
+          }),
+      },
+    })
   } catch (err: any) {
     console.error(`[admin/auctions/:id] get failed: ${err?.message || err}`)
     res.status(500).json({ error: err?.message || "Failed to fetch auction" })

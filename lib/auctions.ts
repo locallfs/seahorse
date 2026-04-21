@@ -74,6 +74,26 @@ export async function payAuction(id: string) {
   );
 }
 
+export type MyBidAuction = {
+  id: string;
+  status: string;
+  starts_at: string;
+  ends_at: string;
+  winner_customer_id: string | null;
+  winner_offer_status: string | null;
+  winner_offer_expires_at: string | null;
+  current_high_bid_amount: number | null;
+  is_current_high: boolean;
+  is_winner: boolean;
+  my_highest_bid: { amount: number; status: string } | null;
+  my_bid_count: number;
+  product: { id: string; title: string; thumbnail: string | null } | null;
+};
+
+export async function listMyBids() {
+  return storeFetch<{ auctions: MyBidAuction[] }>("/store/auctions/my-bids");
+}
+
 export async function placeBid(id: string, amountCents: number) {
   return storeFetch<{
     bid: { id: string; amount: number; status: string };

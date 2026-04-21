@@ -1,9 +1,11 @@
+import { Modules } from "@medusajs/utils"
 import { AUCTIONS_MODULE } from "../../../modules/auctions"
 
 export async function GET(req: any, res: any) {
   console.log("[admin/auctions] list requested")
   try {
     const auctionsModule: any = req.scope.resolve(AUCTIONS_MODULE)
+    const productModule: any = req.scope.resolve(Modules.PRODUCT)
     const status = req.query?.status
     const filters: Record<string, unknown> = {}
     if (typeof status === "string" && status.length > 0) {
@@ -13,7 +15,27 @@ export async function GET(req: any, res: any) {
       order: { created_at: "DESC" },
       take: 200,
     })
-    res.json({ auctions })
+
+    const productIds = Array.from(
+      new Set(auctions.map((a: any) => a.product_id).filter(Boolean))
+    ) as string[]
+    let productById = new Map<string, any>()
+    if (productIds.length) {
+      const products = await productModule.listProducts({ id: productIds })
+      productById = new Map(products.map((p: any) => [p.id, p]))
+    }
+
+    res.json({
+      auctions: auctions.map((a: any) => {
+        const p = productById.get(a.product_id)
+        return {
+          ...a,
+          product: p
+            ? { id: p.id, title: p.title, thumbnail: p.thumbnail }
+            : null,
+        }
+      }),
+    })
   } catch (err: any) {
     console.error(`[admin/auctions] list failed: ${err?.message || err}`)
     res.status(500).json({ error: err?.message || "Failed to list auctions" })

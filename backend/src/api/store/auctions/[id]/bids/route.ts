@@ -102,6 +102,48 @@ export async function POST(req: any, res: any) {
 
     if (currentHigh) {
       await auctionsModule.updateBids({ id: currentHigh.id, status: "outbid" })
+
+      if (currentHigh.customer_id !== customerId) {
+        try {
+          const notificationModule: any = req.scope.resolve(
+            Modules.NOTIFICATION
+          )
+          const productModule: any = req.scope.resolve(Modules.PRODUCT)
+          const [outbid] = await customerModule.listCustomers({
+            id: currentHigh.customer_id,
+          })
+          const [product] = auction.product_id
+            ? await productModule.listProducts({ id: auction.product_id })
+            : [null]
+          if (outbid?.email) {
+            const storefrontUrl =
+              process.env.STOREFRONT_URL ||
+              process.env.NEXT_PUBLIC_BASE_URL ||
+              "https://www.seahorse-nw.com"
+            await notificationModule.createNotifications({
+              to: outbid.email,
+              channel: "email",
+              template: "auction-outbid",
+              data: {
+                first_name: outbid.first_name || "",
+                product_title: product?.title || "an item",
+                new_high_bid_cents: amount,
+                new_high_bid_display: (amount / 100).toFixed(2),
+                your_bid_cents: currentHigh.amount,
+                your_bid_display: (currentHigh.amount / 100).toFixed(2),
+                auction_url: `${storefrontUrl}/auctions/${auction.id}`,
+                company_name: "Woody's Seahorse Aquarium & Supply",
+              },
+            })
+          }
+        } catch (err: any) {
+          console.error(
+            `[store/auctions/:id/bids] outbid notify failed: ${
+              err?.message || err
+            }`
+          )
+        }
+      }
     }
     const [newBid] = await auctionsModule.createBids([
       {
