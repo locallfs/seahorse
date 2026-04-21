@@ -12,6 +12,7 @@ type StoreProduct = {
   title: string;
   thumbnail: string | null;
   images?: Array<{ id?: string; url: string; rank?: number }> | null;
+  categories?: Array<{ id: string; handle: string }> | null;
   variants: Array<{
     calculated_price?: {
       calculated_amount: number;
@@ -26,6 +27,7 @@ interface SideScrollGalleryProps {
   tagValues: string[];
   viewAllHref: string;
   tag?: string;
+  perCategoryCaps?: Record<string, number>;
 }
 
 function formatPrice(amount: number, currency: string) {
@@ -119,10 +121,17 @@ export default function SideScrollGallery({
   tagValues,
   viewAllHref,
   tag,
+  perCategoryCaps,
 }: SideScrollGalleryProps) {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const tagKey = tagValues.join("|");
+  const capsKey = perCategoryCaps
+    ? Object.entries(perCategoryCaps)
+        .sort()
+        .map(([k, v]) => `${k}:${v}`)
+        .join("|")
+    : "";
 
   useEffect(() => {
     let cancelled = false;
@@ -140,7 +149,7 @@ export default function SideScrollGallery({
         while (!cancelled) {
           const res = await medusa.store.product.list({
             fields:
-              "id,handle,title,thumbnail,tags.value,*images,*variants.calculated_price",
+              "id,handle,title,thumbnail,tags.value,*images,*categories,*variants.calculated_price",
             region_id: regionId,
             limit: pageSize,
             offset,
@@ -163,11 +172,30 @@ export default function SideScrollGallery({
           return tags.some((t) => t?.value && wanted.has(normalize(t.value)));
         });
 
-        const unique = Array.from(
+        const deduped = Array.from(
           new Map(filtered.map((p: any) => [p.id, p])).values()
-        ).slice(0, 100);
+        );
 
-        setProducts(unique as StoreProduct[]);
+        let finalList: any[];
+        if (perCategoryCaps) {
+          const counts: Record<string, number> = {};
+          finalList = [];
+          for (const p of deduped) {
+            const cats: Array<{ handle?: string }> = p?.categories || [];
+            const matchedHandle = cats
+              .map((c) => c?.handle)
+              .find((h) => h && perCategoryCaps[h] != null);
+            if (!matchedHandle) continue;
+            const current = counts[matchedHandle] ?? 0;
+            if (current >= perCategoryCaps[matchedHandle]) continue;
+            counts[matchedHandle] = current + 1;
+            finalList.push(p);
+          }
+        } else {
+          finalList = deduped.slice(0, 100);
+        }
+
+        setProducts(finalList as StoreProduct[]);
         setLoading(false);
       } catch {
         if (!cancelled) setLoading(false);
@@ -176,7 +204,7 @@ export default function SideScrollGallery({
     return () => {
       cancelled = true;
     };
-  }, [tagKey]);
+  }, [tagKey, capsKey]);
 
   if (!loading && products.length === 0) {
     return null;

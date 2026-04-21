@@ -21,6 +21,7 @@ export default function HomePage() {
             tagValues={["New Arrival"]}
             viewAllHref="/new-arrivals"
             tag="New"
+            perCategoryCaps={{ fish: 20, corals: 20, inverts: 10 }}
           />
 
           <div className="max-w-screen-xl mx-auto px-6">
