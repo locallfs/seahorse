@@ -14,5 +14,17 @@ export default defineMiddlewares({
       matcher: "/store/payment-methods*",
       middlewares: [authenticate("customer", ["session", "bearer"])],
     },
+    {
+      matcher: "/store/auctions/*/bids",
+      method: "POST",
+      middlewares: [authenticate("customer", ["session", "bearer"])],
+    },
+    {
+      matcher: "/store/auctions*",
+      method: "GET",
+      middlewares: [
+        authenticate("customer", ["session", "bearer"], { allowUnauthenticated: true }),
+      ],
+    },
   ],
 })
