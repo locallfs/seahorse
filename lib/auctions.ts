@@ -51,6 +51,29 @@ export async function getAuction(id: string) {
   return storeFetch<{ auction: AuctionDetail }>(`/store/auctions/${id}`);
 }
 
+export type AuctionInvoice = {
+  auction: {
+    id: string;
+    status: string;
+    winner_offer_status: "pending_payment" | "paid" | "forfeited" | "cascaded" | null;
+    winner_offer_expires_at: string | null;
+    amount: number;
+    product: { id: string; title: string; thumbnail: string | null } | null;
+  };
+  card: { brand?: string; last4?: string } | null;
+};
+
+export async function getAuctionInvoice(id: string) {
+  return storeFetch<AuctionInvoice>(`/store/auctions/${id}/pay`);
+}
+
+export async function payAuction(id: string) {
+  return storeFetch<{ ok: true; payment_intent_id: string; amount: number }>(
+    `/store/auctions/${id}/pay`,
+    { method: "POST" }
+  );
+}
+
 export async function placeBid(id: string, amountCents: number) {
   return storeFetch<{
     bid: { id: string; amount: number; status: string };
