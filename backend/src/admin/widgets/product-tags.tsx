@@ -14,6 +14,23 @@ declare const __BACKEND_URL__: string | undefined
 
 type Tag = { id: string; value: string }
 
+const MAIN_TAG_NAMES = [
+  "Fish",
+  "Corals",
+  "Inverts",
+  "New Arrivals",
+  "Supplies",
+  "WYSIWYG Fish",
+  "WYSIWYG Corals",
+]
+const MAIN_TAG_SET = new Set(MAIN_TAG_NAMES.map((n) => n.toLowerCase()))
+const mainOrder = (v: string) => {
+  const i = MAIN_TAG_NAMES.findIndex(
+    (n) => n.toLowerCase() === v.toLowerCase(),
+  )
+  return i === -1 ? MAIN_TAG_NAMES.length : i
+}
+
 const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   const backendUrl = __BACKEND_URL__ ?? ""
   const [allTags, setAllTags] = useState<Tag[]>([])
@@ -79,6 +96,18 @@ const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
     if (!q) return allTags
     return allTags.filter((t) => t.value.toLowerCase().includes(q))
   }, [allTags, query])
+
+  const { mainTags, otherTags } = useMemo(() => {
+    const main: Tag[] = []
+    const other: Tag[] = []
+    for (const t of filtered) {
+      if (MAIN_TAG_SET.has(t.value.toLowerCase())) main.push(t)
+      else other.push(t)
+    }
+    main.sort((a, b) => mainOrder(a.value) - mainOrder(b.value))
+    other.sort((a, b) => a.value.localeCompare(b.value))
+    return { mainTags: main, otherTags: other }
+  }, [filtered])
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -160,36 +189,83 @@ const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
           placeholder="Filter tags..."
           disabled={loading || saving}
         />
-        <div
-          className="flex flex-wrap gap-2 overflow-y-auto border border-ui-border-base rounded-md p-3"
-          style={{ maxHeight: 320 }}
-        >
-          {loading ? (
-            <Text size="small" className="text-ui-fg-muted">
-              Loading tags…
-            </Text>
-          ) : filtered.length === 0 ? (
-            <Text size="small" className="text-ui-fg-muted">
-              No tags match.
-            </Text>
-          ) : (
-            filtered.map((tag) => {
-              const active = selected.has(tag.id)
-              return (
-                <Button
-                  key={tag.id}
-                  type="button"
-                  variant={active ? "primary" : "secondary"}
-                  size="small"
-                  onClick={() => toggle(tag.id)}
-                  disabled={saving}
-                >
-                  {tag.value}
-                </Button>
-              )
-            })
-          )}
-        </div>
+        {loading ? (
+          <Text size="small" className="text-ui-fg-muted">
+            Loading tags…
+          </Text>
+        ) : filtered.length === 0 ? (
+          <Text size="small" className="text-ui-fg-muted">
+            No tags match.
+          </Text>
+        ) : (
+          <>
+            <div className="flex flex-col gap-2">
+              <Text
+                size="xsmall"
+                className="text-ui-fg-muted uppercase tracking-wider"
+              >
+                Main Categories
+              </Text>
+              <div className="flex flex-wrap gap-2 border border-ui-border-base rounded-md p-3">
+                {mainTags.length === 0 ? (
+                  <Text size="small" className="text-ui-fg-muted">
+                    No main category tags match your filter.
+                  </Text>
+                ) : (
+                  mainTags.map((tag) => {
+                    const active = selected.has(tag.id)
+                    return (
+                      <Button
+                        key={tag.id}
+                        type="button"
+                        variant={active ? "primary" : "secondary"}
+                        size="small"
+                        onClick={() => toggle(tag.id)}
+                        disabled={saving}
+                      >
+                        {tag.value}
+                      </Button>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Text
+                size="xsmall"
+                className="text-ui-fg-muted uppercase tracking-wider"
+              >
+                Other Tags ({otherTags.length})
+              </Text>
+              <div
+                className="flex flex-wrap gap-2 overflow-y-auto border border-ui-border-base rounded-md p-3"
+                style={{ maxHeight: 320 }}
+              >
+                {otherTags.length === 0 ? (
+                  <Text size="small" className="text-ui-fg-muted">
+                    No other tags match your filter.
+                  </Text>
+                ) : (
+                  otherTags.map((tag) => {
+                    const active = selected.has(tag.id)
+                    return (
+                      <Button
+                        key={tag.id}
+                        type="button"
+                        variant={active ? "primary" : "secondary"}
+                        size="small"
+                        onClick={() => toggle(tag.id)}
+                        disabled={saving}
+                      >
+                        {tag.value}
+                      </Button>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          </>
+        )}
         <div className="flex flex-col gap-2">
           <Text size="small" className="text-ui-fg-subtle">
             Create new tag
