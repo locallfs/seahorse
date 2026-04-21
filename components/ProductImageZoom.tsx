@@ -14,14 +14,35 @@ const LENS_SIZE = 400;
 export default function ProductImageZoom({ src, alt }: ProductImageZoomProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showLens, setShowLens] = useState(false);
-  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const [cursor, setCursor] = useState({ x: 0, y: 0 });
+  const [bgPos, setBgPos] = useState({ x: 50, y: 50 });
+  const [imgAspect, setImgAspect] = useState(1);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setPos({
+
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    setCursor({ x: cx, y: cy });
+
+    const containerAspect = rect.width / rect.height;
+    let imgW: number;
+    let imgH: number;
+    if (imgAspect >= containerAspect) {
+      imgW = rect.width;
+      imgH = rect.width / imgAspect;
+    } else {
+      imgH = rect.height;
+      imgW = rect.height * imgAspect;
+    }
+    const offsetX = (rect.width - imgW) / 2;
+    const offsetY = (rect.height - imgH) / 2;
+
+    const x = ((cx - offsetX) / imgW) * 100;
+    const y = ((cy - offsetY) / imgH) * 100;
+
+    setBgPos({
       x: Math.max(0, Math.min(100, x)),
       y: Math.max(0, Math.min(100, y)),
     });
@@ -42,6 +63,11 @@ export default function ProductImageZoom({ src, alt }: ProductImageZoomProps) {
         className="object-contain"
         sizes="(max-width: 1024px) 100vw, 50vw"
         unoptimized
+        onLoadingComplete={(img) => {
+          if (img.naturalWidth && img.naturalHeight) {
+            setImgAspect(img.naturalWidth / img.naturalHeight);
+          }
+        }}
       />
       {showLens && (
         <div
@@ -49,11 +75,11 @@ export default function ProductImageZoom({ src, alt }: ProductImageZoomProps) {
           style={{
             width: `${LENS_SIZE}px`,
             height: `${LENS_SIZE}px`,
-            left: `calc(${pos.x}% - ${LENS_SIZE / 2}px)`,
-            top: `calc(${pos.y}% - ${LENS_SIZE / 2}px)`,
+            left: `${cursor.x - LENS_SIZE / 2}px`,
+            top: `${cursor.y - LENS_SIZE / 2}px`,
             backgroundImage: `url(${src})`,
             backgroundSize: `${ZOOM_SCALE * 100}%`,
-            backgroundPosition: `${pos.x}% ${pos.y}%`,
+            backgroundPosition: `${bgPos.x}% ${bgPos.y}%`,
             backgroundRepeat: "no-repeat",
           }}
         />
