@@ -350,3 +350,194 @@ A small page at `/admin/integrations/quickbooks` inside the Medusa admin:
 - Admin page shows "Connected, last sync 2 min ago" in green
 - Token refresh happens silently in background with no user action
 - If the connection breaks, the admin page shows red and exactly what to do to fix it
+
+
+---
+
+
+## Live Auctions (Phase 4)
+
+Timed English-style auctions for live fish, corals, and invertebrates. Customers bid publicly, the highest bid above reserve wins, winner pays within 24 hours or the offer cascades to the next bidder.
+
+### Who uses it
+- **Shoppers** — browse open auctions, place bids, track their active bids, pay after winning
+- **Admin/staff** — create auctions, set reserves, monitor live bidding, handle no-pay cascades
+
+### Rules (confirmed)
+| Rule | Value |
+|---|---|
+| Auction type | English (ascending public bids) |
+| Reserve price | Yes — hidden from bidders, auction only sells if met |
+| Starting bid | Staff-set per auction |
+| Bid increment | Staff-set per auction (default $5) |
+| Soft close | Yes — if any bid lands in the final 2 minutes, end time extends by 2 minutes. Repeats indefinitely. |
+| Payment model | Card on file at bid time (Stripe SetupIntent — no hold). Charged after winning. |
+| Pay window | 24 hours after auction ends |
+| No-pay fallback | Cascade to 2nd-highest bidder at **their** bid amount, 24-hr window. Cascade again to 3rd if needed. If top 3 all fail, auction relists. |
+| Ghost policy | 1st ghost = warning email. 2nd ghost = banned from future auctions. Tracked on customer metadata. |
+| Eligibility to bid | Logged-in customer + saved card on file. No unverified bidding. |
+| Location | Anyone can bid regardless of shipping distance. Same live-animal shipping rules apply. |
+
+### Tech stack additions
+| Piece | Choice | Why |
+|---|---|---|
+| Realtime bid updates | **Polling** — 3s while auction has <2 min left, 10s otherwise | No new infra, good enough for single-digit concurrent bidders per auction. Upgrade to Pusher/Ably later if load demands it. |
+| Countdown timer | Server-authoritative end time, client computes remaining | Prevents clock-skew sniping |
+| Card storage | Stripe Customer + SetupIntent + default PaymentMethod | Already using Stripe, no hold at bid time = no statement friction |
+| Scheduled jobs | Medusa scheduled jobs (already used for `expire-new-arrivals`) | Close auctions, charge winners, cascade on no-pay |
+| Emails | Klaviyo (already wired) | Outbid, won, payment due, cascade offer, banned |
+
+### Data Models (new Medusa module: `auctions`)
+
+```
+auction
+├── id
+├── product_id          → existing Medusa product (1-of-1 inventory)
+├── status              → scheduled | live | ended | cancelled | relisted
+├── starts_at           → when bidding opens
+├── ends_at             → current end time (moves with soft close)
+├── original_ends_at    → initial end time (unchanged, for records)
+├── starting_bid        → cents
+├── bid_increment       → cents (default 500 = $5)
+├── reserve_price       → cents, nullable
+├── reserve_met         → boolean (cached for fast queries)
+├── current_high_bid_id → nullable FK to bid
+├── winner_customer_id  → nullable FK
+├── winner_offer_status → pending_payment | paid | forfeited | cascaded
+├── cascade_position    → 1 | 2 | 3 (which bidder was offered after forfeit)
+├── metadata
+├── created_at / updated_at
+
+bid
+├── id
+├── auction_id          → FK
+├── customer_id         → FK (must have saved card)
+├── amount              → cents
+├── status              → active | outbid | winning | forfeited
+├── created_at
+
+auction_customer_profile    (extends Medusa customer via metadata)
+├── stripe_customer_id
+├── saved_payment_method_id
+├── ghost_count             → 0, 1, 2+
+├── banned_from_auctions    → boolean
+├── first_ghost_at
+```
+
+### Pages and flows
+
+**Public (logged-out)**
+- `/auctions` — Live + upcoming auctions grid. Shows countdown, current bid, image. Clicking a card = product page.
+- `/auctions/[id]` — Auction detail. Photo gallery, countdown, current high bid, bid history (anonymized: "bidder_7f4a"), bid form (disabled with "Sign in to bid" CTA).
+
+**Customer (logged-in)**
+- `/auctions/[id]` — Same as above, but bid form active. First bid prompts "Save a card to bid" → Stripe SetupIntent flow → returns and places bid.
+- `/account/bids` — Active bids, won auctions pending payment, past wins, losses. Big "Pay now" button on pending-payment rows.
+- `/account/payment-methods` — Add/remove/default cards (Stripe Billing portal or custom UI).
+- Email: outbid notifications, "you won" + pay link, 24-hr countdown reminder at 12-hr and 2-hr marks, cascade offers.
+
+**Admin**
+- `/admin/auctions` (Medusa admin custom route) — List all auctions (live, scheduled, ended). Filters by status.
+- `/admin/auctions/new` — Pick an existing product, set start/end, reserve, starting bid, increment.
+- `/admin/auctions/[id]` — View bid history with real customer names/emails, manual close button, manual cascade override (force offer to Nth bidder), mark as paid/forfeited, cancel auction.
+- Customer detail widget — shows ghost count + ban toggle.
+
+### User flows
+
+**First-time bidder**
+1. Logged-in customer on `/auctions/[id]` clicks "Place Bid: $X"
+2. Modal: "Save a card to bid. Your card won't be charged unless you win."
+3. Stripe SetupIntent flow → card saved as default PaymentMethod on Stripe Customer
+4. Bid placed. Badge next to name: "Verified bidder"
+5. Outbid? Email sent. Card stays saved for next auction.
+
+**Soft close**
+1. Auction end time = 8:00 PM
+2. At 7:59 PM someone bids → end time pushed to 8:01 PM
+3. Countdown visibly jumps on all clients on next poll
+4. Keeps extending until 2 full minutes pass with no bids
+
+**Won the auction**
+1. Auction closes at 8:05 PM with reserve met
+2. Scheduled job runs every 60s, picks up closed auctions, marks winner, fires Klaviyo "You won!" email with Stripe Checkout pay link
+3. Pay link is a one-time Stripe PaymentIntent pre-filled with saved card, customer reviews shipping + taxes, confirms, done
+4. 12-hr and 2-hr reminder emails if unpaid
+5. At T+24hr unpaid → winner marked forfeited, ghost_count++, email sent, cascade starts
+
+**Cascade**
+1. Scheduled job sees `winner_offer_status = pending_payment` past 24hr OR payment failed
+2. Marks winner as forfeited, bumps ghost_count
+3. If ghost_count hits 2 → sets `banned_from_auctions = true`
+4. Finds 2nd-highest active bid, sets as new winner at **their** bid amount, starts fresh 24-hr clock, emails them
+5. Repeats up to 3rd bidder
+6. If all 3 forfeit → admin gets email, auction status = `relisted`, staff manually creates new auction
+
+**Ghost / ban**
+- Warning email after 1st no-pay: "This time it's a warning. Next time = banned."
+- Ban auto-applied on 2nd no-pay. Customer can still shop the regular storefront, just can't bid.
+- Admin widget on customer detail can manually unban (forgive an edge case).
+
+### Third-party service additions
+| Service | What it does |
+|---|---|
+| Stripe SetupIntent API | Save card at bid time without charging |
+| Stripe PaymentIntent (manual) | Charge winner when they hit "Pay now" |
+| Klaviyo | All auction lifecycle emails (outbid, won, reminder, cascade offer, banned) |
+
+### Build order (phased)
+
+1. **Phase A — Auctions module + data models**
+   - New Medusa custom module `auctions` with migrations for `auction`, `bid` tables
+   - Customer metadata fields for ghost tracking
+   - Admin API routes (create, list, cancel)
+
+2. **Phase B — Saved card flow**
+   - `/account/payment-methods` page + Stripe SetupIntent integration
+   - Require saved card before first bid
+
+3. **Phase C — Bidding**
+   - Public auction detail page with countdown + bid form
+   - Bid API route (validate: eligible, amount ≥ current + increment, auction live, not banned)
+   - Soft-close logic on bid placement
+   - Polling cadence (3s late, 10s early)
+   - Anonymized bid history
+
+4. **Phase D — Auction close + winner notify**
+   - Scheduled job every 60s: close expired auctions, mark winner if reserve met, fire Klaviyo email with pay link
+   - Pay page (`/auctions/[id]/pay`) → PaymentIntent with saved card
+
+5. **Phase E — Cascade + ghost tracking**
+   - Scheduled job: detect expired pay windows, forfeit, bump ghost count, cascade to next bidder
+   - Auto-ban on 2nd ghost
+   - Admin override widget
+
+6. **Phase F — Admin UI**
+   - `/admin/auctions` list + detail + create pages as custom routes
+   - Customer widget showing ghost count + ban toggle
+
+7. **Phase G — Public polish**
+   - `/auctions` index page
+   - Homepage row (when there's at least one live auction)
+   - `/account/bids` dashboard
+   - Klaviyo email templates for every lifecycle event
+
+### Done means
+- Admin creates an auction from a product with 1 stock, sets $20 reserve, $10 starting bid, 4-hour duration
+- Customer signs in, lands on `/auctions/[id]`, sees countdown
+- Customer tries to bid → prompted to save card → SetupIntent flow completes → bid placed
+- Second customer bids higher → first customer gets outbid email via Klaviyo
+- Final minute activity extends end time via soft close
+- Auction ends with reserve met → winner gets "You won!" email within 60 seconds with pay link
+- Winner pays via saved card → order created in Medusa with same live-animal shipping rules as storefront
+- If winner doesn't pay in 24 hrs → 2nd place gets cascade offer at their bid price
+- After 2nd ghost, customer is auto-banned from future auctions (but can still shop normally)
+- Admin dashboard shows live bid feed with real identities and manual override buttons
+
+### Out of scope (v1)
+- Proxy/max bidding (eBay-style "bid up to $X automatically")
+- Watchlists / save-for-later
+- Buy-it-now option on auctions
+- Bid retraction
+- Auction extensions beyond 2 min (e.g. 5-min soft close variant per auction)
+- Public reserve indicator ("reserve met ✓") — can add later
+- Push notifications (use email only for v1)
