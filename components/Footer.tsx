@@ -177,9 +177,15 @@ export default function Footer() {
           <p className="text-xs text-white">
             &copy; {new Date().getFullYear()} Secret Reef LLC — All rights reserved.
           </p>
-          <p className="text-xs text-white">
-            106 NE Russet St. Portland, OR 97211 &middot; 503-283-4788
-          </p>
+          <div className="flex items-center gap-4 text-xs text-white">
+            <Link href="/privacy" className="hover:text-[#FFD700] transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="text-white/40">|</span>
+            <span>
+              106 NE Russet St. Portland, OR 97211 &middot; 503-283-4788
+            </span>
+          </div>
         </div>
       </div>
     </footer>
