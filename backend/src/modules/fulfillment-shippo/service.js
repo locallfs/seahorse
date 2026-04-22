@@ -28,6 +28,25 @@ const DEFAULT_PARCEL = {
   mass_unit: "lb",
 };
 
+// Keywords that mark an item as a live animal — triggers overnight-only
+// shipping and the live-animal handling fee.
+const LIVE_ANIMAL_KEYWORDS = [
+  "fish", "coral", "invert", "shrimp", "crab", "snail", "anemone",
+  "seahorse", "clown", "tang", "wrasse", "goby", "angel", "urchin", "starfish",
+];
+
+// Handling fees in dollars — covers boxes, insulation, heat packs, bags, labor.
+const HANDLING_FEE_SUPPLIES = 7;
+const HANDLING_FEE_LIVE = 12;
+
+function hasLiveAnimals(items) {
+  if (!Array.isArray(items)) return false;
+  return items.some((item) => {
+    const title = (item.product_title || item.title || "").toLowerCase();
+    return LIVE_ANIMAL_KEYWORDS.some((kw) => title.includes(kw));
+  });
+}
+
 class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
   static identifier = "shippo";
 
@@ -91,18 +110,11 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
   async validateFulfillmentData(optionData, data, context) {
     // Enforce: live animals can only use overnight shipping
     const optionId = optionData?.id || "";
-    if (optionId !== "shippo-overnight" && context?.items) {
-      const liveKeywords = ["fish", "coral", "invert", "shrimp", "crab", "snail", "anemone", "seahorse", "clown", "tang", "wrasse", "goby", "angel", "urchin", "starfish"];
-      const hasLive = context.items.some((item) => {
-        const title = (item.product_title || item.title || "").toLowerCase();
-        return liveKeywords.some((kw) => title.includes(kw));
-      });
-      if (hasLive) {
-        throw new MedusaError(
-          MedusaError.Types.NOT_ALLOWED,
-          "Live animals require Overnight shipping for safe delivery."
-        );
-      }
+    if (optionId !== "shippo-overnight" && hasLiveAnimals(context?.items)) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Live animals require Overnight shipping for safe delivery."
+      );
     }
     return { ...data };
   }
@@ -185,14 +197,18 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
         selectedRate = sorted[0];
       }
 
-      const amount = parseFloat(selectedRate.amount);
+      const carrierAmount = parseFloat(selectedRate.amount);
+      const handlingFee = hasLiveAnimals(context?.items)
+        ? HANDLING_FEE_LIVE
+        : HANDLING_FEE_SUPPLIES;
+      const totalAmount = carrierAmount + handlingFee;
 
       this.logger.info(
-        `Shippo rate: ${selectedRate.servicelevel?.name} — $${amount} (${selectedRate.provider})`
+        `Shippo rate: ${selectedRate.servicelevel?.name} — $${carrierAmount} carrier + $${handlingFee} handling = $${totalAmount} (${selectedRate.provider})`
       );
 
       return {
-        calculated_amount: amount,
+        calculated_amount: totalAmount,
         is_calculated_price_tax_inclusive: false,
       };
     } catch (err) {
