@@ -177,8 +177,11 @@ const CustomerAuctionStatusWidget = ({
   )
 }
 
-export const config = defineWidgetConfig({
-  zone: "customer.details.after",
-})
+// Auctions hidden from admin on 2026-04-21.
+// Without a config export, Medusa does not mount this widget on customer pages.
+// To restore: uncomment the block below.
+// export const config = defineWidgetConfig({
+//   zone: "customer.details.after",
+// })
 
 export default CustomerAuctionStatusWidget

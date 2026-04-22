@@ -470,8 +470,10 @@ function toLocalInput(d: Date) {
   )}:${pad(d.getMinutes())}`
 }
 
-export const config = defineRouteConfig({
-  label: "Auctions",
-})
+// Auctions hidden from admin sidebar on 2026-04-21.
+// To restore: uncomment the block below. Route /admin/auctions still works by URL.
+// export const config = defineRouteConfig({
+//   label: "Auctions",
+// })
 
 export default AuctionsListPage
