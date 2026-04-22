@@ -817,7 +817,7 @@ export default function CheckoutPage() {
                   <div className="flex justify-between text-white">
                     <span>Subtotal</span>
                     <span className="text-white">
-                      {formatPrice(cart?.subtotal ?? 0)}
+                      {formatPrice(cart?.item_subtotal ?? cart?.subtotal ?? 0)}
                     </span>
                   </div>
                   <div className="flex justify-between text-white">

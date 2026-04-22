@@ -100,7 +100,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const cartId = localStorage.getItem(CART_ID_KEY);
     if (!cartId) return;
     try {
-      const { cart: c } = await medusa.store.cart.retrieve(cartId);
+      const { cart: c } = await medusa.store.cart.retrieve(cartId, {
+        fields:
+          "*items,*shipping_methods,*shipping_address,*billing_address,subtotal,shipping_total,shipping_subtotal,tax_total,total,item_total,item_subtotal,discount_total,currency_code",
+      });
       setCart(c);
     } catch {
       localStorage.removeItem(CART_ID_KEY);
