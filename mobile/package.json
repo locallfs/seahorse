@@ -11,7 +11,11 @@
     "typecheck": "tsc --noEmit",
     "bump": "node scripts/bump-version.js",
     "build:ios": "node scripts/bump-version.js && eas build --platform ios --profile preview --non-interactive --no-wait",
-    "build:android": "node scripts/bump-version.js && eas build --platform android --profile preview --non-interactive --no-wait"
+    "build:android": "node scripts/bump-version.js && eas build --platform android --profile preview --non-interactive --no-wait",
+    "build:ios:production": "node scripts/bump-version.js && eas build --platform ios --profile production --non-interactive --no-wait",
+    "build:android:production": "node scripts/bump-version.js && eas build --platform android --profile production --non-interactive --no-wait",
+    "submit:ios": "eas submit --platform ios --latest --non-interactive",
+    "submit:android": "eas submit --platform android --latest --non-interactive"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
