@@ -23,6 +23,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6762968435",
+        "appleId": "xfinity.anthony@gmail.com",
+        "appleTeamId": "5R77BT7Z62"
+      }
+    }
   }
 }
