@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/AuthContext";
 import SplashScreen from "@/components/SplashScreen";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import StructuredData from "@/components/StructuredData";
+import CookieConsent from "@/components/CookieConsent";
 import "./globals.css";
 
 const geist = Geist({
@@ -67,6 +68,7 @@ export default function RootLayout({
         </AuthProvider>
         <GoogleAnalytics />
         <Analytics />
+        <CookieConsent />
       </body>
     </html>
   );

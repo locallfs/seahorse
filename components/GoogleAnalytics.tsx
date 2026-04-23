@@ -46,6 +46,16 @@ export default function GoogleAnalytics() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           window.gtag = gtag;
+          var stored = null;
+          try { stored = localStorage.getItem('cookie_consent'); } catch (e) {}
+          var granted = stored === 'accepted';
+          gtag('consent', 'default', {
+            ad_storage: granted ? 'granted' : 'denied',
+            ad_user_data: granted ? 'granted' : 'denied',
+            ad_personalization: granted ? 'granted' : 'denied',
+            analytics_storage: granted ? 'granted' : 'denied',
+            wait_for_update: 500,
+          });
           gtag('js', new Date());
           gtag('config', '${GA_ID}', { send_page_view: false });
         `}
