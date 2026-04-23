@@ -111,7 +111,7 @@ export default function ShippingReturnsPage() {
                 >
                   info@seahorseaquariumsupply.com
                 </a>{" "}
-                within four (4) hours of delivery.
+                within two (2) hours of delivery.
               </li>
             </ul>
 
@@ -173,8 +173,13 @@ export default function ShippingReturnsPage() {
                 delivery for a refund to the original payment method.
               </li>
               <li>
-                Items must be in original packaging with all accessories. A
-                15% restocking fee applies to opened items.
+                <strong>We do not accept returns for opened merchandise.</strong>{" "}
+                Items must be returned in their original, unopened packaging
+                with all accessories.
+              </li>
+              <li>
+                A <strong>20% restocking fee</strong> applies to any returned
+                supplies item.
               </li>
               <li>
                 Return shipping is the customer&apos;s responsibility unless
