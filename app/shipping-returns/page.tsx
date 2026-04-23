@@ -97,7 +97,7 @@ export default function ShippingReturnsPage() {
               .
             </p>
 
-            <div className="mt-8 rounded-xl border-2 border-red-500 bg-red-500/10 p-8 md:p-10">
+            <div className="mt-8 rounded-xl border-2 border-red-500 bg-red-500/10 p-8 md:p-10 glow-purple">
               <p className="text-red-400 font-bold uppercase tracking-[0.15em] text-xl md:text-2xl mb-5">
                 In the Case of a DOA (Dead on Arrival)
               </p>
