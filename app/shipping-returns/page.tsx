@@ -90,8 +90,11 @@ export default function ShippingReturnsPage() {
               pride in our packing standards. We use professional-grade
               insulated shipping containers, heat or cold packs as needed, and
               specialized bagging techniques to ensure your livestock arrives
-              in peak condition. All coral purchases include our 1-day Live
-              Arrival Guarantee.
+              in peak condition. All coral purchases include our{" "}
+              <span className="text-[#FFD700] font-semibold">
+                1-day Live Arrival Guarantee
+              </span>
+              .
             </p>
 
             <div className="mt-6 rounded-lg border-2 border-red-500 bg-red-500/10 p-5">
