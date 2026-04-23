@@ -1,12 +1,24 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
+import CategoryJsonLd from "@/components/CategoryJsonLd";
 
-export const metadata = { title: "Invertebrates — Woody's Seahorse Aquarium & Supply" };
+export const metadata = {
+  title: "Saltwater Invertebrates for Sale",
+  description:
+    "Cleanup crew and reef-safe invertebrates — shrimp, crabs, snails, urchins, starfish, and anemones. Healthy, nationally shipped livestock.",
+  alternates: { canonical: "/inverts" },
+  openGraph: { title: "Saltwater Invertebrates — Woody's Seahorse", url: "/inverts" },
+};
 
 export default function InvertsPage() {
   return (
     <>
+      <CategoryJsonLd
+        path="/inverts"
+        name="Saltwater Invertebrates"
+        description="Reef-safe saltwater invertebrates — shrimp, crabs, snails, urchins, starfish."
+      />
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">

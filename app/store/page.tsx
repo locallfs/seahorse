@@ -3,7 +3,11 @@ import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
 
 export const metadata = {
-  title: "Store — Woody's Seahorse Aquarium & Supply",
+  title: "Shop All — Saltwater Fish, Coral & Aquarium Supplies",
+  description:
+    "Browse the full Woody's Seahorse store — live saltwater fish, corals, invertebrates, and aquarium supplies. Nationwide shipping from Portland, OR.",
+  alternates: { canonical: "/store" },
+  openGraph: { title: "Shop All — Woody's Seahorse", url: "/store" },
 };
 
 const categories = [

@@ -2,7 +2,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Care — Woody's Seahorse Aquarium & Supply",
+  title: "Reef Tank Care Guide",
+  description:
+    "Expert care guides for saltwater aquariums — fish acclimation, coral placement, water parameters, lighting, and feeding from Woody's Seahorse.",
+  alternates: { canonical: "/care" },
+  openGraph: { title: "Reef Tank Care Guide — Woody's Seahorse", url: "/care" },
 };
 
 export default function CarePage() {

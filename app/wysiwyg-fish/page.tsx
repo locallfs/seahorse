@@ -1,12 +1,24 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
+import CategoryJsonLd from "@/components/CategoryJsonLd";
 
-export const metadata = { title: "WYSIWYG Fish — Woody's Seahorse Aquarium & Supply" };
+export const metadata = {
+  title: "WYSIWYG Saltwater Fish",
+  description:
+    "What-You-See-Is-What-You-Get saltwater fish. Each fish is photographed individually — the one in the picture is the one you'll receive.",
+  alternates: { canonical: "/wysiwyg-fish" },
+  openGraph: { title: "WYSIWYG Saltwater Fish — Woody's Seahorse", url: "/wysiwyg-fish" },
+};
 
 export default function WysiwygFishPage() {
   return (
     <>
+      <CategoryJsonLd
+        path="/wysiwyg-fish"
+        name="WYSIWYG Saltwater Fish"
+        description="Individually photographed saltwater fish — exactly the one you'll receive."
+      />
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">

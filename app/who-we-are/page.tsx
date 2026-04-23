@@ -3,7 +3,11 @@ import Footer from "@/components/Footer";
 import QuoteForm from "@/components/QuoteForm";
 
 export const metadata = {
-  title: "Who We Are — Woody's Seahorse Aquarium & Supply",
+  title: "About Woody's Seahorse — Portland's Reef Shop Since 1996",
+  description:
+    "Meet the team at Woody's Seahorse Aquarium & Supply — Portland's dedicated saltwater aquarium specialist since 1996. Visit us at 106 NE Russet St.",
+  alternates: { canonical: "/who-we-are" },
+  openGraph: { title: "About Woody's Seahorse", url: "/who-we-are" },
 };
 
 const products = [

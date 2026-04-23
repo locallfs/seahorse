@@ -1,12 +1,24 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
+import CategoryJsonLd from "@/components/CategoryJsonLd";
 
-export const metadata = { title: "Corals — Woody's Seahorse Aquarium & Supply" };
+export const metadata = {
+  title: "Live Coral for Sale",
+  description:
+    "Premium reef corals — LPS, SPS, softies, zoas, mushrooms. Aquacultured and wild frags shipped overnight with live arrival guarantee.",
+  alternates: { canonical: "/corals" },
+  openGraph: { title: "Live Coral for Sale — Woody's Seahorse", url: "/corals" },
+};
 
 export default function CoralsPage() {
   return (
     <>
+      <CategoryJsonLd
+        path="/corals"
+        name="Live Coral"
+        description="Reef corals for sale — LPS, SPS, softies, zoas, mushrooms, and rare frags."
+      />
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">

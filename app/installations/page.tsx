@@ -4,7 +4,11 @@ import Footer from "@/components/Footer";
 import QuoteForm from "@/components/QuoteForm";
 
 export const metadata = {
-  title: "Custom Installations — Woody's Seahorse Aquarium & Supply",
+  title: "Custom Aquarium Installation — Portland, OR",
+  description:
+    "Custom saltwater aquarium design, plumbing, and installation for homes, offices, and commercial spaces across the Portland metro area.",
+  alternates: { canonical: "/installations" },
+  openGraph: { title: "Custom Aquarium Installation — Portland", url: "/installations" },
 };
 
 const services = [

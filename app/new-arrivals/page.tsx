@@ -1,12 +1,24 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
+import CategoryJsonLd from "@/components/CategoryJsonLd";
 
-export const metadata = { title: "New Arrivals — Woody's Seahorse Aquarium & Supply" };
+export const metadata = {
+  title: "New Arrivals — Fresh Fish, Corals & Inverts",
+  description:
+    "This week's fresh saltwater arrivals — brand new fish, corals, and invertebrates just added to our Portland, OR store and online.",
+  alternates: { canonical: "/new-arrivals" },
+  openGraph: { title: "New Arrivals — Woody's Seahorse", url: "/new-arrivals" },
+};
 
 export default function NewArrivalsPage() {
   return (
     <>
+      <CategoryJsonLd
+        path="/new-arrivals"
+        name="New Arrivals"
+        description="This week's new saltwater fish, corals, and invertebrates at Woody's Seahorse."
+      />
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">

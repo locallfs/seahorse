@@ -4,7 +4,11 @@ import Footer from "@/components/Footer";
 import QuoteForm from "@/components/QuoteForm";
 
 export const metadata = {
-  title: "Pond Cleaning Services — Woody's Seahorse Aquarium & Supply",
+  title: "Pond Cleaning & Maintenance — Portland, OR",
+  description:
+    "Professional koi and goldfish pond cleaning in the Portland metro — sludge removal, filter servicing, water quality, and seasonal maintenance.",
+  alternates: { canonical: "/pond-cleaning" },
+  openGraph: { title: "Pond Cleaning — Portland, OR", url: "/pond-cleaning" },
 };
 
 const services = [

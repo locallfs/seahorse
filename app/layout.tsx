@@ -19,9 +19,28 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Woody's Seahorse Aquarium & Supply",
+  metadataBase: new URL("https://www.seahorseaquariumsupply.com"),
+  title: {
+    default: "Woody's Seahorse Aquarium & Supply — Portland, OR",
+    template: "%s — Woody's Seahorse Aquarium & Supply",
+  },
   description:
-    "Premium saltwater fish, coral, and aquarium supplies. Est. 1996. Shop live fish, invertebrates, WYSIWYG corals, and professional aquarium services.",
+    "Pacific Northwest's premier saltwater fish, coral, and aquarium supply store in Portland, OR. Shop live WYSIWYG fish and corals, invertebrates, reef equipment. Est. 1996.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Woody's Seahorse Aquarium & Supply",
+    url: "https://www.seahorseaquariumsupply.com",
+    images: [
+      {
+        url: "/images/LogoFullNameOnly.png",
+        width: 1200,
+        height: 630,
+        alt: "Woody's Seahorse Aquarium & Supply",
+      },
+    ],
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({

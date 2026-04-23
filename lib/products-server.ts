@@ -73,6 +73,35 @@ async function storeRequest<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+type ProductHandleResponse = {
+  products?: Array<{ handle: string; updated_at?: string }>;
+  count?: number;
+};
+
+export async function getAllProductHandles(): Promise<
+  Array<{ handle: string; updated_at?: string }>
+> {
+  try {
+    const pageSize = 200;
+    const collected: Array<{ handle: string; updated_at?: string }> = [];
+    let offset = 0;
+    while (offset < 10000) {
+      const data = await storeRequest<ProductHandleResponse>(
+        `/store/products?fields=handle,updated_at&limit=${pageSize}&offset=${offset}`
+      );
+      const page = data.products ?? [];
+      collected.push(...page);
+      const total = typeof data.count === "number" ? data.count : collected.length;
+      offset += page.length;
+      if (page.length === 0 || offset >= total) break;
+    }
+    return collected;
+  } catch (err) {
+    console.warn("[products-server] handles fetch failed", err);
+    return [];
+  }
+}
+
 export async function getProductByHandle(
   handle: string
 ): Promise<StoreProduct | null> {

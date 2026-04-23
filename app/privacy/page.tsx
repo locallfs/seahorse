@@ -2,7 +2,10 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Privacy Policy — Woody's Seahorse Aquarium & Supply",
+  title: "Privacy Policy",
+  description:
+    "How Woody's Seahorse Aquarium & Supply collects, uses, and protects your personal information on our website and in the ReefNerds mobile app.",
+  alternates: { canonical: "/privacy" },
 };
 
 const lastUpdated = "April 21, 2026";

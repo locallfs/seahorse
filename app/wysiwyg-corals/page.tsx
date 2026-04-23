@@ -1,12 +1,24 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
+import CategoryJsonLd from "@/components/CategoryJsonLd";
 
-export const metadata = { title: "WYSIWYG Corals — Woody's Seahorse Aquarium & Supply" };
+export const metadata = {
+  title: "WYSIWYG Corals",
+  description:
+    "Hand-photographed reef corals — the exact frag in the image is the one shipped to you. LPS, SPS, softies, zoas, and rare specimens.",
+  alternates: { canonical: "/wysiwyg-corals" },
+  openGraph: { title: "WYSIWYG Corals — Woody's Seahorse", url: "/wysiwyg-corals" },
+};
 
 export default function WysiwygCoralsPage() {
   return (
     <>
+      <CategoryJsonLd
+        path="/wysiwyg-corals"
+        name="WYSIWYG Corals"
+        description="Hand-photographed coral frags — the exact frag in the image ships to you."
+      />
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="border-b border-white/10 bg-ocean-900">

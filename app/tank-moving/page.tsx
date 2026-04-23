@@ -4,7 +4,11 @@ import Footer from "@/components/Footer";
 import QuoteForm from "@/components/QuoteForm";
 
 export const metadata = {
-  title: "Tank Moving Services — Woody's Seahorse Aquarium & Supply",
+  title: "Aquarium Tank Moving Service — Portland, OR",
+  description:
+    "Safe saltwater aquarium moving across the Portland area — breakdown, livestock transport, reassembly, and restart. Zero-loss relocation.",
+  alternates: { canonical: "/tank-moving" },
+  openGraph: { title: "Tank Moving — Portland, OR", url: "/tank-moving" },
 };
 
 const services = [

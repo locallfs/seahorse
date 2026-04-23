@@ -3,7 +3,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import QuoteForm from "@/components/QuoteForm";
 
-export const metadata = { title: "Aquarium Maintenance — Woody's Seahorse Aquarium & Supply" };
+export const metadata = {
+  title: "Aquarium Maintenance Service — Portland, OR",
+  description:
+    "Professional saltwater aquarium maintenance in Portland, Oregon. Water testing, system tuning, algae control, and full monthly care plans.",
+  alternates: { canonical: "/maintenance" },
+  openGraph: { title: "Aquarium Maintenance — Portland, OR", url: "/maintenance" },
+};
 
 const plans = [
   {

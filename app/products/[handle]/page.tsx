@@ -88,6 +88,46 @@ function buildProductSchema(product: StoreProduct) {
   return schema;
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  fish: "Saltwater Fish",
+  corals: "Corals",
+  inverts: "Invertebrates",
+  supplies: "Aquarium Supplies",
+};
+
+function buildBreadcrumbSchema(product: StoreProduct) {
+  const firstCategory = product.categories?.find(
+    (c) => c.handle && CATEGORY_LABELS[c.handle]
+  );
+  const items: Array<Record<string, unknown>> = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: SITE_URL,
+    },
+  ];
+  if (firstCategory?.handle) {
+    items.push({
+      "@type": "ListItem",
+      position: 2,
+      name: CATEGORY_LABELS[firstCategory.handle],
+      item: `${SITE_URL}/${firstCategory.handle}`,
+    });
+  }
+  items.push({
+    "@type": "ListItem",
+    position: items.length + 1,
+    name: product.title,
+    item: `${SITE_URL}/products/${product.handle}`,
+  });
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items,
+  };
+}
+
 export default async function ProductPage({
   params,
 }: {
@@ -101,12 +141,17 @@ export default async function ProductPage({
   }
 
   const schema = buildProductSchema(product);
+  const breadcrumb = buildBreadcrumbSchema(product);
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
       />
       <Header />
       <main className="pt-24 min-h-screen">
