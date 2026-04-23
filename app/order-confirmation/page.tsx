@@ -1,14 +1,67 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { medusa } from "@/lib/medusa";
+import { trackPurchase } from "@/lib/gtag";
+
+type OrderItem = {
+  variant_id?: string | null;
+  product_id?: string | null;
+  product_title?: string | null;
+  title?: string | null;
+  variant_title?: string | null;
+  unit_price?: number;
+  quantity: number;
+};
+
+type OrderLike = {
+  id: string;
+  total?: number;
+  subtotal?: number;
+  shipping_total?: number;
+  tax_total?: number;
+  currency_code?: string;
+  items?: OrderItem[];
+};
 
 function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("id");
+  const tracked = useRef(false);
+
+  useEffect(() => {
+    if (!orderId || tracked.current) return;
+    tracked.current = true;
+
+    (async () => {
+      try {
+        const res = (await medusa.store.order.retrieve(orderId)) as {
+          order: OrderLike;
+        };
+        const order = res.order;
+        trackPurchase({
+          transactionId: order.id,
+          value: order.total ?? 0,
+          currency: (order.currency_code ?? "usd").toUpperCase(),
+          shipping: order.shipping_total,
+          tax: order.tax_total,
+          items: (order.items ?? []).map((item) => ({
+            item_id: item.variant_id ?? item.product_id ?? order.id,
+            item_name: item.product_title ?? item.title ?? "item",
+            item_variant: item.variant_title ?? undefined,
+            price: item.unit_price ?? 0,
+            quantity: item.quantity ?? 1,
+          })),
+        });
+      } catch (err) {
+        console.warn("[analytics] purchase event failed", err);
+      }
+    })();
+  }, [orderId]);
 
   return (
     <div className="max-w-lg mx-auto px-6 py-20 text-center">

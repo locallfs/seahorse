@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { CartProvider } from "@/components/CartContext";
 import { AuthProvider } from "@/components/AuthContext";
 import SplashScreen from "@/components/SplashScreen";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 const geist = Geist({
@@ -43,6 +45,8 @@ export default function RootLayout({
             {children}
           </CartProvider>
         </AuthProvider>
+        <GoogleAnalytics />
+        <Analytics />
       </body>
     </html>
   );
