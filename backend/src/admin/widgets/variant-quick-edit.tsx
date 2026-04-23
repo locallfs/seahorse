@@ -51,6 +51,7 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   const [stockEdit, setStockEdit] = useState<VariantRow | null>(null)
   const [stockValue, setStockValue] = useState("")
   const [saving, setSaving] = useState(false)
+  const [debug, setDebug] = useState<string>("")
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -71,24 +72,43 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
         { inventory_item_id: string; location_id: string; stock: number }
       >()
 
+      const debugLines: string[] = []
       for (const v of variants) {
-        if (!v.sku) continue
+        debugLines.push(`variant id=${v.id} title="${v.title ?? ""}" sku=${JSON.stringify(v.sku)}`)
+        if (!v.sku) {
+          debugLines.push("  -> skipped (no sku)")
+          continue
+        }
         try {
-          const invRes = await fetch(
-            `${backendUrl}/admin/inventory-items?sku=${encodeURIComponent(v.sku)}`,
-            { credentials: "include" },
-          )
+          const invUrl = `${backendUrl}/admin/inventory-items?sku=${encodeURIComponent(v.sku)}`
+          const invRes = await fetch(invUrl, { credentials: "include" })
+          debugLines.push(`  inv-items lookup: ${invRes.status}`)
           if (!invRes.ok) continue
           const invData = await invRes.json()
+          debugLines.push(`  inv-items count=${(invData?.inventory_items ?? []).length}`)
           const invItem = invData?.inventory_items?.[0]
           if (!invItem?.id) continue
+          debugLines.push(`  inv-item id=${invItem.id} stocked_quantity=${invItem.stocked_quantity ?? "n/a"}`)
+
+          const firstLevel = invItem.location_levels?.[0]
+          if (firstLevel?.location_id) {
+            debugLines.push(`  level (embedded) location=${firstLevel.location_id} qty=${firstLevel.stocked_quantity}`)
+            inventoryByVariant.set(v.id, {
+              inventory_item_id: invItem.id,
+              location_id: firstLevel.location_id,
+              stock: Number(firstLevel.stocked_quantity ?? 0),
+            })
+            continue
+          }
 
           const levelRes = await fetch(
             `${backendUrl}/admin/inventory-items/${invItem.id}/location-levels`,
             { credentials: "include" },
           )
+          debugLines.push(`  levels lookup: ${levelRes.status}`)
           if (!levelRes.ok) continue
           const lvlData = await levelRes.json()
+          debugLines.push(`  levels keys=${Object.keys(lvlData ?? {}).join(",")}`)
           const level =
             lvlData?.inventory_levels?.[0] ?? lvlData?.location_levels?.[0]
           if (level) {
@@ -98,10 +118,11 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
               stock: Number(level.stocked_quantity ?? 0),
             })
           }
-        } catch {
-          // per-variant lookup failure — leave Edit Stock disabled for this row
+        } catch (err) {
+          debugLines.push(`  error: ${(err as Error).message}`)
         }
       }
+      setDebug(debugLines.join("\n"))
 
       const next: VariantRow[] = variants.map((v: any) => {
         const usdPrice = (v.prices ?? []).find(
@@ -213,6 +234,11 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
           Set price and stock without opening a variant.
         </Text>
       </div>
+      {debug && (
+        <pre className="text-xs text-ui-fg-subtle whitespace-pre-wrap bg-ui-bg-subtle px-6 py-3 font-mono">
+          {debug}
+        </pre>
+      )}
 
       {loading ? (
         <div className="px-6 py-6">
