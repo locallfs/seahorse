@@ -114,7 +114,47 @@ export default function ShippingReturnsPage() {
                 within four (4) hours of delivery.
               </li>
             </ul>
-            <p className="mt-3">
+
+            <div className="mt-6 rounded-lg border-2 border-red-500 bg-red-500/10 p-5">
+              <p className="text-red-400 font-bold uppercase tracking-[0.15em] text-xs mb-3">
+                In the Case of a DOA (Dead on Arrival)
+              </p>
+              <p className="text-white text-sm mb-3">
+                If an item does not arrive alive, please follow these steps
+                strictly to ensure your claim is processed:
+              </p>
+              <ul className="space-y-2 list-disc pl-6 text-sm">
+                <li>
+                  <strong>Take Clear Photos:</strong> Take high-resolution
+                  photos of the deceased livestock within 2 hours of the
+                  carrier&apos;s posted delivery time.
+                </li>
+                <li>
+                  <strong>Email Us:</strong> Send photos and your order
+                  information to{" "}
+                  <a
+                    href="mailto:info@seahorseaquariumsupply.com"
+                    className="text-[#FFD700] hover:underline"
+                  >
+                    info@seahorseaquariumsupply.com
+                  </a>
+                  .
+                </li>
+                <li>
+                  <strong>Keep the Specimen:</strong> Do not discard the coral
+                  until you have received a response from us; we may require
+                  the skeleton to be returned.
+                </li>
+              </ul>
+              <p className="text-white/90 text-sm mt-3">
+                <strong className="text-red-400">Note:</strong> We cannot
+                accept unclear or &ldquo;all blue&rdquo; photos. Guarantee is
+                void if delivery is refused or if the package is not retrieved
+                in a timely manner after delivery/facility arrival.
+              </p>
+            </div>
+
+            <p className="mt-4">
               Approved claims are refunded as store credit for the value of
               the affected animal(s). Shipping fees are non-refundable. The
               guarantee does not cover losses caused by carrier delays beyond
