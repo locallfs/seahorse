@@ -5,6 +5,7 @@ import { CartProvider } from "@/components/CartContext";
 import { AuthProvider } from "@/components/AuthContext";
 import SplashScreen from "@/components/SplashScreen";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import StructuredData from "@/components/StructuredData";
 import "./globals.css";
 
 const geist = Geist({
@@ -37,6 +38,7 @@ export default function RootLayout({
             document.documentElement.classList.add('splash-active');
           }
         `}} />
+        <StructuredData />
       </head>
       <body className="min-h-full flex flex-col bg-black text-white antialiased">
         <AuthProvider>
