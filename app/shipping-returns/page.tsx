@@ -85,35 +85,14 @@ export default function ShippingReturnsPage() {
             <h2 className="text-xl font-bold text-white mb-3">
               Live arrival guarantee
             </h2>
-            <p className="mb-3">
-              Every live animal shipment is covered by our live arrival
-              guarantee, provided the following conditions are met:
+            <p>
+              At Woody&apos;s Seahorse Aquarium &amp; Supply we take immense
+              pride in our packing standards. We use professional-grade
+              insulated shipping containers, heat or cold packs as needed, and
+              specialized bagging techniques to ensure your livestock arrives
+              in peak condition. All coral purchases include our 1-day Live
+              Arrival Guarantee.
             </p>
-            <ul className="space-y-2 list-disc pl-6">
-              <li>
-                Someone is present at the delivery address to receive the
-                package on the first delivery attempt.
-              </li>
-              <li>
-                You open the package within two (2) hours of delivery and
-                begin acclimation.
-              </li>
-              <li>
-                You take clear, unaltered photos of any deceased animals
-                inside the sealed shipping bag &mdash; before removing the
-                animal from the bag.
-              </li>
-              <li>
-                You email the photos and your order number to{" "}
-                <a
-                  href="mailto:info@seahorseaquariumsupply.com"
-                  className="text-[#FFD700] hover:underline"
-                >
-                  info@seahorseaquariumsupply.com
-                </a>{" "}
-                within two (2) hours of delivery.
-              </li>
-            </ul>
 
             <div className="mt-6 rounded-lg border-2 border-red-500 bg-red-500/10 p-5">
               <p className="text-red-400 font-bold uppercase tracking-[0.15em] text-xs mb-3">
