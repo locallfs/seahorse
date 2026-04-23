@@ -169,8 +169,9 @@ export default function ShippingReturnsPage() {
             </h2>
             <ul className="space-y-2 list-disc pl-6">
               <li>
-                New, unopened dry goods may be returned within 30 days of
-                delivery for a refund to the original payment method.
+                New, <strong>UNOPENED</strong> dry goods may be returned
+                within 30 days of delivery for a refund to the original
+                payment method.
               </li>
               <li>
                 <strong>We do not accept returns for opened merchandise.</strong>{" "}
