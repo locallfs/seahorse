@@ -133,6 +133,12 @@ export default function ShippingReturnsPage() {
               </p>
             </div>
 
+            <p className="mt-4 text-sm italic text-white/80">
+              *Livestock shipping requires a minimum order of $99. We
+              currently do not ship to Hawaii, Alaska, Puerto Rico, or
+              internationally.
+            </p>
+
             <p className="mt-4">
               Approved claims are refunded as store credit for the value of
               the affected animal(s). Shipping fees are non-refundable. The
