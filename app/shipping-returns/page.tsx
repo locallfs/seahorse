@@ -185,10 +185,6 @@ export default function ShippingReturnsPage() {
                 Return shipping is the customer&apos;s responsibility unless
                 the item arrived defective or was shipped in error.
               </li>
-              <li>
-                Consumables (salt, media, food, supplements) are
-                non-returnable once opened.
-              </li>
             </ul>
           </section>
 
