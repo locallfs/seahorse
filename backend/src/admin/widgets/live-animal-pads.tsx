@@ -54,17 +54,6 @@ const LIGHTING_OPTIONS = [
   "High",
 ]
 
-const WATER_FIELDS: Array<{ key: keyof Pads; label: string; placeholder: string }> = [
-  { key: "calcium", label: "Calcium", placeholder: "e.g. 420 ppm" },
-  { key: "magnesium", label: "Magnesium", placeholder: "e.g. 1350 ppm" },
-  { key: "alkalinity", label: "Alkalinity", placeholder: "e.g. 8-10 dKH" },
-  { key: "nitrates", label: "Nitrates", placeholder: "e.g. < 10 ppm" },
-  { key: "phosphates", label: "Phosphates", placeholder: "e.g. < 0.05 ppm" },
-  { key: "temperature", label: "Temperature", placeholder: "e.g. 75-78°F" },
-  { key: "ph", label: "PH", placeholder: "e.g. 8.1-8.4" },
-  { key: "salinity", label: "Salinity", placeholder: "e.g. 1.023-1.025 sg" },
-]
-
 const LIVE_CATEGORY_HANDLES = ["fish", "corals", "inverts"]
 
 const LIVE_KEYWORDS = [
@@ -280,17 +269,6 @@ const LiveAnimalPadsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
         {multiField("flow", "Flow", FLOW_OPTIONS)}
         {multiField("placement", "Placement", PLACEMENT_OPTIONS)}
         {multiField("lighting", "Lighting", LIGHTING_OPTIONS)}
-        <div className="flex flex-col gap-3 pt-4 border-t border-ui-border-base">
-          <Heading level="h3">Water Conditions</Heading>
-          <Text size="small" className="text-ui-fg-subtle">
-            Target parameters for this species. Only filled fields render on the storefront.
-          </Text>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {WATER_FIELDS.map(({ key, label, placeholder }) => (
-              <div key={key}>{textField(key, label, placeholder)}</div>
-            ))}
-          </div>
-        </div>
         <div className="flex items-center justify-end gap-3">
           <Button
             variant="primary"

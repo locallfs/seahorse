@@ -55,3 +55,36 @@ export function isLiveAnimal(
   if (isLiveAnimalByCategories(productOrTitle.categories)) return true;
   return isLiveAnimalByTitle(productOrTitle.title);
 }
+
+const CORAL_TITLE_KEYWORDS = ["coral", "zoa", "acan", "monti", "acro"];
+
+type CoralProductLike = {
+  title?: string | null;
+  categories?: CategoryLike[] | null;
+  tags?: Array<{ value?: string | null }> | null;
+} | null | undefined;
+
+export function isCoral(product: CoralProductLike): boolean {
+  if (!product) return false;
+  if (product.categories?.some((c) => c?.handle === "corals")) return true;
+  const tagMatch = product.tags?.some((t) =>
+    typeof t?.value === "string" &&
+    ["coral", "corals", "wysiwyg corals", "wysiwyg coral"].includes(
+      t.value.toLowerCase().trim(),
+    ),
+  );
+  if (tagMatch) return true;
+  const title = (product.title ?? "").toLowerCase();
+  return CORAL_TITLE_KEYWORDS.some((kw) => title.includes(kw));
+}
+
+export const CORAL_WATER_CONDITIONS = [
+  { label: "Calcium", value: "420-480 ppm" },
+  { label: "Magnesium", value: "1350-1500 ppm" },
+  { label: "Alkalinity", value: "8-12 dKH" },
+  { label: "Nitrates", value: "5-35 ppm" },
+  { label: "Phosphates", value: "0.03-1.0 ppm" },
+  { label: "Temperature", value: "76-80 °F" },
+  { label: "PH", value: "7.8-8.4" },
+  { label: "Salinity", value: "1.024-1.027" },
+] as const;
