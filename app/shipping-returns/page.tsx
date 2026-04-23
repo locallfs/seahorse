@@ -31,7 +31,7 @@ export default function ShippingReturnsPage() {
 
         <div className="max-w-3xl mx-auto px-6 py-16 space-y-10 text-white leading-relaxed text-base">
           <section>
-            <h2 className="text-xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-[#FFD700] mb-3">
               Shipping methods
             </h2>
             <ul className="space-y-2 list-disc pl-6">
@@ -57,7 +57,7 @@ export default function ShippingReturnsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-[#FFD700] mb-3">
               Handling and ship dates
             </h2>
             <ul className="space-y-2 list-disc pl-6">
@@ -82,7 +82,7 @@ export default function ShippingReturnsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-[#FFD700] mb-3">
               Live arrival guarantee
             </h2>
             <p>
@@ -152,7 +152,7 @@ export default function ShippingReturnsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-[#FFD700] mb-3">
               Dry goods returns
             </h2>
             <ul className="space-y-2 list-disc pl-6">
@@ -178,7 +178,7 @@ export default function ShippingReturnsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-[#FFD700] mb-3">
               Live animal returns
             </h2>
             <p>
@@ -191,7 +191,7 @@ export default function ShippingReturnsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-[#FFD700] mb-3">
               How to start a return
             </h2>
             <p>
@@ -208,7 +208,7 @@ export default function ShippingReturnsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-[#FFD700] mb-3">
               Questions?
             </h2>
             <p>
