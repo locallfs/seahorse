@@ -72,35 +72,34 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
       >()
 
       for (const v of variants) {
+        if (!v.sku) continue
         try {
           const invRes = await fetch(
-            `${backendUrl}/admin/products/${data.id}/variants/${v.id}/inventory-items`,
+            `${backendUrl}/admin/inventory-items?sku=${encodeURIComponent(v.sku)}`,
             { credentials: "include" },
           )
-          if (invRes.ok) {
-            const data2 = await invRes.json()
-            const firstLink = data2?.inventory_items?.[0]
-            const invItemId = firstLink?.inventory?.id ?? firstLink?.inventory_item_id
-            if (invItemId) {
-              const levelRes = await fetch(
-                `${backendUrl}/admin/inventory-items/${invItemId}/location-levels`,
-                { credentials: "include" },
-              )
-              if (levelRes.ok) {
-                const lvlData = await levelRes.json()
-                const level = lvlData?.inventory_levels?.[0] ?? lvlData?.location_levels?.[0]
-                if (level) {
-                  inventoryByVariant.set(v.id, {
-                    inventory_item_id: invItemId,
-                    location_id: level.location_id,
-                    stock: Number(level.stocked_quantity ?? 0),
-                  })
-                }
-              }
-            }
+          if (!invRes.ok) continue
+          const invData = await invRes.json()
+          const invItem = invData?.inventory_items?.[0]
+          if (!invItem?.id) continue
+
+          const levelRes = await fetch(
+            `${backendUrl}/admin/inventory-items/${invItem.id}/location-levels`,
+            { credentials: "include" },
+          )
+          if (!levelRes.ok) continue
+          const lvlData = await levelRes.json()
+          const level =
+            lvlData?.inventory_levels?.[0] ?? lvlData?.location_levels?.[0]
+          if (level) {
+            inventoryByVariant.set(v.id, {
+              inventory_item_id: invItem.id,
+              location_id: level.location_id,
+              stock: Number(level.stocked_quantity ?? 0),
+            })
           }
         } catch {
-          // ignore per-variant inventory fetch failures
+          // per-variant lookup failure — leave Edit Stock disabled for this row
         }
       }
 
