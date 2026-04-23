@@ -55,46 +55,70 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const baseVariants = (data.variants ?? []) as any[]
+      const productRes = await fetch(
+        `${backendUrl}/admin/products/${data.id}`,
+        { credentials: "include" },
+      )
+      const product = productRes.ok
+        ? (await productRes.json())?.product
+        : null
 
-      let expanded: any[] = []
-      try {
-        const res = await fetch(
-          `${backendUrl}/admin/products/${data.id}?fields=*variants,*variants.prices,*variants.inventory_items,*variants.inventory_items.location_levels`,
-          { credentials: "include" },
-        )
-        if (res.ok) {
-          const payload = await res.json()
-          expanded = payload?.product?.variants ?? []
+      const variants: any[] =
+        product?.variants ?? (data.variants as any[]) ?? []
+
+      const inventoryByVariant = new Map<
+        string,
+        { inventory_item_id: string; location_id: string; stock: number }
+      >()
+
+      for (const v of variants) {
+        try {
+          const invRes = await fetch(
+            `${backendUrl}/admin/products/${data.id}/variants/${v.id}/inventory-items`,
+            { credentials: "include" },
+          )
+          if (invRes.ok) {
+            const data2 = await invRes.json()
+            const firstLink = data2?.inventory_items?.[0]
+            const invItemId = firstLink?.inventory?.id ?? firstLink?.inventory_item_id
+            if (invItemId) {
+              const levelRes = await fetch(
+                `${backendUrl}/admin/inventory-items/${invItemId}/location-levels`,
+                { credentials: "include" },
+              )
+              if (levelRes.ok) {
+                const lvlData = await levelRes.json()
+                const level = lvlData?.inventory_levels?.[0] ?? lvlData?.location_levels?.[0]
+                if (level) {
+                  inventoryByVariant.set(v.id, {
+                    inventory_item_id: invItemId,
+                    location_id: level.location_id,
+                    stock: Number(level.stocked_quantity ?? 0),
+                  })
+                }
+              }
+            }
+          }
+        } catch {
+          // ignore per-variant inventory fetch failures
         }
-      } catch {
-        expanded = []
       }
 
-      const merged =
-        baseVariants.length > 0
-          ? baseVariants.map((v) => {
-              const enriched = expanded.find((ev) => ev.id === v.id) ?? {}
-              return { ...v, ...enriched }
-            })
-          : expanded
-
-      const next: VariantRow[] = merged.map((v: any) => {
+      const next: VariantRow[] = variants.map((v: any) => {
         const usdPrice = (v.prices ?? []).find(
           (p: any) => (p.currency_code ?? "").toLowerCase() === "usd",
         )
-        const invItem: InventoryItem | undefined = v.inventory_items?.[0]
-        const level: LocationLevel | undefined = invItem?.location_levels?.[0]
+        const inv = inventoryByVariant.get(v.id)
         return {
           id: v.id,
           title: v.title ?? "",
           sku: v.sku ?? null,
           price: usdPrice ? Number(usdPrice.amount) : null,
           currency: "USD",
-          stock: level ? Number(level.stocked_quantity) : null,
-          inventory_item_id: invItem?.id ?? null,
-          location_id: level?.location_id ?? null,
-          location_level_id: level?.id ?? null,
+          stock: inv?.stock ?? null,
+          inventory_item_id: inv?.inventory_item_id ?? null,
+          location_id: inv?.location_id ?? null,
+          location_level_id: null,
         }
       })
       setRows(next)
