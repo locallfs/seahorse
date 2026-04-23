@@ -55,13 +55,31 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(
-        `${backendUrl}/admin/products/${data.id}?fields=variants.id,variants.title,variants.sku,variants.prices.amount,variants.prices.currency_code,*variants.inventory_items,*variants.inventory_items.location_levels`,
-        { credentials: "include" },
-      )
-      if (!res.ok) throw new Error()
-      const { product } = await res.json()
-      const next: VariantRow[] = (product?.variants ?? []).map((v: any) => {
+      const baseVariants = (data.variants ?? []) as any[]
+
+      let expanded: any[] = []
+      try {
+        const res = await fetch(
+          `${backendUrl}/admin/products/${data.id}?fields=*variants,*variants.prices,*variants.inventory_items,*variants.inventory_items.location_levels`,
+          { credentials: "include" },
+        )
+        if (res.ok) {
+          const payload = await res.json()
+          expanded = payload?.product?.variants ?? []
+        }
+      } catch {
+        expanded = []
+      }
+
+      const merged =
+        baseVariants.length > 0
+          ? baseVariants.map((v) => {
+              const enriched = expanded.find((ev) => ev.id === v.id) ?? {}
+              return { ...v, ...enriched }
+            })
+          : expanded
+
+      const next: VariantRow[] = merged.map((v: any) => {
         const usdPrice = (v.prices ?? []).find(
           (p: any) => (p.currency_code ?? "").toLowerCase() === "usd",
         )
@@ -85,7 +103,7 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
     } finally {
       setLoading(false)
     }
-  }, [backendUrl, data.id])
+  }, [backendUrl, data.id, data.variants])
 
   useEffect(() => {
     load()
