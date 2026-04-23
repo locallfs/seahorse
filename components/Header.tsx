@@ -54,6 +54,16 @@ export default function Header() {
     }
   }, [searchOpen]);
 
+  useEffect(() => {
+    if (menuOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [menuOpen]);
+
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQuery.trim();
@@ -240,22 +250,39 @@ export default function Header() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setSearchOpen((o) => !o)}
-          className="lg:hidden p-2 text-blue-dim hover:text-blue-accent transition-colors"
-          aria-label="Search"
-        >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <circle cx="9" cy="9" r="6" />
-            <path d="M14 14l4 4" />
-          </svg>
-        </button>
-
+        <div className="lg:hidden flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setSearchOpen((o) => !o)}
+            className="p-2.5 text-blue-dim hover:text-blue-accent transition-colors"
+            aria-label="Search"
+          >
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="9" cy="9" r="6" />
+              <path d="M14 14l4 4" />
+            </svg>
+          </button>
+          <Link
+            href={customer ? "/cart" : "/login"}
+            className="relative p-2.5 text-blue-dim hover:text-blue-accent transition-colors"
+            aria-label={customer ? "Cart" : "Sign in"}
+          >
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M6 2L3 6v12a2 2 0 002 2h10a2 2 0 002-2V6l-3-4z" />
+              <path d="M3 6h14" />
+              <path d="M13 10a3 3 0 01-6 0" />
+            </svg>
+            {count > 0 && (
+              <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-blue-accent text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {count}
+              </span>
+            )}
+          </Link>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="lg:hidden flex flex-col gap-1.5 p-2 group"
+          className="flex flex-col gap-1.5 p-2.5 group"
           aria-label="Toggle menu"
+          aria-expanded={menuOpen}
         >
           <span
             className={`block h-px w-6 bg-blue-dim transition-all duration-300 ${menuOpen ? "rotate-45 translate-y-2" : ""}`}
@@ -267,6 +294,7 @@ export default function Header() {
             className={`block h-px w-6 bg-blue-dim transition-all duration-300 ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`}
           />
         </button>
+        </div>
       </div>
 
       {searchOpen && (

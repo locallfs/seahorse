@@ -38,3 +38,19 @@ public/*.mov
 public/*.avi
 public/videos/
 assets-raw/
+
+# Local data dumps (CSV/JSON exports, import templates)
+/*.csv
+/*.xlsx
+Product Images Store/
+defunct/
+
+# Stray single images at repo root (go in public/ if needed)
+/*.jpg
+/*.jpeg
+/*.png
+/*.webp
+
+# TypeScript incremental build file
+tsconfig.tsbuildinfo
+next-env.d.ts

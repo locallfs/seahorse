@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function HeroVideo() {
   return (
-    <section className="relative w-full h-screen min-h-[600px] flex items-center justify-center">
+    <section className="relative w-full h-[100dvh] min-h-[600px] flex items-center justify-center">
       <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
         <p className="text-white uppercase font-medium mb-6 text-sm md:text-base tracking-[0.25em] [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]">
           Est. 1996 — Pacific Northwest
