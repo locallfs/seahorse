@@ -1,179 +1,113 @@
-"use client";
-
-import { use, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AddToCartButton from "@/components/AddToCartButton";
-import ShippingNotice from "@/components/ShippingNotice";
-import ProductImageZoom from "@/components/ProductImageZoom";
-import { medusa } from "@/lib/medusa";
-import { isLiveAnimal } from "@/lib/liveAnimal";
+import ProductDetail from "./ProductDetail";
+import { getProductByHandle, type StoreProduct } from "@/lib/products-server";
 
-type Variant = {
-  id: string;
-  title: string;
-  calculated_price?: {
-    calculated_amount: number;
-    currency_code: string;
-  };
-  options?: { value: string; option_id?: string | null }[] | null;
-};
+const SITE_URL = "https://www.seahorseaquariumsupply.com";
 
-type ProductImage = { id: string; url: string; rank?: number };
-
-type Pads = {
-  care_level?: string;
-  reef_safe?: string;
-  min_tank_size?: string;
-  max_size?: string;
-  diet?: string;
-  temperament?: string;
-  range?: string;
-  flow?: string[];
-  placement?: string[];
-  lighting?: string[];
-  calcium?: string;
-  magnesium?: string;
-  alkalinity?: string;
-  nitrates?: string;
-  phosphates?: string;
-  temperature?: string;
-  ph?: string;
-  salinity?: string;
-};
-
-const WATER_ORDER: Array<{ key: keyof Pads; label: string }> = [
-  { key: "calcium", label: "Calcium" },
-  { key: "magnesium", label: "Magnesium" },
-  { key: "alkalinity", label: "Alkalinity" },
-  { key: "nitrates", label: "Nitrates" },
-  { key: "phosphates", label: "Phosphates" },
-  { key: "temperature", label: "Temperature" },
-  { key: "ph", label: "PH" },
-  { key: "salinity", label: "Salinity" },
-];
-
-type StoreProduct = {
-  id: string;
-  handle: string;
-  title: string;
-  description: string | null;
-  thumbnail: string | null;
-  images?: ProductImage[] | null;
-  variants: Variant[];
-  options?: { id: string; title: string }[] | null;
-  metadata?: { pads?: Pads } | null;
-  categories?: { id: string; handle: string }[] | null;
-};
-
-const PAD_ORDER: Array<{ key: keyof Pads; label: string }> = [
-  { key: "care_level", label: "Care Level" },
-  { key: "reef_safe", label: "Reef Safe" },
-  { key: "min_tank_size", label: "Min Tank Size" },
-  { key: "max_size", label: "Max Size" },
-  { key: "diet", label: "Diet" },
-  { key: "temperament", label: "Temperament" },
-  { key: "flow", label: "Flow" },
-  { key: "placement", label: "Placement" },
-  { key: "lighting", label: "Lighting" },
-  { key: "range", label: "Range" },
-];
-
-function padDisplayValue(raw: unknown): string | null {
-  if (Array.isArray(raw)) {
-    const items = raw.filter((v): v is string => typeof v === "string" && v.trim().length > 0);
-    return items.length ? items.join(" • ") : null;
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ handle: string }>;
+}): Promise<Metadata> {
+  const { handle } = await params;
+  const product = await getProductByHandle(handle);
+  if (!product) {
+    return { title: "Product not found — Woody's Seahorse" };
   }
-  if (typeof raw === "string" && raw.trim().length > 0) return raw;
-  return null;
+  const description = product.description
+    ? product.description.replace(/\s+/g, " ").trim().slice(0, 155)
+    : `${product.title} — available at Woody's Seahorse Aquarium & Supply.`;
+  const image = product.images?.[0]?.url ?? product.thumbnail ?? undefined;
+  return {
+    title: `${product.title} — Woody's Seahorse Aquarium & Supply`,
+    description,
+    alternates: { canonical: `${SITE_URL}/products/${product.handle}` },
+    openGraph: {
+      title: product.title,
+      description,
+      url: `${SITE_URL}/products/${product.handle}`,
+      type: "website",
+      images: image ? [{ url: image }] : undefined,
+    },
+  };
 }
 
-function formatPrice(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(amount);
+function buildProductSchema(product: StoreProduct) {
+  const offers = product.variants
+    .filter((v) => v.calculated_price)
+    .map((v) => {
+      const price = v.calculated_price!;
+      return {
+        "@type": "Offer",
+        url: `${SITE_URL}/products/${product.handle}`,
+        price: price.calculated_amount.toFixed(2),
+        priceCurrency: price.currency_code.toUpperCase(),
+        availability: "https://schema.org/InStock",
+        itemCondition: "https://schema.org/NewCondition",
+        sku: v.sku ?? undefined,
+        seller: { "@type": "Organization", name: "Woody's Seahorse Aquarium & Supply" },
+      };
+    });
+
+  const images = [
+    ...(product.images?.map((i) => i.url) ?? []),
+    ...(product.thumbnail && !product.images?.length ? [product.thumbnail] : []),
+  ].filter(Boolean);
+
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    description:
+      product.description?.replace(/\s+/g, " ").trim() ?? product.title,
+    sku: product.variants[0]?.sku ?? product.id,
+    url: `${SITE_URL}/products/${product.handle}`,
+    brand: {
+      "@type": "Brand",
+      name: "Woody's Seahorse Aquarium & Supply",
+    },
+  };
+
+  if (images.length > 0) schema.image = images;
+  if (offers.length === 1) {
+    schema.offers = offers[0];
+  } else if (offers.length > 1) {
+    const prices = offers.map((o) => parseFloat(o.price));
+    schema.offers = {
+      "@type": "AggregateOffer",
+      lowPrice: Math.min(...prices).toFixed(2),
+      highPrice: Math.max(...prices).toFixed(2),
+      priceCurrency: offers[0].priceCurrency,
+      offerCount: offers.length,
+      offers,
+    };
+  }
+  return schema;
 }
 
-export default function ProductPage({
+export default async function ProductPage({
   params,
 }: {
   params: Promise<{ handle: string }>;
 }) {
-  const { handle } = use(params);
-  const [product, setProduct] = useState<StoreProduct | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const { handle } = await params;
+  const product = await getProductByHandle(handle);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const regionsRes = await medusa.store.region.list();
-        const regionId = regionsRes.regions?.[0]?.id;
-        const res = await medusa.store.product.list({
-          handle,
-          fields:
-            "id,handle,title,description,thumbnail,metadata,*images,*options,*variants.calculated_price,*variants.options,*categories",
-          region_id: regionId,
-        });
-        if (cancelled) return;
-        const found = (res.products as StoreProduct[])[0] ?? null;
-        setProduct(found);
-        if (found?.variants?.length) {
-          setSelectedVariantId(found.variants[0].id);
-        }
-        const firstImage =
-          found?.images?.[0]?.url ?? found?.thumbnail ?? null;
-        setSelectedImageUrl(firstImage);
-        setLoading(false);
-      } catch (err) {
-        if (cancelled) return;
-        setError((err as Error)?.message ?? "Failed to load product");
-        setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [handle]);
+  if (!product) {
+    notFound();
+  }
 
-  const variant = useMemo(() => {
-    if (!product) return null;
-    return (
-      product.variants.find((v) => v.id === selectedVariantId) ??
-      product.variants[0] ??
-      null
-    );
-  }, [product, selectedVariantId]);
-
-  const price = variant?.calculated_price;
-  const live = isLiveAnimal(product);
-  const pads = (product?.metadata?.pads ?? {}) as Record<string, unknown>;
-  const padEntries = PAD_ORDER.filter(({ key }) => {
-    return padDisplayValue(pads[key]) !== null;
-  });
-  const waterEntries = WATER_ORDER.filter(({ key }) => {
-    return padDisplayValue(pads[key]) !== null;
-  });
-
-  const gallery: ProductImage[] = useMemo(() => {
-    if (!product) return [];
-    const imgs = product.images && product.images.length > 0
-      ? [...product.images].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
-      : product.thumbnail
-        ? [{ id: "thumb", url: product.thumbnail }]
-        : [];
-    return imgs;
-  }, [product]);
-
-  const hasVariantChoice = (product?.variants?.length ?? 0) > 1;
+  const schema = buildProductSchema(product);
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
       <Header />
       <main className="pt-24 min-h-screen">
         <div className="max-w-screen-xl mx-auto px-6 py-12">
@@ -182,161 +116,10 @@ export default function ProductPage({
               Store
             </a>
             <span>/</span>
-            <span className="text-white">
-              {product?.title ?? (loading ? "Loading…" : "Not found")}
-            </span>
+            <span className="text-white">{product.title}</span>
           </nav>
 
-          {loading ? (
-            <div className="text-center py-32">
-              <p className="text-white text-sm">Loading product…</p>
-            </div>
-          ) : error || !product ? (
-            <div className="text-center py-32">
-              <p className="text-red-400 text-sm mb-2">Could not load product.</p>
-              {error && <p className="text-white text-xs">{error}</p>}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="flex flex-col gap-3">
-                {selectedImageUrl ? (
-                  <ProductImageZoom src={selectedImageUrl} alt={product.title} />
-                ) : (
-                  <div className="w-full aspect-square rounded-xl border border-white/10 overflow-hidden relative bg-ocean-800 glow-white flex items-center justify-center text-white text-xs">
-                    No image
-                  </div>
-                )}
-                {gallery.length > 1 && (
-                  <div className="flex gap-2 flex-wrap">
-                    {gallery.map((img) => {
-                      const active = img.url === selectedImageUrl;
-                      return (
-                        <button
-                          key={img.id}
-                          onClick={() => setSelectedImageUrl(img.url)}
-                          className={`relative w-20 h-20 rounded-md overflow-hidden border transition-all ${
-                            active
-                              ? "border-[#FFD700] ring-1 ring-[#FFD700]"
-                              : "border-white/15 hover:border-white/40"
-                          }`}
-                          aria-label="View image"
-                        >
-                          <Image
-                            src={img.url}
-                            alt=""
-                            fill
-                            className="object-cover"
-                            sizes="80px"
-                            unoptimized
-                          />
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col">
-                <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">
-                  {product.title}
-                </h1>
-                {price && (
-                  <div className="flex items-center gap-3 mb-6 flex-wrap">
-                    <p className="text-3xl font-bold text-white">
-                      {formatPrice(price.calculated_amount, price.currency_code)}
-                    </p>
-                    {price.calculated_amount >= 500 && (
-                      <span className="px-3 py-1.5 rounded-md bg-[#FFD700] text-black text-xs font-bold tracking-wider uppercase">
-                        ★ Free Shipping ★
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {live && (
-                  <div className="mb-6">
-                    <ShippingNotice hasLive />
-                  </div>
-                )}
-
-                {live && padEntries.length > 0 && (
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    {padEntries.map(({ key, label }) => (
-                      <div
-                        key={key}
-                        className="rounded-lg border border-white/15 bg-ocean-800/60 px-4 py-3"
-                      >
-                        <p className="text-[10px] uppercase tracking-[0.12em] text-white/55 mb-1">
-                          {label}
-                        </p>
-                        <p className="text-sm text-white leading-snug">
-                          {padDisplayValue(pads[key])}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {live && waterEntries.length > 0 && (
-                  <div className="mb-6">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-[#FFD700] mb-3">
-                      Water Conditions
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {waterEntries.map(({ key, label }) => (
-                        <div
-                          key={key}
-                          className="rounded-md border border-white/15 bg-ocean-800/60 px-3 py-2"
-                        >
-                          <p className="text-[10px] uppercase tracking-[0.12em] text-white/55 mb-0.5">
-                            {label}
-                          </p>
-                          <p className="text-sm text-white leading-snug">
-                            {padDisplayValue(pads[key])}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {product.description && (
-                  <div className="border-t border-white/10 pt-6 mb-6">
-                    <p className="text-white leading-relaxed text-sm whitespace-pre-line">
-                      {product.description}
-                    </p>
-                  </div>
-                )}
-
-                {hasVariantChoice && (
-                  <div className="mb-5">
-                    <label
-                      htmlFor="variant-select"
-                      className="block text-[11px] tracking-[0.18em] uppercase text-white/60 mb-2"
-                    >
-                      {product.options?.[0]?.title ?? "Size"}
-                    </label>
-                    <select
-                      id="variant-select"
-                      value={selectedVariantId ?? ""}
-                      onChange={(e) => setSelectedVariantId(e.target.value)}
-                      className="w-full bg-ocean-800 text-white text-sm border border-white/20 rounded px-4 py-3 focus:outline-none focus:border-[#FFD700] transition-colors appearance-none"
-                    >
-                      {product.variants.map((v) => (
-                        <option key={v.id} value={v.id} className="bg-ocean-800">
-                          {v.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {variant && price && (
-                  <AddToCartButton variantId={variant.id} />
-                )}
-              </div>
-            </div>
-          )}
+          <ProductDetail product={product} />
         </div>
       </main>
       <Footer />
