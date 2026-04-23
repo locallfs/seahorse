@@ -49,6 +49,42 @@ export default function SplashScreen() {
         onError={dismiss}
         style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
       />
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          dismiss();
+        }}
+        aria-label="Skip intro"
+        style={{
+          position: "absolute",
+          top: "max(1rem, env(safe-area-inset-top))",
+          right: "max(1rem, env(safe-area-inset-right))",
+          padding: "0.6rem 1.1rem",
+          background: "rgba(255, 255, 255, 0.1)",
+          border: "1px solid rgba(255, 255, 255, 0.35)",
+          borderRadius: "9999px",
+          color: "white",
+          fontSize: "0.75rem",
+          fontWeight: 500,
+          letterSpacing: "0.15em",
+          textTransform: "uppercase",
+          cursor: "pointer",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+          transition: "background 200ms ease, border-color 200ms ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+          e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.6)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+          e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.35)";
+        }}
+      >
+        Skip ›
+      </button>
     </div>
   );
 }
