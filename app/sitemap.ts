@@ -25,6 +25,9 @@ const staticRoutes: Array<{
   { path: "/pond-cleaning", changeFrequency: "monthly", priority: 0.5 },
   { path: "/tank-moving", changeFrequency: "monthly", priority: 0.5 },
   { path: "/who-we-are", changeFrequency: "yearly", priority: 0.5 },
+  { path: "/faq", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/shipping-returns", changeFrequency: "yearly", priority: 0.4 },
+  { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
 ];
 

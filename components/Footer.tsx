@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 const shopLinks = [
   { label: "New Arrivals", href: "/new-arrivals" },
@@ -15,6 +16,13 @@ const serviceLinks = [
   { label: "Store", href: "/store" },
 ];
 
+const helpLinks = [
+  { label: "Shipping & Returns", href: "/shipping-returns" },
+  { label: "FAQ", href: "/faq" },
+  { label: "Care Guide", href: "/care" },
+  { label: "Who We Are", href: "/who-we-are" },
+];
+
 const hours = [
   { day: "Monday", time: "Closed" },
   { day: "Tuesday", time: "Closed" },
@@ -28,6 +36,25 @@ const hours = [
 export default function Footer() {
   return (
     <footer className="bg-ocean-900 border-t border-white/10 mt-auto">
+      <div className="border-b border-white/10 bg-ocean-800/40">
+        <div className="max-w-screen-xl mx-auto px-6 py-10 flex flex-col md:flex-row md:items-center gap-6 md:gap-10">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs tracking-[0.2em] uppercase text-[#FFD700] font-medium mb-1.5">
+              Newsletter
+            </p>
+            <h3 className="text-xl font-bold text-white tracking-tight">
+              Daily deals, new arrivals, and care tips
+            </h3>
+            <p className="text-white/70 text-sm mt-1">
+              Subscribe for updates from Woody&apos;s Seahorse. Unsubscribe
+              any time.
+            </p>
+          </div>
+          <div className="w-full md:w-96 flex-shrink-0">
+            <NewsletterSignup />
+          </div>
+        </div>
+      </div>
       <div className="py-16 px-6">
         <div className="flex flex-col lg:flex-row gap-10">
           <div className="flex-shrink-0 lg:pl-20 text-center">
@@ -173,18 +200,67 @@ export default function Footer() {
       </div>
 
       <div className="bg-black border-t border-white/10">
-        <div className="max-w-screen-xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-white">
-            &copy; {new Date().getFullYear()} Secret Reef LLC — All rights reserved.
-          </p>
-          <div className="flex items-center gap-4 text-xs text-white">
-            <Link href="/privacy" className="hover:text-[#FFD700] transition-colors">
-              Privacy Policy
-            </Link>
-            <span className="text-white/40">|</span>
-            <span>
-              106 NE Russet St. Portland, OR 97211 &middot; 503-283-4788
-            </span>
+        <div className="max-w-screen-xl mx-auto px-6 py-6 flex flex-col gap-5">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <nav className="flex flex-wrap items-center justify-center md:justify-start gap-x-5 gap-y-2 text-xs text-white">
+              {helpLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="hover:text-[#FFD700] transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <Link
+                href="/privacy"
+                className="hover:text-[#FFD700] transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/terms"
+                className="hover:text-[#FFD700] transition-colors"
+              >
+                Terms of Service
+              </Link>
+            </nav>
+            <div
+              className="flex items-center gap-3 text-white/70"
+              aria-label="Accepted payment methods"
+            >
+              <svg width="38" height="24" viewBox="0 0 40 24" aria-label="Visa" role="img">
+                <rect width="40" height="24" rx="3" fill="#ffffff" />
+                <text x="20" y="16" textAnchor="middle" fontFamily="system-ui, sans-serif" fontSize="9" fontWeight="700" fill="#1a1f71" letterSpacing="0.5">VISA</text>
+              </svg>
+              <svg width="38" height="24" viewBox="0 0 40 24" aria-label="Mastercard" role="img">
+                <rect width="40" height="24" rx="3" fill="#ffffff" />
+                <circle cx="16" cy="12" r="6" fill="#eb001b" />
+                <circle cx="24" cy="12" r="6" fill="#f79e1b" />
+                <path d="M20 7.5a6 6 0 000 9 6 6 0 000-9z" fill="#ff5f00" />
+              </svg>
+              <svg width="38" height="24" viewBox="0 0 40 24" aria-label="American Express" role="img">
+                <rect width="40" height="24" rx="3" fill="#006fcf" />
+                <text x="20" y="15" textAnchor="middle" fontFamily="system-ui, sans-serif" fontSize="7" fontWeight="700" fill="#ffffff" letterSpacing="0.3">AMEX</text>
+              </svg>
+              <svg width="38" height="24" viewBox="0 0 40 24" aria-label="Discover" role="img">
+                <rect width="40" height="24" rx="3" fill="#ffffff" />
+                <text x="20" y="15" textAnchor="middle" fontFamily="system-ui, sans-serif" fontSize="6.5" fontWeight="700" fill="#231f20">DISCOVER</text>
+                <circle cx="32" cy="18" r="3" fill="#ff6000" />
+              </svg>
+              <svg width="38" height="24" viewBox="0 0 40 24" aria-label="Apple Pay" role="img">
+                <rect width="40" height="24" rx="3" fill="#000000" />
+                <text x="20" y="15" textAnchor="middle" fontFamily="system-ui, sans-serif" fontSize="7" fontWeight="600" fill="#ffffff">Pay</text>
+                <path d="M12 11a2 2 0 012-2 2 2 0 01-2 2z" fill="#ffffff" />
+              </svg>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/70 pt-4 border-t border-white/10">
+            <p>
+              &copy; {new Date().getFullYear()} Secret Reef LLC — All rights
+              reserved.
+            </p>
+            <p>106 NE Russet St. Portland, OR 97211 &middot; 503-283-4788</p>
           </div>
         </div>
       </div>
