@@ -51,11 +51,9 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   const [stockEdit, setStockEdit] = useState<VariantRow | null>(null)
   const [stockValue, setStockValue] = useState("")
   const [saving, setSaving] = useState(false)
-  const [debug, setDebug] = useState<string>("")
 
   const load = useCallback(async () => {
     setLoading(true)
-    const debugLines: string[] = []
     try {
       const productRes = await fetch(
         `${backendUrl}/admin/products/${data.id}`,
@@ -73,13 +71,13 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
       >()
 
       for (const v of variants) {
-        const url = `${backendUrl}/admin/variant-inventory/${v.id}`
         try {
-          const res = await fetch(url, { credentials: "include" })
-          const text = await res.text()
-          debugLines.push(`${v.id} -> ${res.status} ${text.slice(0, 4000)}`)
+          const res = await fetch(
+            `${backendUrl}/admin/variant-inventory/${v.id}`,
+            { credentials: "include" },
+          )
           if (!res.ok) continue
-          const data2: any = JSON.parse(text)
+          const data2: any = await res.json()
           if (data2?.inventory_item_id && data2?.location_id) {
             inventoryByVariant.set(v.id, {
               inventory_item_id: data2.inventory_item_id,
@@ -87,11 +85,10 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
               stock: Number(data2.stocked_quantity ?? 0),
             })
           }
-        } catch (err) {
-          debugLines.push(`${v.id} -> fetch-error: ${(err as Error).message}`)
+        } catch {
+          // unmanaged variant — Edit Stock stays disabled for this row
         }
       }
-      setDebug(debugLines.join("\n"))
 
       const next: VariantRow[] = variants.map((v: any) => {
         const usdPrice = (v.prices ?? []).find(
@@ -202,12 +199,6 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
           Set price and stock without opening a variant.
         </Text>
       </div>
-      {debug && (
-        <pre className="text-xs text-ui-fg-subtle whitespace-pre-wrap bg-ui-bg-subtle px-6 py-3 font-mono">
-          {debug}
-        </pre>
-      )}
-
       {loading ? (
         <div className="px-6 py-6">
           <Text size="small" className="text-ui-fg-subtle">Loading variants…</Text>
@@ -243,7 +234,7 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
                   {row.stock != null ? row.stock : "—"}
                 </Table.Cell>
                 <Table.Cell>
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex gap-2 justify-end items-center">
                     <Button
                       size="small"
                       variant="secondary"
@@ -251,14 +242,23 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
                     >
                       Edit Price
                     </Button>
-                    <Button
-                      size="small"
-                      variant="secondary"
-                      onClick={() => openStock(row)}
-                      disabled={!row.inventory_item_id || !row.location_id}
-                    >
-                      Edit Stock
-                    </Button>
+                    {row.inventory_item_id && row.location_id ? (
+                      <Button
+                        size="small"
+                        variant="secondary"
+                        onClick={() => openStock(row)}
+                      >
+                        Edit Stock
+                      </Button>
+                    ) : (
+                      <Text
+                        size="xsmall"
+                        className="text-ui-fg-muted italic"
+                        title="Enable Manage Inventory on this variant to edit stock"
+                      >
+                        Inventory not managed
+                      </Text>
+                    )}
                   </div>
                 </Table.Cell>
               </Table.Row>
