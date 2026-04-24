@@ -77,7 +77,7 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
         try {
           const res = await fetch(url, { credentials: "include" })
           const text = await res.text()
-          debugLines.push(`${v.id} -> ${res.status} ${text.slice(0, 240)}`)
+          debugLines.push(`${v.id} -> ${res.status} ${text.slice(0, 4000)}`)
           if (!res.ok) continue
           const data2: any = JSON.parse(text)
           if (data2?.inventory_item_id && data2?.location_id) {
