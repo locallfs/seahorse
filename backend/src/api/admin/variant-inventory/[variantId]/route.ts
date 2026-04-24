@@ -1,4 +1,4 @@
-import { ContainerRegistrationKeys } from "@medusajs/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
 
 async function resolveInventoryFor(
   scope: any,
@@ -8,37 +8,36 @@ async function resolveInventoryFor(
   location_id: string | null
   stocked_quantity: number | null
 }> {
-  const query: any = scope.resolve(ContainerRegistrationKeys.QUERY)
-
-  const { data: links } = await query.graph({
-    entity: "product_variant_inventory_item",
-    fields: ["variant_id", "inventory_item_id"],
-    filters: { variant_id: variantId },
-  })
-  const link = links?.[0]
-  if (!link?.inventory_item_id) {
+  const remoteLink: any = scope.resolve(ContainerRegistrationKeys.LINK)
+  const linkService = remoteLink.getLinkModule(
+    Modules.PRODUCT,
+    "variant_id",
+    Modules.INVENTORY,
+    "inventory_item_id",
+  )
+  const links = await linkService.list(
+    { variant_id: [variantId] },
+    { select: ["variant_id", "inventory_item_id"] },
+  )
+  const first = links?.[0]
+  const inventoryItemId = first?.inventory_item_id
+  if (!inventoryItemId) {
     return { inventory_item_id: null, location_id: null, stocked_quantity: null }
   }
 
-  const { data: items } = await query.graph({
-    entity: "inventory_item",
-    fields: [
-      "id",
-      "sku",
-      "stocked_quantity",
-      "location_levels.id",
-      "location_levels.location_id",
-      "location_levels.stocked_quantity",
-    ],
-    filters: { id: link.inventory_item_id },
+  const inventoryModule: any = scope.resolve(Modules.INVENTORY)
+  const levels = await inventoryModule.listInventoryLevels({
+    inventory_item_id: inventoryItemId,
   })
-  const item = items?.[0]
-  const level = item?.location_levels?.[0]
+  const level = levels?.[0]
+
   return {
-    inventory_item_id: item?.id ?? link.inventory_item_id,
+    inventory_item_id: inventoryItemId,
     location_id: level?.location_id ?? null,
     stocked_quantity:
-      level?.stocked_quantity ?? item?.stocked_quantity ?? null,
+      typeof level?.stocked_quantity === "number"
+        ? level.stocked_quantity
+        : null,
   }
 }
 
@@ -77,7 +76,7 @@ export async function POST(req: any, res: any) {
           "No inventory level is set up for this variant yet. Open the variant, enable Manage Inventory, and set a stock location first.",
       })
     }
-    const inventoryModule: any = req.scope.resolve("inventory")
+    const inventoryModule: any = req.scope.resolve(Modules.INVENTORY)
     await inventoryModule.updateInventoryLevels([
       {
         inventory_item_id: info.inventory_item_id,
