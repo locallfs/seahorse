@@ -51,17 +51,18 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   const [stockEdit, setStockEdit] = useState<VariantRow | null>(null)
   const [stockValue, setStockValue] = useState("")
   const [saving, setSaving] = useState(false)
+  const [debug, setDebug] = useState<string>("")
 
   const load = useCallback(async () => {
     setLoading(true)
+    const debugLines: string[] = []
     try {
       const productRes = await fetch(
         `${backendUrl}/admin/products/${data.id}`,
         { credentials: "include" },
       )
-      const product = productRes.ok
-        ? (await productRes.json())?.product
-        : null
+      const productJson: any = productRes.ok ? await productRes.json() : null
+      const product = productJson?.product ?? null
 
       const variants: any[] =
         product?.variants ?? (data.variants as any[]) ?? []
@@ -72,13 +73,13 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
       >()
 
       for (const v of variants) {
+        const url = `${backendUrl}/admin/variant-inventory/${v.id}`
         try {
-          const res = await fetch(
-            `${backendUrl}/admin/variant-inventory/${v.id}`,
-            { credentials: "include" },
-          )
+          const res = await fetch(url, { credentials: "include" })
+          const text = await res.text()
+          debugLines.push(`${v.id} -> ${res.status} ${text.slice(0, 240)}`)
           if (!res.ok) continue
-          const data2 = await res.json()
+          const data2: any = JSON.parse(text)
           if (data2?.inventory_item_id && data2?.location_id) {
             inventoryByVariant.set(v.id, {
               inventory_item_id: data2.inventory_item_id,
@@ -86,10 +87,11 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
               stock: Number(data2.stocked_quantity ?? 0),
             })
           }
-        } catch {
-          // per-variant lookup failure — leave Edit Stock disabled for this row
+        } catch (err) {
+          debugLines.push(`${v.id} -> fetch-error: ${(err as Error).message}`)
         }
       }
+      setDebug(debugLines.join("\n"))
 
       const next: VariantRow[] = variants.map((v: any) => {
         const usdPrice = (v.prices ?? []).find(
@@ -200,6 +202,11 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
           Set price and stock without opening a variant.
         </Text>
       </div>
+      {debug && (
+        <pre className="text-xs text-ui-fg-subtle whitespace-pre-wrap bg-ui-bg-subtle px-6 py-3 font-mono">
+          {debug}
+        </pre>
+      )}
 
       {loading ? (
         <div className="px-6 py-6">
