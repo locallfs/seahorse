@@ -1,4 +1,8 @@
-import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
+import {
+  ContainerRegistrationKeys,
+  Modules,
+  remoteQueryObjectFromString,
+} from "@medusajs/utils"
 
 type ResolveResult = {
   inventory_item_id: string | null
@@ -12,65 +16,41 @@ async function resolveInventoryFor(
   variantId: string,
 ): Promise<ResolveResult> {
   const debug: Record<string, unknown> = {}
-  const remoteLink: any = scope.resolve(ContainerRegistrationKeys.LINK)
-  debug.has_remoteLink = !!remoteLink
-  debug.has_getLinkModule = typeof remoteLink?.getLinkModule === "function"
 
-  let linkService: any = null
+  const remoteQuery: any = scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY)
+  debug.has_remoteQuery = !!remoteQuery
+
+  const queryObj = remoteQueryObjectFromString({
+    entryPoint: "product_variant",
+    variables: { filters: { id: variantId } },
+    fields: [
+      "id",
+      "inventory_items.inventory_item_id",
+      "inventory_items.inventory.id",
+      "inventory_items.inventory.location_levels.id",
+      "inventory_items.inventory.location_levels.location_id",
+      "inventory_items.inventory.location_levels.stocked_quantity",
+    ],
+  })
+
+  let variants: any[] = []
   try {
-    linkService = remoteLink.getLinkModule(
-      Modules.PRODUCT,
-      "variant_id",
-      Modules.INVENTORY,
-      "inventory_item_id",
-    )
+    variants = await remoteQuery(queryObj)
+    debug.variants_count = Array.isArray(variants) ? variants.length : "not-array"
+    debug.variant_sample = variants?.[0]
+      ? JSON.parse(JSON.stringify(variants[0]))
+      : null
   } catch (err: any) {
-    debug.getLinkModule_error = err?.message || String(err)
-  }
-  debug.has_linkService = !!linkService
-
-  let links: any[] = []
-  if (linkService) {
-    try {
-      links = await linkService.list(
-        { variant_id: [variantId] },
-        { select: ["variant_id", "inventory_item_id"] },
-      )
-      debug.links_count = Array.isArray(links) ? links.length : "not-array"
-      debug.links_sample = Array.isArray(links) ? links[0] : null
-    } catch (err: any) {
-      debug.linkService_list_error = err?.message || String(err)
-    }
+    debug.remoteQuery_error = err?.message || String(err)
   }
 
-  const first = links?.[0]
-  const inventoryItemId = first?.inventory_item_id
-  if (!inventoryItemId) {
-    return {
-      inventory_item_id: null,
-      location_id: null,
-      stocked_quantity: null,
-      debug,
-    }
-  }
+  const variant = variants?.[0]
+  const invLink = variant?.inventory_items?.[0]
+  const inventory = invLink?.inventory
+  const level = inventory?.location_levels?.[0]
 
-  const inventoryModule: any = scope.resolve(Modules.INVENTORY)
-  debug.has_inventoryModule = !!inventoryModule
-
-  let levels: any[] = []
-  try {
-    levels = await inventoryModule.listInventoryLevels({
-      inventory_item_id: inventoryItemId,
-    })
-    debug.levels_count = Array.isArray(levels) ? levels.length : "not-array"
-    debug.levels_sample = Array.isArray(levels) ? levels[0] : null
-  } catch (err: any) {
-    debug.listInventoryLevels_error = err?.message || String(err)
-  }
-
-  const level = levels?.[0]
   return {
-    inventory_item_id: inventoryItemId,
+    inventory_item_id: inventory?.id ?? invLink?.inventory_item_id ?? null,
     location_id: level?.location_id ?? null,
     stocked_quantity:
       typeof level?.stocked_quantity === "number"
