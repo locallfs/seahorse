@@ -28,6 +28,7 @@ interface SideScrollGalleryProps {
   viewAllHref: string;
   tag?: string;
   perCategoryCaps?: Record<string, number>;
+  speedMultiplier?: number;
 }
 
 function formatPrice(amount: number, currency: string) {
@@ -122,6 +123,7 @@ export default function SideScrollGallery({
   viewAllHref,
   tag,
   perCategoryCaps,
+  speedMultiplier = 1,
 }: SideScrollGalleryProps) {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +214,13 @@ export default function SideScrollGallery({
 
   const useMarquee = products.length > 0 && products.length < 5;
   const displayItems = useMarquee ? products : [...products, ...products];
-  const marqueeDuration = useMarquee ? `${18 + products.length * 4}s` : undefined;
+  const marqueeDuration = useMarquee
+    ? `${(18 + products.length * 4) * speedMultiplier}s`
+    : undefined;
+  const autoScrollDuration =
+    !useMarquee && speedMultiplier !== 1
+      ? `${40 * speedMultiplier}s`
+      : undefined;
 
   return (
     <section className="py-20 overflow-hidden">
@@ -262,9 +270,14 @@ export default function SideScrollGallery({
               : "gallery-auto-scroll flex gap-4 px-6"
           }
           style={
-            marqueeDuration
-              ? ({ ["--marquee-duration" as any]: marqueeDuration } as React.CSSProperties)
-              : undefined
+            {
+              ...(marqueeDuration
+                ? { ["--marquee-duration" as any]: marqueeDuration }
+                : {}),
+              ...(autoScrollDuration
+                ? { animationDuration: autoScrollDuration }
+                : {}),
+            } as React.CSSProperties
           }
         >
           {displayItems.map((product, i) => (
