@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "woodys-seahorse.b-cdn.net",
       },
+      {
+        protocol: "https",
+        hostname: "woodysWebsite.b-cdn.net",
+      },
     ],
   },
   async redirects() {
