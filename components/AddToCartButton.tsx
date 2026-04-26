@@ -8,15 +8,21 @@ import { useAuth } from "@/components/AuthContext";
 type Props = {
   variantId: string;
   disabled?: boolean;
+  disabledLabel?: string;
 };
 
-export default function AddToCartButton({ variantId, disabled }: Props) {
+export default function AddToCartButton({
+  variantId,
+  disabled,
+  disabledLabel,
+}: Props) {
   const { addItem, adding } = useCart();
   const { customer } = useAuth();
   const router = useRouter();
   const [added, setAdded] = useState(false);
 
   const handleAdd = async () => {
+    if (disabled) return;
     if (!customer) {
       router.push("/login");
       return;
@@ -30,22 +36,31 @@ export default function AddToCartButton({ variantId, disabled }: Props) {
     }
   };
 
-  const busy = adding || disabled;
+  const busy = adding;
+
+  let label: string;
+  if (added) label = "Added to Cart";
+  else if (adding) label = "Adding...";
+  else if (disabled) label = disabledLabel ?? "Unavailable";
+  else if (!customer) label = "Sign in to Add to Cart";
+  else label = "Add to Cart";
 
   return (
     <div className="flex flex-col gap-3">
       <button
         onClick={handleAdd}
-        disabled={busy}
+        disabled={disabled || busy}
         className={`w-full py-4 rounded font-medium text-sm tracking-wide transition-all duration-200 glow-white ${
           added
             ? "bg-green-600 text-white"
-            : busy
-              ? "bg-blue-accent/50 text-white/50 cursor-wait"
-              : "bg-blue-accent hover:bg-blue-light text-white"
+            : disabled
+              ? "bg-white/10 text-white/40 cursor-not-allowed"
+              : busy
+                ? "bg-blue-accent/50 text-white/50 cursor-wait"
+                : "bg-blue-accent hover:bg-blue-light text-white"
         }`}
       >
-        {added ? "Added to Cart" : adding ? "Adding..." : customer ? "Add to Cart" : "Sign in to Add to Cart"}
+        {label}
       </button>
       <a
         href="/cart"

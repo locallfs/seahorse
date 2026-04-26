@@ -83,6 +83,10 @@ export default function ProductDetail({ product }: { product: StoreProduct }) {
   const price = variant?.calculated_price;
   const live = isLiveAnimal(product);
   const coral = isCoral(product);
+  const outOfStock =
+    !!variant?.manage_inventory &&
+    !variant?.allow_backorder &&
+    (variant?.inventory_quantity ?? 0) <= 0;
   const pads = (product.metadata?.pads ?? {}) as Record<string, unknown>;
   const padEntries = PAD_ORDER.filter(({ key }) => {
     return padDisplayValue(pads[key]) !== null;
@@ -103,13 +107,22 @@ export default function ProductDetail({ product }: { product: StoreProduct }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
       <div className="flex flex-col gap-3">
-        {selectedImageUrl ? (
-          <ProductImageZoom src={selectedImageUrl} alt={product.title} />
-        ) : (
-          <div className="w-full aspect-square rounded-xl border border-white/10 overflow-hidden relative bg-ocean-800 glow-white flex items-center justify-center text-white text-xs">
-            No image
-          </div>
-        )}
+        <div className="relative">
+          {selectedImageUrl ? (
+            <ProductImageZoom src={selectedImageUrl} alt={product.title} />
+          ) : (
+            <div className="w-full aspect-square rounded-xl border border-white/10 overflow-hidden relative bg-ocean-800 glow-white flex items-center justify-center text-white text-xs">
+              No image
+            </div>
+          )}
+          {outOfStock && (
+            <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+              <span className="px-8 py-3 bg-red-600/95 text-white text-lg md:text-xl font-bold tracking-[0.25em] uppercase border-y-2 border-red-300/40 shadow-2xl backdrop-blur-sm w-full text-center">
+                Out of Stock
+              </span>
+            </div>
+          )}
+        </div>
         {gallery.length > 1 && (
           <div className="flex gap-2 flex-wrap">
             {gallery.map((img) => {
@@ -233,7 +246,13 @@ export default function ProductDetail({ product }: { product: StoreProduct }) {
           </div>
         )}
 
-        {variant && price && <AddToCartButton variantId={variant.id} />}
+        {variant && price && (
+          <AddToCartButton
+            variantId={variant.id}
+            disabled={outOfStock}
+            disabledLabel={outOfStock ? "Out of Stock" : undefined}
+          />
+        )}
       </div>
     </div>
   );
