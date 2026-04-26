@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { cdn } from "@/lib/cdn";
+import { websiteCdn } from "@/lib/cdn";
 
 export default function SplashScreen() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -56,7 +56,7 @@ export default function SplashScreen() {
     >
       <video
         ref={videoRef}
-        src={cdn("/Seahorse Logo Splashing.mp4")}
+        src={websiteCdn("/Seahorse Logo Splashing.mp4")}
         autoPlay
         muted
         playsInline
