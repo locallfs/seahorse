@@ -71,6 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCustomer(customer as Customer);
     } catch {
       setCustomer(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("medusa_auth_token");
+      }
     } finally {
       setLoading(false);
     }
