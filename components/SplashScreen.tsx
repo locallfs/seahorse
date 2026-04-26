@@ -16,9 +16,24 @@ export default function SplashScreen() {
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem("splash_shown")) return;
+    const force =
+      typeof window !== "undefined" &&
+      window.location.search.includes("splash=1");
+    if (!force && sessionStorage.getItem("splash_shown")) return;
     setVisible(true);
   }, []);
+
+  useEffect(() => {
+    if (!visible) return;
+    const v = videoRef.current;
+    if (!v) return;
+    const tryPlay = () => {
+      v.play().catch((err) => {
+        console.warn("[splash] autoplay blocked:", err?.message || err);
+      });
+    };
+    tryPlay();
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -45,8 +60,12 @@ export default function SplashScreen() {
         autoPlay
         muted
         playsInline
+        preload="auto"
         onEnded={dismiss}
-        onError={dismiss}
+        onError={(e) => {
+          console.warn("[splash] video error", e);
+          dismiss();
+        }}
         style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
       />
       <button
