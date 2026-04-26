@@ -54,9 +54,7 @@ export default function RootLayout({
     <html lang="en" className={`${geist.variable} h-full`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `
-          if (!sessionStorage.getItem('splash_shown')) {
-            document.documentElement.classList.add('splash-active');
-          }
+          document.documentElement.classList.add('splash-active');
         `}} />
         <StructuredData />
       </head>
