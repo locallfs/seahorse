@@ -62,8 +62,9 @@ export default function SplashScreen() {
         playsInline
         preload="auto"
         onEnded={dismiss}
-        onError={(e) => {
-          console.warn("[splash] video error", e);
+        onError={() => {
+          const src = videoRef.current?.currentSrc || videoRef.current?.src;
+          console.warn("[splash] video failed to load. src:", src);
           dismiss();
         }}
         style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
