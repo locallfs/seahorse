@@ -7,6 +7,7 @@ import ShippingNotice from "@/components/ShippingNotice";
 import ProductImageZoom from "@/components/ProductImageZoom";
 import { isLiveAnimal, isCoral, CORAL_WATER_CONDITIONS } from "@/lib/liveAnimal";
 import type { StoreProduct } from "@/lib/products-server";
+import OutOfStockBanner from "@/components/OutOfStockBanner";
 
 type ProductImage = { id: string; url: string; rank?: number };
 
@@ -115,13 +116,7 @@ export default function ProductDetail({ product }: { product: StoreProduct }) {
               No image
             </div>
           )}
-          {outOfStock && (
-            <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
-              <span className="px-8 py-3 bg-red-600/95 text-white text-lg md:text-xl font-bold tracking-[0.25em] uppercase border-y-2 border-red-300/40 shadow-2xl backdrop-blur-sm w-full text-center">
-                Out of Stock
-              </span>
-            </div>
-          )}
+          {outOfStock && <OutOfStockBanner />}
         </div>
         {gallery.length > 1 && (
           <div className="flex gap-2 flex-wrap">

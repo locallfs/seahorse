@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { medusa } from "@/lib/medusa";
 import FreeShippingBadge from "./FreeShippingBadge";
+import OutOfStockBanner from "./OutOfStockBanner";
 
 type StoreProduct = {
   id: string;
@@ -18,8 +19,21 @@ type StoreProduct = {
       calculated_amount: number;
       currency_code: string;
     };
+    manage_inventory?: boolean | null;
+    inventory_quantity?: number | null;
+    allow_backorder?: boolean | null;
   }>;
 };
+
+function isProductOutOfStock(product: StoreProduct): boolean {
+  const variants = product.variants ?? [];
+  if (variants.length === 0) return false;
+  return variants.every((v) => {
+    if (!v?.manage_inventory) return false;
+    if (v.allow_backorder) return false;
+    return (v.inventory_quantity ?? 0) <= 0;
+  });
+}
 
 interface SideScrollGalleryProps {
   title: string;
@@ -40,6 +54,7 @@ function formatPrice(amount: number, currency: string) {
 
 function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) {
   const price = product.variants?.[0]?.calculated_price;
+  const outOfStock = isProductOutOfStock(product);
 
   const images = useMemo(() => {
     const imgs = (product.images || [])
@@ -98,6 +113,7 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
               {tag}
             </span>
           )}
+          {outOfStock && <OutOfStockBanner size="sm" />}
           <FreeShippingBadge amount={price?.calculated_amount} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
           <div className="absolute bottom-4 left-4 right-4 z-10">
@@ -151,7 +167,7 @@ export default function SideScrollGallery({
         while (!cancelled) {
           const res = await medusa.store.product.list({
             fields:
-              "id,handle,title,thumbnail,tags.value,*images,*categories,*variants.calculated_price",
+              "id,handle,title,thumbnail,tags.value,*images,*categories,*variants,*variants.calculated_price,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder",
             region_id: regionId,
             limit: pageSize,
             offset,
