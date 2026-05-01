@@ -8,12 +8,20 @@ export type SuppliesSubcategory = {
 
 export const SUPPLIES_SUBCATEGORIES: SuppliesSubcategory[] = [
   {
+    handle: "sea-salt",
+    label: "Sea Salt",
+    tag: "Sea Salt",
+    description: "Reef-grade salt mix for fresh saltwater changes.",
+    metaDescription:
+      "Reef-grade sea salt mixes — Red Sea, Tropic Marin, Instant Ocean, and more for healthy salinity and trace elements.",
+  },
+  {
     handle: "chemicals",
     label: "Chemicals & Additives",
     tag: "Chemicals",
-    description: "Salt mix, calcium, alkalinity, magnesium, trace elements.",
+    description: "Calcium, alkalinity, magnesium, trace elements.",
     metaDescription:
-      "Reef chemicals and additives — salt mix, calcium, alkalinity, magnesium, trace elements from Seachem, Red Sea, and more.",
+      "Reef chemicals and additives — calcium, alkalinity, magnesium, trace elements from Seachem, Red Sea, and more.",
   },
   {
     handle: "test-kits",
