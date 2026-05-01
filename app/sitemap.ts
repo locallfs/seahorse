@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllProductHandles } from "@/lib/products-server";
+import { SUPPLIES_SUBCATEGORIES } from "@/lib/suppliesCategories";
 
 const SITE_URL = "https://www.seahorseaquariumsupply.com";
 
@@ -41,6 +42,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: r.priority,
   }));
 
+  const subcategories: MetadataRoute.Sitemap = SUPPLIES_SUBCATEGORIES.map(
+    (c) => ({
+      url: `${SITE_URL}/supplies/${c.handle}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    }),
+  );
+
   const products = await getAllProductHandles();
   const productEntries: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${SITE_URL}/products/${p.handle}`,
@@ -49,5 +59,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...statics, ...productEntries];
+  return [...statics, ...subcategories, ...productEntries];
 }
