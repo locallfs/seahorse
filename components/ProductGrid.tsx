@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { medusa } from "@/lib/medusa";
+import { storeFetch } from "@/lib/storeFetch";
 import FreeShippingBadge from "./FreeShippingBadge";
 
 type StoreProduct = {
@@ -41,7 +42,6 @@ export default function ProductGrid({
   useEffect(() => {
     let cancelled = false;
     const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-    const wanted = new Set((tagValues ?? []).map(normalize));
 
     (async () => {
       try {
@@ -49,17 +49,48 @@ export default function ProductGrid({
         const regionId = regionsRes.regions?.[0]?.id;
 
         if (tagValues && tagValues.length > 0) {
-          const res = await medusa.store.product.list({
-            fields: "id,handle,title,thumbnail,tags.value,*variants.calculated_price",
-            region_id: regionId,
-            limit: 200,
-          } as any);
+          const wanted = new Set(tagValues.map(normalize));
+          const tagRes = await storeFetch<{
+            product_tags?: Array<{ id: string; value: string }>;
+          }>("/store/product-tags").catch(() => ({ product_tags: [] }));
+          const tagIds = (tagRes.product_tags ?? [])
+            .filter((t) => wanted.has(normalize(t.value)))
+            .map((t) => t.id);
+
+          if (tagIds.length === 0) {
+            if (!cancelled) {
+              setProducts([]);
+              setLoading(false);
+            }
+            return;
+          }
+
+          const pageSize = 200;
+          const collected: any[] = [];
+          let offset = 0;
+          while (!cancelled) {
+            const res = await medusa.store.product.list({
+              fields:
+                "id,handle,title,thumbnail,*variants.calculated_price",
+              region_id: regionId,
+              tag_id: tagIds,
+              limit: pageSize,
+              offset,
+            } as any);
+            const page = (res.products as any[]) || [];
+            collected.push(...page);
+            const total =
+              typeof (res as any).count === "number"
+                ? (res as any).count
+                : collected.length;
+            offset += page.length;
+            if (page.length === 0 || offset >= total) break;
+            if (offset > 10000) break;
+          }
           if (cancelled) return;
-          const filtered = (res.products as any[]).filter((p) => {
-            const tags: Array<{ value?: string }> = p?.tags || [];
-            return tags.some((t) => t?.value && wanted.has(normalize(t.value)));
-          });
-          const unique = Array.from(new Map(filtered.map((p: any) => [p.id, p])).values());
+          const unique = Array.from(
+            new Map(collected.map((p: any) => [p.id, p])).values(),
+          );
           setProducts(unique as StoreProduct[]);
           setLoading(false);
           return;
@@ -71,17 +102,30 @@ export default function ProductGrid({
           categoryId = (catRes as any).product_categories?.[0]?.id;
         }
 
-        const params: Record<string, any> = {
-          fields: "id,handle,title,thumbnail,*variants.calculated_price",
-          region_id: regionId,
-        };
-        if (categoryId) {
-          params.category_id = [categoryId];
+        const pageSize = 200;
+        const collected: any[] = [];
+        let offset = 0;
+        while (!cancelled) {
+          const params: Record<string, any> = {
+            fields: "id,handle,title,thumbnail,*variants.calculated_price",
+            region_id: regionId,
+            limit: pageSize,
+            offset,
+          };
+          if (categoryId) params.category_id = [categoryId];
+          const res = await medusa.store.product.list(params);
+          const page = (res.products as any[]) || [];
+          collected.push(...page);
+          const total =
+            typeof (res as any).count === "number"
+              ? (res as any).count
+              : collected.length;
+          offset += page.length;
+          if (page.length === 0 || offset >= total) break;
+          if (offset > 10000) break;
         }
-
-        const res = await medusa.store.product.list(params);
         if (cancelled) return;
-        setProducts(res.products as StoreProduct[]);
+        setProducts(collected as StoreProduct[]);
         setLoading(false);
       } catch (err) {
         if (cancelled) return;
