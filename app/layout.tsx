@@ -7,7 +7,6 @@ import SplashScreen from "@/components/SplashScreen";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import StructuredData from "@/components/StructuredData";
 import CookieConsent from "@/components/CookieConsent";
-import RefreshToHome from "@/components/RefreshToHome";
 import "./globals.css";
 
 const geist = Geist({
@@ -59,7 +58,6 @@ export default function RootLayout({
         <StructuredData />
       </head>
       <body className="min-h-full flex flex-col bg-black text-white antialiased">
-        <RefreshToHome />
         <AuthProvider>
           <CartProvider>
             <SplashScreen />
