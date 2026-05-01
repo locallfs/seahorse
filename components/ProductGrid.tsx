@@ -52,10 +52,21 @@ export default function ProductGrid({
           const wanted = new Set(tagValues.map(normalize));
           const tagRes = await storeFetch<{
             product_tags?: Array<{ id: string; value: string }>;
-          }>("/store/product-tags").catch(() => ({ product_tags: [] }));
-          const tagIds = (tagRes.product_tags ?? [])
+          }>("/store/product-tags").catch((e) => {
+            console.warn("[ProductGrid] product-tags fetch failed", e);
+            return { product_tags: [] as Array<{ id: string; value: string }> };
+          });
+          const allTags = tagRes.product_tags ?? [];
+          const tagIds = allTags
             .filter((t) => wanted.has(normalize(t.value)))
             .map((t) => t.id);
+
+          console.log(
+            `[ProductGrid] looking for ${tagValues.join("|")}; found ${tagIds.length} matching tag(s) out of ${allTags.length} total. Sample tag values: ${allTags
+              .slice(0, 10)
+              .map((t) => t.value)
+              .join(", ")}`,
+          );
 
           if (tagIds.length === 0) {
             if (!cancelled) {
@@ -90,6 +101,9 @@ export default function ProductGrid({
           if (cancelled) return;
           const unique = Array.from(
             new Map(collected.map((p: any) => [p.id, p])).values(),
+          );
+          console.log(
+            `[ProductGrid] Medusa returned ${unique.length} product(s) for tag_id=${tagIds.join(",")}`,
           );
           setProducts(unique as StoreProduct[]);
           setLoading(false);
