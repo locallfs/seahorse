@@ -113,7 +113,12 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
     } finally {
       setLoading(false)
     }
-  }, [backendUrl, data.id, data.variants])
+    // Intentionally NOT including data.variants — it changes reference on
+    // every parent re-render (e.g. typing in the Organize section), which
+    // would re-trigger the entire inventory fetch loop. The variants we need
+    // come from the fetch above; data.variants is only used as a fallback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backendUrl, data.id])
 
   useEffect(() => {
     load()
