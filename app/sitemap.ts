@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getAllProductHandles } from "@/lib/products-server";
 import { SUPPLIES_SUBCATEGORIES } from "@/lib/suppliesCategories";
 import { CORALS_SUBCATEGORIES } from "@/lib/coralsCategories";
+import { FISH_SUBCATEGORIES } from "@/lib/fishCategories";
 
 const SITE_URL = "https://www.seahorseaquariumsupply.com";
 
@@ -53,6 +54,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...CORALS_SUBCATEGORIES.map((c) => ({
       url: `${SITE_URL}/corals/${c.handle}`,
+      lastModified: now,
+      changeFrequency: "daily" as const,
+      priority: 0.8,
+    })),
+    ...FISH_SUBCATEGORIES.map((c) => ({
+      url: `${SITE_URL}/fish/${c.handle}`,
       lastModified: now,
       changeFrequency: "daily" as const,
       priority: 0.8,
