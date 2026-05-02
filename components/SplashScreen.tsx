@@ -10,11 +10,22 @@ export default function SplashScreen() {
 
   const dismiss = () => {
     setFading(true);
+    try {
+      sessionStorage.setItem("splash_shown", "1");
+    } catch {}
     document.documentElement.classList.remove("splash-active");
     setTimeout(() => setVisible(false), 700);
   };
 
   useEffect(() => {
+    let alreadyShown = false;
+    try {
+      alreadyShown = sessionStorage.getItem("splash_shown") === "1";
+    } catch {}
+    if (alreadyShown) {
+      document.documentElement.classList.remove("splash-active");
+      return;
+    }
     setVisible(true);
   }, []);
 
