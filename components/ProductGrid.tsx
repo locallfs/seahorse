@@ -6,6 +6,7 @@ import Image from "next/image";
 import { medusa } from "@/lib/medusa";
 import { storeFetch } from "@/lib/storeFetch";
 import FreeShippingBadge from "./FreeShippingBadge";
+import OutOfStockBanner from "./OutOfStockBanner";
 
 type StoreProduct = {
   id: string;
@@ -17,8 +18,21 @@ type StoreProduct = {
       calculated_amount: number;
       currency_code: string;
     };
+    manage_inventory?: boolean | null;
+    inventory_quantity?: number | null;
+    allow_backorder?: boolean | null;
   }>;
 };
+
+function isProductOutOfStock(product: StoreProduct): boolean {
+  const variants = product.variants ?? [];
+  if (variants.length === 0) return false;
+  return variants.every((v) => {
+    if (!v?.manage_inventory) return false;
+    if (v.allow_backorder) return false;
+    return (v.inventory_quantity ?? 0) <= 0;
+  });
+}
 
 function formatPrice(amount: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
@@ -73,7 +87,7 @@ export default function ProductGrid({
           while (!cancelled) {
             const res = await medusa.store.product.list({
               fields:
-                "id,handle,title,thumbnail,*variants.calculated_price",
+                "id,handle,title,thumbnail,*variants,*variants.calculated_price,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder",
               region_id: regionId,
               tag_id: tagIds,
               limit: pageSize,
@@ -109,7 +123,8 @@ export default function ProductGrid({
         let offset = 0;
         while (!cancelled) {
           const params: Record<string, any> = {
-            fields: "id,handle,title,thumbnail,*variants.calculated_price",
+            fields:
+              "id,handle,title,thumbnail,*variants,*variants.calculated_price,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder",
             region_id: regionId,
             limit: pageSize,
             offset,
@@ -172,6 +187,7 @@ export default function ProductGrid({
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
       {products.map((product) => {
         const price = product.variants?.[0]?.calculated_price;
+        const outOfStock = isProductOutOfStock(product);
         return (
           <Link key={product.id} href={`/products/${product.handle}`} className="group">
             <div className="rounded-lg border border-white/10 group-hover:border-white/30 overflow-hidden transition-all duration-300 glow-purple">
@@ -190,6 +206,7 @@ export default function ProductGrid({
                     No image
                   </div>
                 )}
+                {outOfStock && <OutOfStockBanner size="sm" />}
                 <FreeShippingBadge amount={price?.calculated_amount} />
               </div>
               <div className="p-3 bg-ocean-900">

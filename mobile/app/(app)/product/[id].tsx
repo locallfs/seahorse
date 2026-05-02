@@ -152,7 +152,7 @@ export default function ProductEditScreen() {
       setPrice(usd ? usd.amount.toString() : '');
       const qty = (v?.inventory_items || []).reduce((sum, link) => {
         for (const lvl of link.inventory?.location_levels || []) {
-          sum += Number(lvl.stocked_quantity ?? 0) - Number(lvl.reserved_quantity ?? 0);
+          sum += Number(lvl.stocked_quantity ?? 0);
         }
         return sum;
       }, 0);
@@ -256,14 +256,8 @@ export default function ProductEditScreen() {
       });
 
       const nextStock = Math.max(0, Math.floor(Number(stock)));
-      const currentStock = (variant?.inventory_items || []).reduce((sum, link) => {
-        for (const lvl of link.inventory?.location_levels || []) {
-          sum += Number(lvl.stocked_quantity ?? 0);
-        }
-        return sum;
-      }, 0);
 
-      if (manageInventory && !Number.isNaN(nextStock) && nextStock !== currentStock && variant) {
+      if (manageInventory && !Number.isNaN(nextStock) && variant) {
         const link = variant.inventory_items?.[0];
         const inventoryId = link?.inventory?.id;
         const existingLevel = link?.inventory?.location_levels?.[0];
