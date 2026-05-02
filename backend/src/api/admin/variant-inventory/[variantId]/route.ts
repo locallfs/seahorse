@@ -286,6 +286,15 @@ export async function POST(req: any, res: any) {
         [Modules.PRODUCT]: { variant_id: variantId },
         [Modules.INVENTORY]: { inventory_item_id },
       })
+
+      step = "variant.manage_inventory=true"
+      await productModule
+        .updateProductVariants(variantId, { manage_inventory: true })
+        .catch((err: any) => {
+          console.warn(
+            `[admin/variant-inventory] could not flip manage_inventory: ${err?.message || err}`,
+          )
+        })
     }
 
     if (!location_id) {
