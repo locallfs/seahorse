@@ -56,7 +56,7 @@ export default function CartPage() {
       try {
         const res = await medusa.store.product.list({
           id: productIds,
-          fields: "id,metadata,*categories",
+          fields: "id,metadata,*categories,tags.value",
           limit: productIds.length,
         } as any);
         if (cancelled) return;
@@ -65,10 +65,15 @@ export default function CartPage() {
         for (const p of (res.products as any[]) || []) {
           if (isLiveAnimalByCategories(p.categories)) liveSet.add(p.id);
           const careLevel = p?.metadata?.pads?.care_level;
-          if (
+          const isExpertCarePad =
             typeof careLevel === "string" &&
-            careLevel.trim().toLowerCase() === "expert"
-          ) {
+            careLevel.trim().toLowerCase() === "expert";
+          const hasExpertTag = (p?.tags ?? []).some(
+            (t: { value?: string }) =>
+              typeof t?.value === "string" &&
+              t.value.trim().toLowerCase() === "expert only",
+          );
+          if (isExpertCarePad || hasExpertTag) {
             expertSet.add(p.id);
           }
         }
