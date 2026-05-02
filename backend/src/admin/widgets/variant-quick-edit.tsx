@@ -247,23 +247,13 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
                     >
                       Edit Price
                     </Button>
-                    {row.inventory_item_id && row.location_id ? (
-                      <Button
-                        size="small"
-                        variant="secondary"
-                        onClick={() => openStock(row)}
-                      >
-                        Edit Stock
-                      </Button>
-                    ) : (
-                      <Text
-                        size="xsmall"
-                        className="text-ui-fg-muted italic"
-                        title="Enable Manage Inventory on this variant to edit stock"
-                      >
-                        Inventory not managed
-                      </Text>
-                    )}
+                    <Button
+                      size="small"
+                      variant="secondary"
+                      onClick={() => openStock(row)}
+                    >
+                      {row.inventory_item_id ? "Edit Stock" : "Set Stock"}
+                    </Button>
                   </div>
                 </Table.Cell>
               </Table.Row>

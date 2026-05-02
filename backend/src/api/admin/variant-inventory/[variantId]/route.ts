@@ -90,26 +90,84 @@ export async function POST(req: any, res: any) {
       .json({ error: "stocked_quantity must be a non-negative number" })
   }
   try {
-    const info = await resolveInventoryFor(req.scope, variantId)
-    if (!info.inventory_item_id || !info.location_id) {
-      return res.status(404).json({
-        error:
-          "No inventory level is set up for this variant yet. Open the variant, enable Manage Inventory, and set a stock location first.",
-        debug: info.debug,
+    const inventoryModule: any = req.scope.resolve(Modules.INVENTORY)
+    const stockLocationModule: any = req.scope.resolve(Modules.STOCK_LOCATION)
+    const productModule: any = req.scope.resolve(Modules.PRODUCT)
+    const remoteLink: any = req.scope.resolve(ContainerRegistrationKeys.LINK)
+
+    let info = await resolveInventoryFor(req.scope, variantId)
+    let { inventory_item_id, location_id } = info
+
+    // Bootstrap: variant has no inventory_item linked yet (Medusa didn't auto-
+    // create it when manage_inventory was toggled). Create + link it.
+    if (!inventory_item_id) {
+      const variant = await productModule
+        .retrieveProductVariant(variantId, { select: ["id", "sku", "title"] })
+        .catch(() => null)
+      const sku = variant?.sku ?? `variant-${variantId}`
+      const title = variant?.title ?? null
+      console.log(
+        `[admin/variant-inventory] bootstrapping inventory_item for variant=${variantId} sku=${sku}`,
+      )
+      const created = await inventoryModule.createInventoryItems([
+        { sku, title, requires_shipping: true },
+      ])
+      inventory_item_id = created?.[0]?.id
+      if (!inventory_item_id) {
+        return res
+          .status(500)
+          .json({ error: "Failed to create inventory item for variant" })
+      }
+      await remoteLink.create({
+        [Modules.PRODUCT]: { variant_id: variantId },
+        [Modules.INVENTORY]: { inventory_item_id },
       })
     }
-    const inventoryModule: any = req.scope.resolve(Modules.INVENTORY)
+
+    // Bootstrap: no location_level yet. Use the first available stock location.
+    if (!location_id) {
+      const locations = await stockLocationModule.listStockLocations(
+        {},
+        { take: 1, select: ["id"] },
+      )
+      const firstLocation = locations?.[0]
+      if (!firstLocation?.id) {
+        return res.status(500).json({
+          error:
+            "No stock location exists. Open Medusa admin → Settings → Locations and add one.",
+        })
+      }
+      location_id = firstLocation.id
+      console.log(
+        `[admin/variant-inventory] creating level for inventory_item=${inventory_item_id} location=${location_id}`,
+      )
+      await inventoryModule.createInventoryLevels([
+        {
+          inventory_item_id,
+          location_id,
+          stocked_quantity,
+        },
+      ])
+      return res.json({
+        variant_id: variantId,
+        inventory_item_id,
+        location_id,
+        stocked_quantity,
+        bootstrapped: true,
+      })
+    }
+
     await inventoryModule.updateInventoryLevels([
       {
-        inventory_item_id: info.inventory_item_id,
-        location_id: info.location_id,
+        inventory_item_id,
+        location_id,
         stocked_quantity,
       },
     ])
     res.json({
       variant_id: variantId,
-      inventory_item_id: info.inventory_item_id,
-      location_id: info.location_id,
+      inventory_item_id,
+      location_id,
       stocked_quantity,
     })
   } catch (err: any) {
