@@ -203,6 +203,16 @@ export async function POST(req: any, res: any) {
     await inventoryModule.updateInventoryLevels([
       { inventory_item_id, location_id, stocked_quantity },
     ])
+
+    step = "cleanup-duplicates"
+    await cleanupDuplicateInventoryItems(req.scope, variantId, inventory_item_id).catch(
+      (err: any) => {
+        console.warn(
+          `[admin/variant-inventory] cleanup failed (non-fatal): ${err?.message || err}`,
+        )
+      },
+    )
+
     res.json({
       variant_id: variantId,
       inventory_item_id,
@@ -215,5 +225,57 @@ export async function POST(req: any, res: any) {
       `[admin/variant-inventory] step=${step} error: ${msg}\n${err?.stack || ""}`,
     )
     res.status(500).json({ error: `step=${step}: ${msg}` })
+  }
+}
+
+/**
+ * Removes any inventory_item links for this variant other than `keepId`.
+ * Necessary because Medusa's manage_inventory toggle sometimes leaves an
+ * empty inventory_item linked, which my bootstrap doesn't see via
+ * remoteQuery — so a fresh one gets created alongside it. The result is two
+ * "Default" rows in the meatball Edit Stock dialog.
+ */
+async function cleanupDuplicateInventoryItems(
+  scope: any,
+  variantId: string,
+  keepId: string,
+) {
+  const remoteQuery: any = scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY)
+  const remoteLink: any = scope.resolve(ContainerRegistrationKeys.LINK)
+  const inventoryModule: any = scope.resolve(Modules.INVENTORY)
+
+  const queryObj = remoteQueryObjectFromString({
+    entryPoint: "product_variant_inventory_item",
+    variables: { filters: { variant_id: variantId } },
+    fields: ["variant_id", "inventory_item_id"],
+  })
+  const links = (await remoteQuery(queryObj)) as Array<{
+    variant_id: string
+    inventory_item_id: string
+  }>
+
+  const stale = links.filter(
+    (l) => l.inventory_item_id && l.inventory_item_id !== keepId,
+  )
+  if (stale.length === 0) return
+
+  console.log(
+    `[admin/variant-inventory] cleanup: removing ${stale.length} stale inventory_item(s) for variant=${variantId}`,
+  )
+
+  for (const link of stale) {
+    await remoteLink
+      .dismiss({
+        [Modules.PRODUCT]: { variant_id: variantId },
+        [Modules.INVENTORY]: { inventory_item_id: link.inventory_item_id },
+      })
+      .catch((e: any) =>
+        console.warn(`  dismiss failed: ${e?.message || e}`),
+      )
+    await inventoryModule
+      .deleteInventoryItems([link.inventory_item_id])
+      .catch((e: any) =>
+        console.warn(`  delete inventory_item failed: ${e?.message || e}`),
+      )
   }
 }
