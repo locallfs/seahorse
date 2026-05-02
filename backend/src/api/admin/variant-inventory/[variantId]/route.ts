@@ -69,12 +69,132 @@ export async function GET(req: any, res: any) {
   }
   try {
     const info = await resolveInventoryFor(req.scope, variantId)
-    console.log(`[admin/variant-inventory] debug: ${JSON.stringify(info.debug)}`)
+
+    // Also count how many inventory_items are linked, so the widget can
+    // show a "Repair" button when duplicates exist.
+    let link_count = 0
+    try {
+      const remoteQuery: any = req.scope.resolve(
+        ContainerRegistrationKeys.REMOTE_QUERY,
+      )
+      const linksQuery = remoteQueryObjectFromString({
+        entryPoint: "product_variant_inventory_item",
+        variables: { filters: { variant_id: variantId } },
+        fields: ["variant_id", "inventory_item_id"],
+      })
+      const links = (await remoteQuery(linksQuery)) as any[]
+      link_count = Array.isArray(links) ? links.length : 0
+    } catch {
+      // ignore — link_count stays 0
+    }
+
+    console.log(
+      `[admin/variant-inventory] debug: ${JSON.stringify({ ...info.debug, link_count })}`,
+    )
     res.setHeader("Cache-Control", "no-store")
-    res.json({ variant_id: variantId, ...info })
+    res.json({ variant_id: variantId, link_count, ...info })
   } catch (err: any) {
     console.error(`[admin/variant-inventory] error: ${err?.message || err}`)
     res.status(500).json({ error: err?.message || "Failed to load inventory" })
+  }
+}
+
+export async function DELETE(req: any, res: any) {
+  const variantId = req.params?.variantId
+  console.log(`[admin/variant-inventory] DELETE (repair) variantId=${variantId}`)
+  if (!variantId) {
+    return res.status(400).json({ error: "variantId is required" })
+  }
+  try {
+    const remoteQuery: any = req.scope.resolve(
+      ContainerRegistrationKeys.REMOTE_QUERY,
+    )
+    const remoteLink: any = req.scope.resolve(ContainerRegistrationKeys.LINK)
+    const inventoryModule: any = req.scope.resolve(Modules.INVENTORY)
+
+    // 1. List every inventory_item link for this variant.
+    const linksQuery = remoteQueryObjectFromString({
+      entryPoint: "product_variant_inventory_item",
+      variables: { filters: { variant_id: variantId } },
+      fields: ["variant_id", "inventory_item_id"],
+    })
+    const links = (await remoteQuery(linksQuery)) as Array<{
+      variant_id: string
+      inventory_item_id: string
+    }>
+    if (links.length === 0) {
+      return res.json({
+        variant_id: variantId,
+        action: "noop",
+        message: "No inventory items linked to this variant.",
+      })
+    }
+
+    // 2. For each linked inventory_item, fetch its location_levels so we
+    //    can rank by total stocked_quantity. We keep the one with the most
+    //    stock (or the first if all are zero) and delete the rest.
+    const itemQuery = remoteQueryObjectFromString({
+      entryPoint: "inventory_item",
+      variables: {
+        filters: { id: links.map((l) => l.inventory_item_id) },
+      },
+      fields: [
+        "id",
+        "sku",
+        "location_levels.id",
+        "location_levels.location_id",
+        "location_levels.stocked_quantity",
+      ],
+    })
+    const items = (await remoteQuery(itemQuery)) as Array<{
+      id: string
+      sku: string | null
+      location_levels?: Array<{ stocked_quantity?: number }>
+    }>
+    const itemsById = new Map(items.map((i) => [i.id, i]))
+
+    const ranked = links
+      .map((l) => {
+        const item = itemsById.get(l.inventory_item_id)
+        const totalStock = (item?.location_levels ?? []).reduce(
+          (sum, lvl) => sum + Number(lvl.stocked_quantity ?? 0),
+          0,
+        )
+        return { id: l.inventory_item_id, totalStock, sku: item?.sku ?? null }
+      })
+      .sort((a, b) => b.totalStock - a.totalStock)
+
+    const keep = ranked[0]
+    const remove = ranked.slice(1)
+
+    for (const r of remove) {
+      console.log(
+        `[admin/variant-inventory] repair: dismissing+deleting inventory_item=${r.id} (sku=${r.sku}, stock=${r.totalStock})`,
+      )
+      await remoteLink
+        .dismiss({
+          [Modules.PRODUCT]: { variant_id: variantId },
+          [Modules.INVENTORY]: { inventory_item_id: r.id },
+        })
+        .catch((e: any) =>
+          console.warn(`  dismiss failed: ${e?.message || e}`),
+        )
+      await inventoryModule
+        .deleteInventoryItems([r.id])
+        .catch((e: any) =>
+          console.warn(`  delete failed: ${e?.message || e}`),
+        )
+    }
+
+    res.json({
+      variant_id: variantId,
+      action: "repaired",
+      kept: keep,
+      removed: remove,
+    })
+  } catch (err: any) {
+    console.error(`[admin/variant-inventory] repair error: ${err?.message || err}`)
+    res.status(500).json({ error: err?.message || "Failed to repair inventory" })
   }
 }
 

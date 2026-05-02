@@ -36,6 +36,7 @@ type VariantRow = {
   inventory_item_id: string | null
   location_id: string | null
   location_level_id: string | null
+  link_count: number
 }
 
 const USD = (n: number) =>
@@ -67,7 +68,12 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
 
       const inventoryByVariant = new Map<
         string,
-        { inventory_item_id: string; location_id: string; stock: number }
+        {
+          inventory_item_id: string
+          location_id: string
+          stock: number
+          link_count: number
+        }
       >()
 
       for (const v of variants) {
@@ -83,6 +89,15 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
               inventory_item_id: data2.inventory_item_id,
               location_id: data2.location_id,
               stock: Number(data2.stocked_quantity ?? 0),
+              link_count: Number(data2.link_count ?? 1),
+            })
+          } else if (Number(data2?.link_count ?? 0) > 0) {
+            // links exist but no usable item — still surface so user can repair
+            inventoryByVariant.set(v.id, {
+              inventory_item_id: "",
+              location_id: "",
+              stock: 0,
+              link_count: Number(data2.link_count),
             })
           }
         } catch {
@@ -102,9 +117,10 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
           price: usdPrice ? Number(usdPrice.amount) : null,
           currency: "USD",
           stock: inv?.stock ?? null,
-          inventory_item_id: inv?.inventory_item_id ?? null,
-          location_id: inv?.location_id ?? null,
+          inventory_item_id: inv?.inventory_item_id || null,
+          location_id: inv?.location_id || null,
           location_level_id: null,
+          link_count: inv?.link_count ?? 0,
         }
       })
       setRows(next)
@@ -123,6 +139,32 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   useEffect(() => {
     load()
   }, [load])
+
+  const repairInventory = async (row: VariantRow) => {
+    if (
+      !window.confirm(
+        `This variant has ${row.link_count} inventory records linked to it. Consolidate to a single record (the one with the most stock)?`,
+      )
+    ) {
+      return
+    }
+    try {
+      const res = await fetch(
+        `${backendUrl}/admin/variant-inventory/${row.id}`,
+        { method: "DELETE", credentials: "include" },
+      )
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error || "repair failed")
+      }
+      const data2 = await res.json()
+      const removed = Array.isArray(data2?.removed) ? data2.removed.length : 0
+      toast.success(`Repaired: removed ${removed} duplicate inventory record(s)`)
+      await load()
+    } catch (err) {
+      toast.error((err as Error).message || "Repair failed")
+    }
+  }
 
   const openPrice = (row: VariantRow) => {
     setPriceEdit(row)
@@ -239,7 +281,7 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
                   {row.stock != null ? row.stock : "—"}
                 </Table.Cell>
                 <Table.Cell>
-                  <div className="flex gap-2 justify-end items-center">
+                  <div className="flex gap-2 justify-end items-center flex-wrap">
                     <Button
                       size="small"
                       variant="secondary"
@@ -254,6 +296,15 @@ const VariantQuickEditWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
                     >
                       {row.inventory_item_id ? "Edit Stock" : "Set Stock"}
                     </Button>
+                    {row.link_count > 1 ? (
+                      <Button
+                        size="small"
+                        variant="danger"
+                        onClick={() => repairInventory(row)}
+                      >
+                        Repair ({row.link_count})
+                      </Button>
+                    ) : null}
                   </div>
                 </Table.Cell>
               </Table.Row>
