@@ -90,36 +90,40 @@ export async function POST(req: any, res: any) {
       .status(400)
       .json({ error: "stocked_quantity must be a non-negative number" })
   }
+  let step = "init"
   try {
     const inventoryModule: any = req.scope.resolve(Modules.INVENTORY)
     const stockLocationModule: any = req.scope.resolve(Modules.STOCK_LOCATION)
     const productModule: any = req.scope.resolve(Modules.PRODUCT)
     const remoteLink: any = req.scope.resolve(ContainerRegistrationKeys.LINK)
 
+    step = "resolveInventoryFor"
     let info = await resolveInventoryFor(req.scope, variantId)
     let { inventory_item_id, location_id } = info
 
-    // Bootstrap: variant has no inventory_item linked yet (Medusa didn't auto-
-    // create it when manage_inventory was toggled). Create + link it.
     if (!inventory_item_id) {
+      step = "retrieveProductVariant"
       const variant = await productModule
         .retrieveProductVariant(variantId, {
           select: ["id", "sku", "title", "product_id"],
         })
-        .catch(() => null)
+        .catch((e: any) => {
+          console.warn(`[admin/variant-inventory] retrieveProductVariant: ${e?.message || e}`)
+          return null
+        })
       let sku = variant?.sku ?? null
       const title = variant?.title ?? null
-      // If the variant has no SKU yet, mint one and write it back.
+
       if (!sku || !sku.trim()) {
+        step = "mint-sku"
         const product = variant?.product_id
-          ? await productModule.retrieveProduct(variant.product_id, {
-              relations: ["variants"],
-            }).catch(() => null)
+          ? await productModule
+              .retrieveProduct(variant.product_id, { relations: ["variants"] })
+              .catch(() => null)
           : null
-        const allProducts = await productModule.listProducts(
-          {},
-          { relations: ["variants"], take: null },
-        )
+        const allProducts = await productModule
+          .listProducts({}, { relations: ["variants"], take: null })
+          .catch(() => [])
         const taken = new Set<string>()
         for (const p of allProducts) {
           for (const v of p.variants ?? []) {
@@ -127,10 +131,7 @@ export async function POST(req: any, res: any) {
           }
         }
         const variants = product?.variants ?? []
-        const idx = Math.max(
-          0,
-          variants.findIndex((v: any) => v.id === variantId),
-        )
+        const idx = Math.max(0, variants.findIndex((v: any) => v.id === variantId))
         sku = buildVariantSku(
           product?.title ?? "Item",
           product?.handle ?? null,
@@ -138,34 +139,37 @@ export async function POST(req: any, res: any) {
           variants.length || 1,
           taken,
         )
-        await productModule
-          .updateProductVariants(variantId, { sku })
-          .catch((err: any) => {
-            console.warn(
-              `[admin/variant-inventory] could not write SKU back to variant: ${err?.message || err}`,
-            )
-          })
+        step = "updateProductVariants(sku)"
+        await productModule.updateProductVariants(variantId, { sku }).catch((err: any) => {
+          console.warn(
+            `[admin/variant-inventory] could not write SKU: ${err?.message || err}`,
+          )
+        })
       }
+
+      step = "createInventoryItems"
       console.log(
-        `[admin/variant-inventory] bootstrapping inventory_item for variant=${variantId} sku=${sku}`,
+        `[admin/variant-inventory] bootstrapping inventory_item variant=${variantId} sku=${sku}`,
       )
-      const created = await inventoryModule.createInventoryItems([
-        { sku, title, requires_shipping: true },
-      ])
-      inventory_item_id = created?.[0]?.id
+      const itemPayload: any = { sku, requires_shipping: true }
+      if (title) itemPayload.title = title
+      const created = await inventoryModule.createInventoryItems(itemPayload)
+      inventory_item_id = Array.isArray(created) ? created[0]?.id : created?.id
       if (!inventory_item_id) {
         return res
           .status(500)
-          .json({ error: "Failed to create inventory item for variant" })
+          .json({ error: "createInventoryItems returned no id" })
       }
+
+      step = "remoteLink.create"
       await remoteLink.create({
         [Modules.PRODUCT]: { variant_id: variantId },
         [Modules.INVENTORY]: { inventory_item_id },
       })
     }
 
-    // Bootstrap: no location_level yet. Use the first available stock location.
     if (!location_id) {
+      step = "listStockLocations"
       const locations = await stockLocationModule.listStockLocations(
         {},
         { take: 1, select: ["id"] },
@@ -178,15 +182,13 @@ export async function POST(req: any, res: any) {
         })
       }
       location_id = firstLocation.id
+
+      step = "createInventoryLevels"
       console.log(
-        `[admin/variant-inventory] creating level for inventory_item=${inventory_item_id} location=${location_id}`,
+        `[admin/variant-inventory] creating level inventory_item=${inventory_item_id} location=${location_id}`,
       )
       await inventoryModule.createInventoryLevels([
-        {
-          inventory_item_id,
-          location_id,
-          stocked_quantity,
-        },
+        { inventory_item_id, location_id, stocked_quantity },
       ])
       return res.json({
         variant_id: variantId,
@@ -197,12 +199,9 @@ export async function POST(req: any, res: any) {
       })
     }
 
+    step = "updateInventoryLevels"
     await inventoryModule.updateInventoryLevels([
-      {
-        inventory_item_id,
-        location_id,
-        stocked_quantity,
-      },
+      { inventory_item_id, location_id, stocked_quantity },
     ])
     res.json({
       variant_id: variantId,
@@ -211,7 +210,10 @@ export async function POST(req: any, res: any) {
       stocked_quantity,
     })
   } catch (err: any) {
-    console.error(`[admin/variant-inventory] update error: ${err?.message || err}`)
-    res.status(500).json({ error: err?.message || "Failed to update inventory" })
+    const msg = err?.message || String(err)
+    console.error(
+      `[admin/variant-inventory] step=${step} error: ${msg}\n${err?.stack || ""}`,
+    )
+    res.status(500).json({ error: `step=${step}: ${msg}` })
   }
 }
