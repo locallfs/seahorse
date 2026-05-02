@@ -16,6 +16,7 @@ const staticRoutes: Array<{
   { path: "/new-arrivals", changeFrequency: "daily", priority: 0.9 },
   { path: "/fish", changeFrequency: "daily", priority: 0.9 },
   { path: "/corals", changeFrequency: "daily", priority: 0.9 },
+  { path: "/macroalgae", changeFrequency: "weekly", priority: 0.7 },
   { path: "/inverts", changeFrequency: "daily", priority: 0.9 },
   { path: "/supplies", changeFrequency: "weekly", priority: 0.8 },
   { path: "/wysiwyg-fish", changeFrequency: "daily", priority: 0.8 },

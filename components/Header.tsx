@@ -20,6 +20,11 @@ const wysiwygLinks = [
   { label: "WYSIWYG Corals", href: "/wysiwyg-corals" },
 ];
 
+const coralLinks = [
+  { label: "All Corals", href: "/corals" },
+  { label: "Macro", href: "/macroalgae" },
+];
+
 const serviceLinks = [
   { label: "Maintenance", href: "/maintenance" },
   { label: "Installations", href: "/installations" },
@@ -140,19 +145,57 @@ export default function Header() {
               </div>
             </div>
           </div>
-          {navLinks.slice(1).map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-glow-gold ${
-                link.flash
-                  ? "text-blue-accent hover:text-blue-light"
-                  : "text-blue-dim hover:text-blue-accent"
-              } ${link.flash ? "nav-grow" : ""}`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.slice(1).map((link) => {
+            if (link.href === "/corals") {
+              return (
+                <div key={link.href} className="relative group">
+                  <Link
+                    href="/corals"
+                    className="text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-blue-dim hover:text-blue-accent flex items-center gap-1 text-glow-gold"
+                  >
+                    Corals
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      className="mt-0.5"
+                    >
+                      <path d="M3 5l3 3 3-3" />
+                    </svg>
+                  </Link>
+                  <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    <div className="bg-white border border-white/20 rounded-lg shadow-lg py-2 min-w-[180px]">
+                      {coralLinks.map((c) => (
+                        <Link
+                          key={c.href}
+                          href={c.href}
+                          className="block px-4 py-2.5 text-sm font-medium text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 transition-colors"
+                        >
+                          {c.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-glow-gold ${
+                  link.flash
+                    ? "text-blue-accent hover:text-blue-light"
+                    : "text-blue-dim hover:text-blue-accent"
+                } ${link.flash ? "nav-grow" : ""}`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           <div className="relative group">
             <button className="text-base tracking-wider font-bold whitespace-nowrap transition-colors duration-200 text-blue-dim hover:text-blue-accent flex items-center gap-1 text-glow-gold">
               Services
@@ -359,16 +402,38 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
-            {navLinks.slice(1).map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium text-glow-gold"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.slice(1).map((link) => {
+              if (link.href === "/corals") {
+                return (
+                  <div key={link.href}>
+                    <Link
+                      href="/corals"
+                      onClick={() => setMenuOpen(false)}
+                      className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium text-glow-gold block"
+                    >
+                      Corals
+                    </Link>
+                    <Link
+                      href="/macroalgae"
+                      onClick={() => setMenuOpen(false)}
+                      className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium pl-8 text-glow-gold block"
+                    >
+                      Macro
+                    </Link>
+                  </div>
+                );
+              }
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="py-3 px-4 text-sm text-blue-dim hover:text-blue-accent hover:bg-blue-accent/5 rounded transition-colors duration-200 tracking-wide font-medium text-glow-gold"
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <p className="py-2 px-4 text-xs tracking-[0.2em] uppercase text-white font-medium mt-2">Services</p>
             {serviceLinks.map((link) => (
               <Link
