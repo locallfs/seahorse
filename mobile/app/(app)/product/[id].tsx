@@ -84,6 +84,8 @@ export default function ProductEditScreen() {
   const [newThumbnailFile, setNewThumbnailFile] = useState<{ uri: string; name: string; type: string } | null>(null);
 
   const [variant, setVariant] = useState<VariantShape | null>(null);
+  const [reservedQty, setReservedQty] = useState<number>(0);
+  const [releasingReservations, setReleasingReservations] = useState(false);
 
   const [organizeOptions, setOrganizeOptions] = useState<OrganizeOptions | null>(null);
   const [organize, setOrganize] = useState<ProductOrganize>({
@@ -157,6 +159,13 @@ export default function ProductEditScreen() {
         return sum;
       }, 0);
       setStock(String(qty));
+      const reserved = (v?.inventory_items || []).reduce((sum, link) => {
+        for (const lvl of link.inventory?.location_levels || []) {
+          sum += Number(lvl.reserved_quantity ?? 0);
+        }
+        return sum;
+      }, 0);
+      setReservedQty(reserved);
       setOrganize({
         tagIds: (p.tags || []).map((t: any) => t.id),
         typeId: p.type?.id || null,
@@ -351,6 +360,48 @@ export default function ProductEditScreen() {
     setStock(String(n));
   };
 
+  const releaseReservations = async () => {
+    if (!variant) return;
+    const inventoryIds = (variant.inventory_items || [])
+      .map((link) => link.inventory?.id)
+      .filter((id): id is string => Boolean(id));
+    if (inventoryIds.length === 0) {
+      Alert.alert('Nothing to release', 'No inventory item is linked to this variant.');
+      return;
+    }
+    Alert.alert(
+      'Release reservations?',
+      `This will clear ${reservedQty} unit(s) currently reserved by carts. Use this to recover stock that's stuck after abandoned checkouts.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Release',
+          style: 'destructive',
+          onPress: async () => {
+            setReleasingReservations(true);
+            try {
+              for (const invId of inventoryIds) {
+                const { reservations } = (await sdk.admin.reservation.list({
+                  inventory_item_id: [invId],
+                  limit: 1000,
+                } as any)) as { reservations: Array<{ id: string }> };
+                for (const r of reservations) {
+                  await sdk.admin.reservation.delete(r.id);
+                }
+              }
+              await load();
+              Alert.alert('Done', 'Reservations cleared.');
+            } catch (e: any) {
+              Alert.alert('Failed', e?.message || 'Could not release reservations.');
+            } finally {
+              setReleasingReservations(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loader}>
@@ -445,6 +496,27 @@ export default function ProductEditScreen() {
                 <Text style={styles.stepBtnText}>+</Text>
               </Pressable>
             </View>
+            {reservedQty > 0 ? (
+              <View style={styles.reservedRow}>
+                <Text style={styles.reservedText}>
+                  {reservedQty} unit{reservedQty === 1 ? '' : 's'} reserved by carts
+                </Text>
+                <Pressable
+                  onPress={releaseReservations}
+                  disabled={releasingReservations}
+                  style={({ pressed }) => [
+                    styles.releaseBtn,
+                    (releasingReservations || pressed) && styles.releaseBtnPressed,
+                  ]}
+                >
+                  {releasingReservations ? (
+                    <ActivityIndicator color={theme.color.gold} size="small" />
+                  ) : (
+                    <Text style={styles.releaseBtnText}>Release</Text>
+                  )}
+                </Pressable>
+              </View>
+            ) : null}
           </>
         ) : null}
 
@@ -555,6 +627,39 @@ const styles = StyleSheet.create({
   },
   stepBtnText: { color: theme.color.gold, fontSize: theme.font.xl, fontWeight: '700' },
   stockInput: { flex: 1, textAlign: 'center', fontSize: theme.font.lg },
+  reservedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: theme.space.sm,
+    paddingHorizontal: theme.space.sm,
+    paddingVertical: theme.space.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    backgroundColor: 'rgba(255,215,0,0.05)',
+    gap: theme.space.md,
+  },
+  reservedText: {
+    color: theme.color.textDim,
+    fontSize: theme.font.sm,
+    flex: 1,
+  },
+  releaseBtn: {
+    paddingHorizontal: theme.space.md,
+    paddingVertical: theme.space.sm,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: theme.color.gold,
+  },
+  releaseBtnPressed: { opacity: 0.6 },
+  releaseBtnText: {
+    color: theme.color.gold,
+    fontSize: theme.font.sm,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
