@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
 import CategoryJsonLd from "@/components/CategoryJsonLd";
+import CoralsNav from "@/components/CoralsNav";
 
 export const metadata = {
   title: "Live Coral for Sale",
@@ -31,6 +32,7 @@ export default function CoralsPage() {
             </h1>
           </div>
         </div>
+        <CoralsNav />
         <div className="max-w-screen-xl mx-auto px-6 py-12">
           <ProductGrid tagValues={["Coral"]} />
         </div>
