@@ -3,6 +3,7 @@ import {
   Modules,
   remoteQueryObjectFromString,
 } from "@medusajs/utils"
+import { buildVariantSku } from "../../../../lib/sku"
 
 type ResolveResult = {
   inventory_item_id: string | null
@@ -102,10 +103,49 @@ export async function POST(req: any, res: any) {
     // create it when manage_inventory was toggled). Create + link it.
     if (!inventory_item_id) {
       const variant = await productModule
-        .retrieveProductVariant(variantId, { select: ["id", "sku", "title"] })
+        .retrieveProductVariant(variantId, {
+          select: ["id", "sku", "title", "product_id"],
+        })
         .catch(() => null)
-      const sku = variant?.sku ?? `variant-${variantId}`
+      let sku = variant?.sku ?? null
       const title = variant?.title ?? null
+      // If the variant has no SKU yet, mint one and write it back.
+      if (!sku || !sku.trim()) {
+        const product = variant?.product_id
+          ? await productModule.retrieveProduct(variant.product_id, {
+              relations: ["variants"],
+            }).catch(() => null)
+          : null
+        const allProducts = await productModule.listProducts(
+          {},
+          { relations: ["variants"], take: null },
+        )
+        const taken = new Set<string>()
+        for (const p of allProducts) {
+          for (const v of p.variants ?? []) {
+            if (v.sku && v.sku.trim()) taken.add(v.sku.trim())
+          }
+        }
+        const variants = product?.variants ?? []
+        const idx = Math.max(
+          0,
+          variants.findIndex((v: any) => v.id === variantId),
+        )
+        sku = buildVariantSku(
+          product?.title ?? "Item",
+          product?.handle ?? null,
+          idx,
+          variants.length || 1,
+          taken,
+        )
+        await productModule
+          .updateProductVariants(variantId, { sku })
+          .catch((err: any) => {
+            console.warn(
+              `[admin/variant-inventory] could not write SKU back to variant: ${err?.message || err}`,
+            )
+          })
+      }
       console.log(
         `[admin/variant-inventory] bootstrapping inventory_item for variant=${variantId} sku=${sku}`,
       )

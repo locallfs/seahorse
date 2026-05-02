@@ -1,23 +1,6 @@
 import { ExecArgs, IProductModuleService } from "@medusajs/types"
 import { Modules } from "@medusajs/utils"
-
-const PREFIX = "WS-"
-
-function slugifySku(input: string): string {
-  return input
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48)
-}
-
-function buildSkuBase(productTitle: string, productHandle: string | null): string {
-  const source = productHandle && productHandle.trim().length > 0
-    ? productHandle
-    : productTitle
-  const slug = slugifySku(source)
-  return slug.length > 0 ? `${PREFIX}${slug}` : `${PREFIX}ITEM`
-}
+import { buildVariantSku } from "../lib/sku"
 
 export default async function assignSkus({ container }: ExecArgs) {
   const productModule: IProductModuleService = container.resolve(Modules.PRODUCT)
@@ -29,11 +12,11 @@ export default async function assignSkus({ container }: ExecArgs) {
 
   console.log(`Found ${products.length} products. Scanning variants...`)
 
-  const existingSkus = new Set<string>()
+  const taken = new Set<string>()
   for (const product of products) {
     for (const variant of product.variants ?? []) {
       if (variant.sku && variant.sku.trim().length > 0) {
-        existingSkus.add(variant.sku.trim())
+        taken.add(variant.sku.trim())
       }
     }
   }
@@ -51,19 +34,15 @@ export default async function assignSkus({ container }: ExecArgs) {
         skipped++
         continue
       }
-
-      const base = buildSkuBase(product.title, product.handle ?? null)
-      const suffix = variants.length > 1 ? `-V${String(i + 1).padStart(2, "0")}` : ""
-      let candidate = `${base}${suffix}`
-      let n = 1
-      while (existingSkus.has(candidate)) {
-        n++
-        candidate = `${base}${suffix}-${String(n).padStart(2, "0")}`
-      }
-      existingSkus.add(candidate)
-
-      await productModule.updateProductVariants(variant.id, { sku: candidate })
-      console.log(`  ${product.title.slice(0, 40).padEnd(40)} \u2192 ${candidate}`)
+      const sku = buildVariantSku(
+        product.title,
+        product.handle ?? null,
+        i,
+        variants.length,
+        taken,
+      )
+      await productModule.updateProductVariants(variant.id, { sku })
+      console.log(`  ${product.title.slice(0, 40).padEnd(40)} \u2192 ${sku}`)
       updated++
     }
   }
