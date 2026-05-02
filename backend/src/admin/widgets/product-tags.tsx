@@ -36,9 +36,6 @@ const FISH_TAG_NAMES = [
   "Reef Safe",
   "With Caution",
   "Aggressive",
-  "Beginner Friendly",
-  "Nano",
-  "Expert Only",
   // Species
   "Clownfish",
   "Tangs",
