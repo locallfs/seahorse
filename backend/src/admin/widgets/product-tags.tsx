@@ -31,6 +31,67 @@ const mainOrder = (v: string) => {
   return i === -1 ? MAIN_TAG_NAMES.length : i
 }
 
+const FISH_TAG_NAMES = [
+  // Care
+  "Reef Safe",
+  "With Caution",
+  "Aggressive",
+  "Beginner Friendly",
+  "Nano",
+  "Expert Only",
+  // Species
+  "Clownfish",
+  "Tangs",
+  "Angelfish",
+  "Wrasses",
+  "Gobies",
+  "Blennies",
+  "Basslets & Grammas",
+  "Dottybacks",
+  "Cardinalfish",
+  "Damselfish & Chromis",
+  "Hawkfish",
+  "Butterflyfish",
+  "Triggerfish",
+  "Pufferfish",
+  "Lionfish & Scorpionfish",
+  "Eels",
+  "Rabbitfish & Foxfaces",
+  "Anthias",
+  "Seahorses & Pipefish",
+  "Dragonets",
+  "Filefish",
+]
+const FISH_TAG_SET = new Set(FISH_TAG_NAMES.map((n) => n.toLowerCase()))
+
+const CORAL_TAG_NAMES = [
+  "Soft",
+  "LPS",
+  "SPS",
+  "Zoanthids",
+  "Mushrooms",
+  "Gorgonians",
+  "NPS",
+  "Macro",
+  "Macroalgae",
+]
+const CORAL_TAG_SET = new Set(CORAL_TAG_NAMES.map((n) => n.toLowerCase()))
+
+const SUPPLIES_TAG_NAMES = [
+  "Sea Salt",
+  "Chemicals",
+  "Test Kits",
+  "Lighting",
+  "Pumps",
+  "Filtration",
+  "Food",
+  "Plumbing",
+  "Maintenance",
+]
+const SUPPLIES_TAG_SET = new Set(
+  SUPPLIES_TAG_NAMES.map((n) => n.toLowerCase()),
+)
+
 const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   const backendUrl = __BACKEND_URL__ ?? ""
   const [allTags, setAllTags] = useState<Tag[]>([])
@@ -97,16 +158,32 @@ const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
     return allTags.filter((t) => t.value.toLowerCase().includes(q))
   }, [allTags, query])
 
-  const { mainTags, otherTags } = useMemo(() => {
+  const { mainTags, fishTags, coralTags, suppliesTags, miscTags } = useMemo(() => {
     const main: Tag[] = []
-    const other: Tag[] = []
+    const fish: Tag[] = []
+    const coral: Tag[] = []
+    const supplies: Tag[] = []
+    const misc: Tag[] = []
     for (const t of filtered) {
-      if (MAIN_TAG_SET.has(t.value.toLowerCase())) main.push(t)
-      else other.push(t)
+      const v = t.value.toLowerCase()
+      if (MAIN_TAG_SET.has(v)) main.push(t)
+      else if (FISH_TAG_SET.has(v)) fish.push(t)
+      else if (CORAL_TAG_SET.has(v)) coral.push(t)
+      else if (SUPPLIES_TAG_SET.has(v)) supplies.push(t)
+      else misc.push(t)
     }
     main.sort((a, b) => mainOrder(a.value) - mainOrder(b.value))
-    other.sort((a, b) => a.value.localeCompare(b.value))
-    return { mainTags: main, otherTags: other }
+    fish.sort((a, b) => a.value.localeCompare(b.value))
+    coral.sort((a, b) => a.value.localeCompare(b.value))
+    supplies.sort((a, b) => a.value.localeCompare(b.value))
+    misc.sort((a, b) => a.value.localeCompare(b.value))
+    return {
+      mainTags: main,
+      fishTags: fish,
+      coralTags: coral,
+      suppliesTags: supplies,
+      miscTags: misc,
+    }
   }, [filtered])
 
   const toggle = (id: string) => {
@@ -230,40 +307,49 @@ const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <Text
-                size="xsmall"
-                className="text-ui-fg-muted uppercase tracking-wider"
-              >
-                Other Tags ({otherTags.length})
-              </Text>
-              <div
-                className="flex flex-wrap gap-2 overflow-y-auto border border-ui-border-base rounded-md p-3"
-                style={{ maxHeight: 320 }}
-              >
-                {otherTags.length === 0 ? (
-                  <Text size="small" className="text-ui-fg-muted">
-                    No other tags match your filter.
+            {[
+              { label: "Fish Tags", tags: fishTags },
+              { label: "Coral Tags", tags: coralTags },
+              { label: "Supplies Tags", tags: suppliesTags },
+              { label: "Misc Tags", tags: miscTags },
+            ].map(({ label, tags }) =>
+              tags.length === 0 && query.trim() === "" ? null : (
+                <div key={label} className="flex flex-col gap-2">
+                  <Text
+                    size="xsmall"
+                    className="text-ui-fg-muted uppercase tracking-wider"
+                  >
+                    {label} ({tags.length})
                   </Text>
-                ) : (
-                  otherTags.map((tag) => {
-                    const active = selected.has(tag.id)
-                    return (
-                      <Button
-                        key={tag.id}
-                        type="button"
-                        variant={active ? "primary" : "secondary"}
-                        size="small"
-                        onClick={() => toggle(tag.id)}
-                        disabled={saving}
-                      >
-                        {tag.value}
-                      </Button>
-                    )
-                  })
-                )}
-              </div>
-            </div>
+                  <div
+                    className="flex flex-wrap gap-2 overflow-y-auto border border-ui-border-base rounded-md p-3"
+                    style={{ maxHeight: 240 }}
+                  >
+                    {tags.length === 0 ? (
+                      <Text size="small" className="text-ui-fg-muted">
+                        No {label.toLowerCase()} match your filter.
+                      </Text>
+                    ) : (
+                      tags.map((tag) => {
+                        const active = selected.has(tag.id)
+                        return (
+                          <Button
+                            key={tag.id}
+                            type="button"
+                            variant={active ? "primary" : "secondary"}
+                            size="small"
+                            onClick={() => toggle(tag.id)}
+                            disabled={saving}
+                          >
+                            {tag.value}
+                          </Button>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              ),
+            )}
           </>
         )}
         <div className="flex flex-col gap-2">
