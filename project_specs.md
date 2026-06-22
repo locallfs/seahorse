@@ -541,3 +541,76 @@ auction_customer_profile    (extends Medusa customer via metadata)
 - Auction extensions beyond 2 min (e.g. 5-min soft close variant per auction)
 - Public reserve indicator ("reserve met ✓") — can add later
 - Push notifications (use email only for v1)
+
+
+---
+
+
+## AI Support Chatbot (Phase 5)
+
+A free, AI-powered chat bubble on the public storefront that answers customer questions about **their orders**, **product stock**, and **store basics** (shipping, returns, hours, location, livestock care). It feels like a real AI assistant but runs on a free AI tier — no per-message cost.
+
+### Who uses it
+- **Shoppers (logged-in or guest)** — ask "where's my order?", "is X in stock?", "do you ship live coral?" from any storefront page.
+- Customer-facing only in v1 — there is no admin/staff bot.
+
+### The "brain" — free-tier AI
+| Piece | Choice | Why |
+|---|---|---|
+| AI provider | **Groq free tier** (recommended) | Free, fast, supports tool calling, and its API does **not** train on your messages — important because order lookups touch customer emails. |
+| Alternative | Google Gemini free tier | Slightly higher quality, but its *free* tier may use messages to improve their models — only chosen if the privacy terms are acceptable. |
+| Upgrade path | Swappable to paid Claude (`@anthropic-ai/sdk`) later | One change to the "brain"; everything else stays the same. |
+| Key storage | Provider API key as a Vercel environment variable (e.g. `GROQ_API_KEY`) | Secret stays server-side, never in the browser. No credit card needed for the free tier. |
+
+Free tiers have daily / per-minute limits. Fine for the store's volume; a big traffic spike could briefly pause the bot, in which case it shows a polite "back in a moment" message instead of breaking. Exact current limits and privacy terms will be confirmed against the provider's official docs before building.
+
+### How it works
+1. A chat bubble (client component, dark theme to match the site) sits on every storefront page.
+2. Messages POST to a new private endpoint, `app/api/chat/route.ts`.
+3. The route sends the conversation + a set of **lookup tools** to the AI brain. The AI decides which tool to call; **our server runs the lookup** (against Medusa) and returns the result; the AI phrases the answer; the reply **streams** back to the bubble.
+4. The AI can only state facts the lookups return — it cannot invent stock numbers or order details.
+
+### Lookup tools (run server-side)
+| Tool | What it does | Data source | Who can use it |
+|---|---|---|---|
+| `checkStock` | Finds a product by name and reports availability / price | Medusa store products + inventory (publishable key) | Anyone |
+| `getMyOrders` | Returns the **logged-in** customer's own orders + status / tracking | Medusa store orders, scoped by the customer's session token | Logged-in only |
+| `lookupGuestOrder` | Looks up one order by order number, **only after** the supplied email matches that order's email | Medusa order lookup, verified on the server | Guest, after verification |
+| `getStoreInfo` | Answers shipping, returns, hours, location, and livestock-care questions | Small store-info file kept in the repo | Anyone |
+
+### Privacy & safety
+- The AI provider key lives only on the server (Vercel env var), never shipped to the browser.
+- Order details are returned **only** for the logged-in shopper, or a guest who proves the order number + email match — enforced in our server code, never by trusting the chat text.
+- We use an AI provider whose API does not train on messages, so customer order data isn't reused.
+- The system prompt keeps the bot to orders / stock / store-info, tells it to never guess, and to point to the contact page when a lookup finds nothing or a question is out of scope.
+
+### Pages and files (new)
+- `components/ChatWidget.tsx` (and small sub-components) — the bubble + chat panel, client component, dark premium styling, with quick-reply suggestions ("Track my order", "Check stock", "Shipping & returns").
+- `app/api/chat/route.ts` — server endpoint: talks to the AI brain, runs the tools, streams the reply. (`console.log` at start and end, per project rules.)
+- `lib/chat/` — small helpers for the AI client and the four tool functions that call Medusa.
+- `lib/chat/store-info.ts` — the curated shipping / returns / hours / location / care content.
+- Mounted once in the storefront layout so the bubble appears on every public page.
+
+### Build order (phased)
+1. **Phase A — Widget + endpoint skeleton.** Chat bubble UI + `/api/chat` route that streams a plain reply from the free AI brain (no tools yet). User adds `GROQ_API_KEY` on Vercel first. Confirms the brain + key + streaming work.
+2. **Phase B — Store info + guardrails.** Add the `getStoreInfo` tool, system prompt, and scope guardrails. Bot answers shipping / returns / hours / care and politely declines off-topic questions.
+3. **Phase C — Stock lookups.** Add `checkStock` against Medusa. "Is X in stock?" returns live availability.
+4. **Phase D — Order lookups.** Add `getMyOrders` (logged-in) and `lookupGuestOrder` (order # + email verification). Privacy enforced server-side.
+5. **Phase E — Polish.** Dark styling pass, quick-reply buttons, error / rate-limit messages, mobile, accessibility.
+6. **Phase F — Deploy + verify.** Push to Vercel, verify end-to-end on the live domain (logged-in order, guest verified order, stock, FAQ, off-topic decline, key not exposed).
+
+### Out of scope (v1)
+- Product recommendations or "add to cart" from chat
+- Saved chat history / database persistence
+- Admin / staff assistant bot
+- Live human handoff
+- Multiple languages
+
+### Done means
+- The dark chat bubble opens on the storefront.
+- A logged-in customer asks "where's my order?" and gets their real order status / tracking.
+- A guest gets their order status after providing a matching order number + email (and is refused if they don't match).
+- Anyone gets accurate, live "is X in stock?" answers.
+- Common store questions (shipping, returns, hours, location, care) are answered.
+- Off-topic questions get a friendly redirect, and the bot never invents stock or order info.
+- The AI key is not exposed in the browser, `npm run build` passes, and there are no console errors.
