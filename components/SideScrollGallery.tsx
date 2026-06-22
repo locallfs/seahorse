@@ -42,8 +42,13 @@ interface SideScrollGalleryProps {
   viewAllHref: string;
   tag?: string;
   perCategoryCaps?: Record<string, number>;
-  speedMultiplier?: number;
 }
+
+// Every gallery scrolls at the same fixed pace: one card-width of travel takes
+// SECONDS_PER_CARD seconds. Because the animation duration grows with the number
+// of cards, the on-screen speed stays identical no matter how many products a
+// gallery holds. Lower = faster, higher = slower.
+const SECONDS_PER_CARD = 8;
 
 function formatPrice(amount: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
@@ -139,7 +144,6 @@ export default function SideScrollGallery({
   viewAllHref,
   tag,
   perCategoryCaps,
-  speedMultiplier = 1,
 }: SideScrollGalleryProps) {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -230,13 +234,16 @@ export default function SideScrollGallery({
 
   const useMarquee = products.length > 0 && products.length < 5;
   const displayItems = useMarquee ? products : [...products, ...products];
+  // Auto-scroll loops one full set of cards (doubled content sliding -50%), so
+  // its travel is exactly products.length card-widths.
+  const autoScrollDuration = useMarquee
+    ? undefined
+    : `${products.length * SECONDS_PER_CARD}s`;
+  // Marquee slides a single set across the viewport; the extra ~5 card-widths
+  // account for the empty viewport it crosses so the per-card pace still matches.
   const marqueeDuration = useMarquee
-    ? `${(18 + products.length * 4) * speedMultiplier}s`
+    ? `${(products.length + 5) * SECONDS_PER_CARD}s`
     : undefined;
-  const autoScrollDuration =
-    !useMarquee && speedMultiplier !== 1
-      ? `${40 * speedMultiplier}s`
-      : undefined;
 
   return (
     <section className="py-20 overflow-hidden">

@@ -90,7 +90,6 @@ export default function HomePage() {
             subtitle="Equipment & Accessories"
             tagValues={["Supplies"]}
             viewAllHref="/supplies"
-            speedMultiplier={4}
           />
         </div>
 
