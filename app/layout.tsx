@@ -7,6 +7,7 @@ import SplashScreen from "@/components/SplashScreen";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import StructuredData from "@/components/StructuredData";
 import CookieConsent from "@/components/CookieConsent";
+import ChatWidget from "@/components/ChatWidget";
 import "./globals.css";
 
 const geist = Geist({
@@ -68,6 +69,7 @@ export default function RootLayout({
           <CartProvider>
             <SplashScreen />
             {children}
+            <ChatWidget />
           </CartProvider>
         </AuthProvider>
         <GoogleAnalytics />
