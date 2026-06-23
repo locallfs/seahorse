@@ -76,8 +76,16 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("[api/chat] error", err);
+    // TEMPORARY diagnostic: surface the real error so we can fix the root
+    // cause. Reverts to the friendly message once fixed.
+    const e = err as {
+      status?: number;
+      message?: string;
+      error?: { message?: string };
+    };
+    const detail = e?.error?.message || e?.message || String(err);
     return Response.json({
-      reply: `Something went wrong on our end. Please email ${FALLBACK_EMAIL} and we'll help you out.`,
+      reply: `DEBUG (temporary): [${e?.status ?? "?"}] ${detail}`,
     });
   }
 }
