@@ -4,10 +4,16 @@ import { useEffect, useRef, useState } from "react";
 
 type Message = { role: "user" | "assistant"; content: string };
 
-const QUICK_REPLIES = [
-  "Track my order",
-  "Is an item in stock?",
-  "Shipping & returns",
+const QUICK_REPLIES: { label: string; prompt: string }[] = [
+  { label: "Track my order", prompt: "I'd like to check the status of my order." },
+  {
+    label: "Check if in stock",
+    prompt: "Can you check whether an item is in stock?",
+  },
+  {
+    label: "Shipping & returns",
+    prompt: "What are your shipping and return policies?",
+  },
 ];
 
 const GREETING =
@@ -106,11 +112,11 @@ export default function ChatWidget() {
               <div className="flex flex-wrap gap-2 pt-1">
                 {QUICK_REPLIES.map((q) => (
                   <button
-                    key={q}
-                    onClick={() => send(q)}
+                    key={q.label}
+                    onClick={() => send(q.prompt)}
                     className="text-xs px-3 py-1.5 rounded-full border border-white/15 text-white/90 hover:border-white/35 hover:text-white transition-colors"
                   >
-                    {q}
+                    {q.label}
                   </button>
                 ))}
               </div>
