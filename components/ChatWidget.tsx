@@ -97,9 +97,7 @@ export default function ChatWidget() {
             <p className="text-[10px] tracking-[0.25em] uppercase text-[#FFD700] font-medium">
               Live Help
             </p>
-            <h2 className="text-white font-semibold text-sm">
-              Seahorse Assistant
-            </h2>
+            <h2 className="text-white font-semibold text-sm">Woody</h2>
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
