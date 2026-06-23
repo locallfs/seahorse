@@ -5,9 +5,38 @@ import { TOOL_DEFS, runTool, type ToolContext } from "@/lib/chat/tools";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
-const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+// Groq's recommended model for reliable tool/function calling (their tool-use
+// docs use this one). Override with GROQ_MODEL if needed.
+const MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 const MAX_TOOL_ROUNDS = 5;
 const FALLBACK_EMAIL = "info@seahorseaquariumsupply.com";
+
+// Per Groq's tool-use guidance: a malformed tool call comes back as HTTP 400
+// (tool_use_failed). Retrying with a slightly higher temperature almost always
+// produces a valid call on the next attempt.
+async function createWithRetry(
+  groq: Groq,
+  params: any,
+  maxRetries = 3
+): Promise<any> {
+  let temperature = 0.2;
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await groq.chat.completions.create({ ...params, temperature });
+    } catch (err) {
+      lastErr = err;
+      const status = (err as { status?: number })?.status;
+      if (status === 400 && attempt < maxRetries - 1) {
+        temperature = Math.min(temperature + 0.2, 1.0);
+        console.log(`[api/chat] tool_use retry at temperature ${temperature}`);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
 
 export async function POST(req: Request) {
   console.log("[api/chat] start");
@@ -37,12 +66,11 @@ export async function POST(req: Request) {
 
     let reply = "";
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const completion = await groq.chat.completions.create({
+      const completion = await createWithRetry(groq, {
         model: MODEL,
         messages: convo,
         tools: TOOL_DEFS as any,
         tool_choice: "auto",
-        temperature: 0.3,
         max_tokens: 700,
       });
 
@@ -59,7 +87,12 @@ export async function POST(req: Request) {
             args = {};
           }
           const result = await runTool(call.function.name, args, ctx);
-          convo.push({ role: "tool", tool_call_id: call.id, content: result });
+          convo.push({
+            role: "tool",
+            tool_call_id: call.id,
+            name: call.function.name,
+            content: result,
+          });
         }
         continue;
       }
@@ -76,16 +109,8 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("[api/chat] error", err);
-    // TEMPORARY diagnostic: surface the real error so we can fix the root
-    // cause. Reverts to the friendly message once fixed.
-    const e = err as {
-      status?: number;
-      message?: string;
-      error?: { message?: string };
-    };
-    const detail = e?.error?.message || e?.message || String(err);
     return Response.json({
-      reply: `DEBUG (temporary): [${e?.status ?? "?"}] ${detail}`,
+      reply: `Something went wrong on our end. Please email ${FALLBACK_EMAIL} and we'll help you out.`,
     });
   }
 }
