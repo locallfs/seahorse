@@ -65,7 +65,7 @@ export const TOOL_DEFS = [
     function: {
       name: "get_store_info",
       description:
-        "Get store policy/info text: shipping, returns, hours, location, care, or general. Use for store-basics questions.",
+        "Get store policy/info text: shipping, returns, the live arrival guarantee (DOA process), hours, location, care, or general. Use for store-basics questions. Use 'guarantee' for live-arrival/DOA/dead-on-arrival questions and 'returns' for refunds and dry-goods returns.",
       parameters: {
         type: "object",
         properties: {
@@ -74,6 +74,7 @@ export const TOOL_DEFS = [
             enum: [
               "shipping",
               "returns",
+              "guarantee",
               "hours",
               "location",
               "care",
