@@ -379,7 +379,7 @@ export default function Header() {
       )}
 
       {menuOpen && (
-        <div className="lg:hidden bg-white border-t border-white/20">
+        <div className="lg:hidden bg-white border-t border-white/20 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain">
           <nav className="max-w-screen-xl mx-auto px-6 py-4 flex flex-col gap-1">
             {navLinks.slice(0, 1).map((link) => (
               <Link
