@@ -180,3 +180,15 @@ export async function setItemQuantity(
   })
   return res.Item
 }
+
+// Fetches a single item by its QBO Id (returns Sku, QtyOnHand, SyncToken).
+export async function getItemById(
+  service: QuickbooksModuleService,
+  id: string
+): Promise<QboItem | null> {
+  const res = await qboRequest<{ Item: QboItem }>(service, {
+    method: "GET",
+    path: `/item/${encodeURIComponent(id)}?minorversion=75`,
+  })
+  return res.Item || null
+}
