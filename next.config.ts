@@ -5,10 +5,6 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "picsum.photos",
-      },
-      {
-        protocol: "https",
         hostname: "woodys-seahorse.b-cdn.net",
       },
       {

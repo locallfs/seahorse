@@ -7,10 +7,6 @@ function build(base: string, path: string): string {
   return `${base.replace(/\/$/, "")}${encodeURI(clean)}`;
 }
 
-export function cdn(path: string): string {
-  return build(CDN_BASE, path);
-}
-
 export function websiteCdn(path: string): string {
   return build(WEBSITE_CDN_BASE || CDN_BASE, path);
 }
