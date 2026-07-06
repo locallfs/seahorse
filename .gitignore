@@ -29,6 +29,12 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Claude Code local settings (machine-local tokens/permissions — never commit)
+.claude/
+
+# Stray Expo stub created by running expo/eas from the repo root (real config is mobile/app.json)
+/app.json
+
 # Large media files — videos live on Bunny CDN, not in git
 /*.mp4
 /*.mov

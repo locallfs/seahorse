@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Sub-projects with their own tooling/lint config — not part of the
+    // Next.js storefront lint scope (backend includes generated .medusa output).
+    "backend/**",
+    "mobile/**",
+    "graveyard/**",
   ]),
 ]);
 
