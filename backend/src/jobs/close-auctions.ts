@@ -5,6 +5,8 @@ import { AUCTIONS_MODULE } from "../modules/auctions"
 const PAY_WINDOW_MS = 24 * 60 * 60 * 1000
 
 export default async function closeAuctions(container: MedusaContainer) {
+  // Auctions are retired for now. Re-enable by setting AUCTIONS_ENABLED=true.
+  if (process.env.AUCTIONS_ENABLED !== "true") return
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const auctionsModule: any = container.resolve(AUCTIONS_MODULE)
   const productModule: any = container.resolve(Modules.PRODUCT)

@@ -3,6 +3,18 @@ import multer from "multer"
 
 const upload = multer({ storage: multer.memoryStorage() })
 
+// Auctions are retired for now. These routes return 410 Gone unless
+// AUCTIONS_ENABLED=true, so no bids can be placed and no saved card can be
+// charged while the feature is off.
+const requireAuctionsEnabled = (req: any, res: any, next: any) => {
+  if (process.env.AUCTIONS_ENABLED !== "true") {
+    return res
+      .status(410)
+      .json({ message: "Auctions are not currently available." })
+  }
+  return next()
+}
+
 export default defineMiddlewares({
   routes: [
     {
@@ -17,21 +29,31 @@ export default defineMiddlewares({
     {
       matcher: "/store/auctions/*/bids",
       method: "POST",
-      middlewares: [authenticate("customer", ["session", "bearer"])],
+      middlewares: [
+        requireAuctionsEnabled,
+        authenticate("customer", ["session", "bearer"]),
+      ],
     },
     {
       matcher: "/store/auctions/*/pay",
-      middlewares: [authenticate("customer", ["session", "bearer"])],
+      middlewares: [
+        requireAuctionsEnabled,
+        authenticate("customer", ["session", "bearer"]),
+      ],
     },
     {
       matcher: "/store/auctions/my-bids",
       method: "GET",
-      middlewares: [authenticate("customer", ["session", "bearer"])],
+      middlewares: [
+        requireAuctionsEnabled,
+        authenticate("customer", ["session", "bearer"]),
+      ],
     },
     {
       matcher: "/store/auctions*",
       method: "GET",
       middlewares: [
+        requireAuctionsEnabled,
         authenticate("customer", ["session", "bearer"], { allowUnauthenticated: true }),
       ],
     },
