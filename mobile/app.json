@@ -59,6 +59,13 @@
           "photosPermission": "ReefNerds uses your photo library to attach product images.",
           "cameraPermission": "ReefNerds uses the camera to take product photos."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ReefNerds uses the camera to scan product barcodes.",
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "experiments": {

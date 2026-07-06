@@ -41,11 +41,13 @@ import {
   OrganizeFields,
   PadFields,
   TypeCategoryFields,
+  UpcField,
 } from '@/lib/ProductFormFields';
 
 type VariantShape = {
   id: string;
   manage_inventory?: boolean;
+  upc?: string | null;
   prices?: { id?: string; amount: number; currency_code: string }[];
   inventory_items?: {
     inventory?: {
@@ -80,6 +82,7 @@ export default function ProductEditScreen() {
   const [manageInventory, setManageInventory] = useState(true);
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('0');
+  const [upc, setUpc] = useState('');
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [newThumbnailFile, setNewThumbnailFile] = useState<{ uri: string; name: string; type: string } | null>(null);
 
@@ -150,6 +153,7 @@ export default function ProductEditScreen() {
       const v: VariantShape | null = p.variants?.[0] || null;
       setVariant(v);
       setManageInventory(v?.manage_inventory ?? true);
+      setUpc(v?.upc || '');
       const usd = v?.prices?.find((x) => x.currency_code === 'usd') || v?.prices?.[0];
       setPrice(usd ? usd.amount.toString() : '');
       const qty = (v?.inventory_items || []).reduce((sum, link) => {
@@ -244,6 +248,7 @@ export default function ProductEditScreen() {
         const variantPayload: any = {
           id: variant.id,
           manage_inventory: manageInventory,
+          upc: upc.trim() || null,
         };
         if (!Number.isNaN(amount)) {
           variantPayload.prices = [{ amount, currency_code: 'usd' }];
@@ -529,6 +534,8 @@ export default function ProductEditScreen() {
             thumbColor="#fff"
           />
         </View>
+
+        <UpcField value={upc} onChange={setUpc} />
 
         <TypeCategoryFields
           value={typeKey}

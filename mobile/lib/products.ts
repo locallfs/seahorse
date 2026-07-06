@@ -343,6 +343,7 @@ export type NewProductInput = {
   stock: number;
   published: boolean;
   manageInventory: boolean;
+  upc?: string;
   thumbnail?: { uri: string; name: string; type: string } | null;
   organize?: ProductOrganize;
   attributes?: ProductAttributes;
@@ -395,6 +396,9 @@ export async function createProduct(input: NewProductInput): Promise<string> {
       },
     ],
   };
+  if (input.upc && input.upc.trim()) {
+    payload.variants[0].upc = input.upc.trim();
+  }
   if (defaults.shippingProfileId) payload.shipping_profile_id = defaults.shippingProfileId;
   if (defaults.salesChannelId) payload.sales_channels = [{ id: defaults.salesChannelId }];
 

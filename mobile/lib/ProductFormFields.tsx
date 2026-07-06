@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { theme } from '@/lib/theme';
+import { BarcodeScanner } from '@/lib/BarcodeScanner';
 import {
   COUNTRY_OF_ORIGIN_LABEL,
   FLOW_OPTIONS,
@@ -365,6 +367,46 @@ export function AttributeFields({ value, onChange }: AttributesProps) {
   );
 }
 
+type UpcProps = {
+  value: string;
+  onChange: (next: string) => void;
+};
+
+export function UpcField({ value, onChange }: UpcProps) {
+  const [scanning, setScanning] = useState(false);
+  return (
+    <View>
+      <Text style={styles.sectionHeader}>Barcode</Text>
+      <Text style={styles.helpText}>
+        Scan or type the product&apos;s UPC. This is how the item is matched to
+        QuickBooks for stock sync — mainly for dry goods and supplies.
+      </Text>
+      <View style={styles.upcRow}>
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          style={[styles.input, styles.upcInput]}
+          placeholder="e.g. 812345678901"
+          placeholderTextColor={theme.color.textDim}
+          keyboardType="number-pad"
+          autoCapitalize="none"
+        />
+        <Pressable onPress={() => setScanning(true)} style={styles.scanBtn}>
+          <Text style={styles.scanBtnText}>Scan</Text>
+        </Pressable>
+      </View>
+      <BarcodeScanner
+        visible={scanning}
+        onClose={() => setScanning(false)}
+        onScanned={(code) => {
+          onChange(code);
+          setScanning(false);
+        }}
+      />
+    </View>
+  );
+}
+
 function NumberField({
   label,
   value,
@@ -455,6 +497,22 @@ const styles = StyleSheet.create({
   },
   grid: { flexDirection: 'row', gap: theme.space.md },
   gridItem: { flex: 1 },
+  upcRow: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
+  upcInput: { flex: 1 },
+  scanBtn: {
+    paddingHorizontal: theme.space.lg,
+    paddingVertical: theme.space.md,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.color.gold,
+    backgroundColor: theme.color.card,
+  },
+  scanBtnText: {
+    color: theme.color.gold,
+    fontSize: theme.font.sm,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
   lockedField: {
     flexDirection: 'row',
     justifyContent: 'space-between',

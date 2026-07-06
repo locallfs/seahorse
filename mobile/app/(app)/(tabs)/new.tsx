@@ -31,6 +31,7 @@ import {
   OrganizeFields,
   PadFields,
   TypeCategoryFields,
+  UpcField,
 } from '@/lib/ProductFormFields';
 
 export default function NewProductScreen() {
@@ -41,6 +42,7 @@ export default function NewProductScreen() {
   const [stock, setStock] = useState('0');
   const [published, setPublished] = useState(true);
   const [manageInventory, setManageInventory] = useState(true);
+  const [upc, setUpc] = useState('');
   const [file, setFile] = useState<{ uri: string; name: string; type: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -113,6 +115,7 @@ export default function NewProductScreen() {
     setStock('0');
     setPublished(true);
     setManageInventory(true);
+    setUpc('');
     setFile(null);
     setError(null);
     setOrganize({ tagIds: [], typeId: null, collectionId: null, categoryIds: [] });
@@ -140,6 +143,7 @@ export default function NewProductScreen() {
         stock: stockNum,
         published,
         manageInventory,
+        upc: upc.trim() || undefined,
         thumbnail: file,
         organize,
         attributes,
@@ -266,6 +270,8 @@ export default function NewProductScreen() {
             />
           </>
         ) : null}
+
+        <UpcField value={upc} onChange={setUpc} />
 
         <TypeCategoryFields
           value={typeKey}
