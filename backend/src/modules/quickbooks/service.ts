@@ -1,5 +1,6 @@
 import { MedusaService } from "@medusajs/utils"
 import { QuickbooksConnection } from "./models/connection"
+import { QuickbooksSyncLog } from "./models/sync-log"
 import { encrypt, decrypt } from "./crypto"
 import {
   exchangeCodeForTokens,
@@ -10,6 +11,7 @@ import {
 
 class QuickbooksModuleService extends MedusaService({
   QuickbooksConnection,
+  QuickbooksSyncLog,
 }) {
   async saveTokens(params: {
     realmId: string
@@ -114,6 +116,41 @@ class QuickbooksModuleService extends MedusaService({
       id: rows[0].id,
       last_error: message.slice(0, 2000),
     })
+  }
+
+  async logSync(params: {
+    direction: "medusa_to_qbo" | "qbo_to_medusa"
+    status: "success" | "failed" | "needs_manual_review"
+    sku?: string | null
+    qboItemId?: string | null
+    errorMessage?: string | null
+    entityType?: string
+  }): Promise<void> {
+    await this.createQuickbooksSyncLogs({
+      direction: params.direction,
+      entity_type: params.entityType || "item",
+      sku: params.sku ?? null,
+      qbo_item_id: params.qboItemId ?? null,
+      status: params.status,
+      error_message: params.errorMessage
+        ? params.errorMessage.slice(0, 2000)
+        : null,
+    })
+  }
+
+  async listSyncLogs(limit = 50) {
+    return this.listQuickbooksSyncLogs(
+      {},
+      { take: limit, order: { created_at: "DESC" } }
+    )
+  }
+
+  async lastSuccessfulSyncAt(): Promise<Date | null> {
+    const rows = await this.listQuickbooksSyncLogs(
+      { status: "success" },
+      { take: 1, order: { created_at: "DESC" } }
+    )
+    return rows.length ? (rows[0] as { created_at: Date }).created_at : null
   }
 }
 
