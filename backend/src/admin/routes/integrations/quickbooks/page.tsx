@@ -21,12 +21,25 @@ interface Connection {
   last_error: string | null
 }
 
+interface SyncLogRow {
+  id: string
+  direction: string
+  sku: string | null
+  status: string
+  error_message: string | null
+  created_at: string
+}
+
 interface StatusPayload {
   configured: boolean
   connected: boolean
   connection: Connection | null
   environment: string
   env_check?: Record<string, string | null>
+  sync_enabled?: boolean
+  health?: string
+  last_sync_at?: string | null
+  sync_log?: SyncLogRow[]
 }
 
 const QuickbooksPage = () => {
@@ -34,6 +47,7 @@ const QuickbooksPage = () => {
   const [status, setStatus] = useState<StatusPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState(false)
+  const [resyncing, setResyncing] = useState(false)
 
   const loadStatus = async () => {
     setLoading(true)
@@ -44,7 +58,7 @@ const QuickbooksPage = () => {
       if (!res.ok) throw new Error(await res.text())
       const data = (await res.json()) as StatusPayload
       setStatus(data)
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to load QuickBooks status")
     } finally {
       setLoading(false)
@@ -73,7 +87,8 @@ const QuickbooksPage = () => {
         credentials: "include",
       })
       if (!res.ok) {
-        const msg = (await res.json().catch(() => ({}))).error || "Failed to start OAuth"
+        const msg =
+          (await res.json().catch(() => ({}))).error || "Failed to start OAuth"
         throw new Error(msg)
       }
       const { url } = (await res.json()) as { url: string }
@@ -85,7 +100,8 @@ const QuickbooksPage = () => {
   }
 
   const disconnect = async () => {
-    if (!confirm("Disconnect QuickBooks? Sync will stop until reconnected.")) return
+    if (!confirm("Disconnect QuickBooks? Sync will stop until reconnected."))
+      return
     setActing(true)
     try {
       const res = await fetch(`${backendUrl}/admin/quickbooks/disconnect`, {
@@ -99,6 +115,33 @@ const QuickbooksPage = () => {
       toast.error(err?.message || "Failed to disconnect")
     } finally {
       setActing(false)
+    }
+  }
+
+  const resync = async () => {
+    if (
+      !confirm(
+        "Push all products to QuickBooks now? Creates any missing Inventory items with current stock. Safe to run repeatedly."
+      )
+    )
+      return
+    setResyncing(true)
+    try {
+      const res = await fetch(`${backendUrl}/admin/quickbooks/resync`, {
+        method: "POST",
+        credentials: "include",
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+      const r = data.result || {}
+      toast.success(
+        `Resync done — created ${r.created}, existed ${r.existed}, failed ${r.failed}`
+      )
+      await loadStatus()
+    } catch (err: any) {
+      toast.error(err?.message || "Resync failed")
+    } finally {
+      setResyncing(false)
     }
   }
 
@@ -117,10 +160,12 @@ const QuickbooksPage = () => {
         <div>
           <Heading level="h1">QuickBooks Online</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-1">
-            Sync inventory between Medusa and QuickBooks.
+            Two-way inventory sync between the store and QuickBooks.
           </Text>
         </div>
-        {status?.connected ? (
+        {status?.health === "token_expired" ? (
+          <StatusBadge color="orange">Reconnect needed</StatusBadge>
+        ) : status?.connected ? (
           <StatusBadge color="green">Connected</StatusBadge>
         ) : (
           <StatusBadge color="grey">Not connected</StatusBadge>
@@ -133,26 +178,26 @@ const QuickbooksPage = () => {
         {!loading && status && !status.configured && (
           <div className="rounded border border-ui-border-error bg-ui-bg-base p-4 flex flex-col gap-2">
             <Text className="text-ui-fg-error">
-              Backend is missing one or more QuickBooks env vars.
-              Set them on Railway, redeploy, then return here.
+              Backend is missing one or more QuickBooks env vars. Set them on
+              Railway, redeploy, then return here.
             </Text>
             {status.env_check && (
               <div className="rounded bg-ui-bg-subtle p-3 font-mono text-xs">
-                {Object.entries(status.env_check).map(([key, preview]) => (
+                {Object.entries(status.env_check).map(([key, previewVal]) => (
                   <div key={key} className="flex justify-between gap-4">
                     <span>{key}</span>
                     <span
                       className={
-                        preview === null || preview === ""
+                        previewVal === null || previewVal === ""
                           ? "text-ui-fg-error"
                           : "text-ui-fg-subtle"
                       }
                     >
-                      {preview === null
+                      {previewVal === null
                         ? "(not set)"
-                        : preview === ""
-                        ? "(empty)"
-                        : preview}
+                        : previewVal === ""
+                          ? "(empty)"
+                          : previewVal}
                     </span>
                   </div>
                 ))}
@@ -164,8 +209,13 @@ const QuickbooksPage = () => {
         {!loading && status && status.configured && (
           <>
             <div className="flex items-center gap-2">
-              <Text size="small" className="text-ui-fg-subtle">Environment:</Text>
-              <Badge size="2xsmall" color={status.environment === "production" ? "green" : "orange"}>
+              <Text size="small" className="text-ui-fg-subtle">
+                Environment:
+              </Text>
+              <Badge
+                size="2xsmall"
+                color={status.environment === "production" ? "green" : "orange"}
+              >
                 {status.environment}
               </Badge>
             </div>
@@ -173,20 +223,32 @@ const QuickbooksPage = () => {
             {status.connected && status.connection && (
               <div className="grid grid-cols-2 gap-4 rounded border border-ui-border-base p-4">
                 <div>
-                  <Text size="xsmall" className="text-ui-fg-subtle">Realm (Company) ID</Text>
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    Realm (Company) ID
+                  </Text>
                   <Text size="small">{status.connection.realm_id}</Text>
                 </div>
                 <div>
-                  <Text size="xsmall" className="text-ui-fg-subtle">Access token expires</Text>
-                  <Text size="small">{formatDate(status.connection.access_token_expires_at)}</Text>
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    Access token expires
+                  </Text>
+                  <Text size="small">
+                    {formatDate(status.connection.access_token_expires_at)}
+                  </Text>
                 </div>
                 <div>
-                  <Text size="xsmall" className="text-ui-fg-subtle">Refresh token expires</Text>
-                  <Text size="small">{formatDate(status.connection.refresh_token_expires_at)}</Text>
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    Refresh token expires
+                  </Text>
+                  <Text size="small">
+                    {formatDate(status.connection.refresh_token_expires_at)}
+                  </Text>
                 </div>
                 {status.connection.last_error && (
                   <div className="col-span-2">
-                    <Text size="xsmall" className="text-ui-fg-subtle">Last error</Text>
+                    <Text size="xsmall" className="text-ui-fg-subtle">
+                      Last error
+                    </Text>
                     <Text size="small" className="text-ui-fg-error">
                       {status.connection.last_error}
                     </Text>
@@ -197,21 +259,126 @@ const QuickbooksPage = () => {
 
             <div className="flex gap-3">
               {!status.connected && (
-                <Button variant="primary" onClick={connect} isLoading={acting} disabled={acting}>
+                <Button
+                  variant="primary"
+                  onClick={connect}
+                  isLoading={acting}
+                  disabled={acting}
+                >
                   Connect to QuickBooks
                 </Button>
               )}
               {status.connected && (
                 <>
-                  <Button variant="secondary" onClick={connect} isLoading={acting} disabled={acting}>
+                  <Button
+                    variant="secondary"
+                    onClick={connect}
+                    isLoading={acting}
+                    disabled={acting}
+                  >
                     Reconnect
                   </Button>
-                  <Button variant="danger" onClick={disconnect} isLoading={acting} disabled={acting}>
+                  <Button
+                    variant="danger"
+                    onClick={disconnect}
+                    isLoading={acting}
+                    disabled={acting}
+                  >
                     Disconnect
                   </Button>
                 </>
               )}
             </div>
+
+            {status.connected && (
+              <div className="flex flex-col gap-3 rounded border border-ui-border-base p-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Text size="small" className="text-ui-fg-subtle">
+                    Live sync:
+                  </Text>
+                  <Badge
+                    size="2xsmall"
+                    color={status.sync_enabled ? "green" : "grey"}
+                  >
+                    {status.sync_enabled ? "ON" : "OFF"}
+                  </Badge>
+                  {!status.sync_enabled && (
+                    <Text size="xsmall" className="text-ui-fg-subtle">
+                      Set QUICKBOOKS_SYNC_ENABLED=true on Railway to turn on live
+                      sync.
+                    </Text>
+                  )}
+                  <Text size="small" className="text-ui-fg-subtle ml-2">
+                    Last successful sync:
+                  </Text>
+                  <Text size="small">
+                    {formatDate(status.last_sync_at ?? null)}
+                  </Text>
+                </div>
+                <div>
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    onClick={resync}
+                    isLoading={resyncing}
+                    disabled={resyncing || acting}
+                  >
+                    Resync all to QuickBooks
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {status.connected &&
+              status.sync_log &&
+              status.sync_log.length > 0 && (
+                <div className="rounded border border-ui-border-base">
+                  <div className="px-4 py-2 border-b border-ui-border-base">
+                    <Text size="small" weight="plus">
+                      Recent sync activity
+                    </Text>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto divide-y divide-ui-border-base">
+                    {status.sync_log.map((row) => (
+                      <div
+                        key={row.id}
+                        className="flex items-center justify-between gap-3 px-4 py-2 text-xs"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Badge
+                            size="2xsmall"
+                            color={
+                              row.status === "success"
+                                ? "green"
+                                : row.status === "failed"
+                                  ? "red"
+                                  : "orange"
+                            }
+                          >
+                            {row.status === "needs_manual_review"
+                              ? "review"
+                              : row.status}
+                          </Badge>
+                          <span className="text-ui-fg-subtle">
+                            {row.direction === "medusa_to_qbo"
+                              ? "→ QBO"
+                              : "← QBO"}
+                          </span>
+                          <span className="truncate">{row.sku || "—"}</span>
+                          {row.error_message && (
+                            <span className="text-ui-fg-error truncate">
+                              {row.error_message}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-ui-fg-muted whitespace-nowrap">
+                          {formatDate(row.created_at)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </>
         )}
       </div>
