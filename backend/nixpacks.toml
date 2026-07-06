@@ -1,8 +1,0 @@
-[phases.install]
-cmds = ["npm install --production=false"]
-
-[phases.build]
-cmds = ["npm run build && cp -r src/modules .medusa/server/src/"]
-
-[start]
-cmd = "node_modules/.bin/medusa start"
