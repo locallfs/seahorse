@@ -11,6 +11,30 @@ const MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 const MAX_TOOL_ROUNDS = 5;
 const FALLBACK_EMAIL = "info@seahorseaquariumsupply.com";
 
+// Basic abuse protection. In-memory and per-instance — fine for this traffic
+// level; swap for a shared KV store if the chat ever gets heavy use.
+const RATE_LIMIT = 20; // requests
+const RATE_WINDOW_MS = 60_000; // per minute, per IP
+const MAX_MESSAGE_CHARS = 1000;
+const MAX_MESSAGES = 50;
+const rateHits = new Map<string, number[]>();
+
+function clientIp(req: Request): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0].trim();
+  return req.headers.get("x-real-ip") || "unknown";
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const recent = (rateHits.get(ip) || []).filter(
+    (t) => t > now - RATE_WINDOW_MS
+  );
+  recent.push(now);
+  rateHits.set(ip, recent);
+  return recent.length > RATE_LIMIT;
+}
+
 // Per Groq's tool-use guidance: a malformed tool call comes back as HTTP 400
 // (tool_use_failed). Retrying with a slightly higher temperature almost always
 // produces a valid call on the next attempt.
@@ -41,10 +65,42 @@ async function createWithRetry(
 export async function POST(req: Request) {
   console.log("[api/chat] start");
   try {
+    const ip = clientIp(req);
+    if (isRateLimited(ip)) {
+      console.log("[api/chat] rate limited", ip);
+      return Response.json(
+        {
+          reply:
+            "You're sending messages very quickly — please wait a moment and try again.",
+        },
+        { status: 429 }
+      );
+    }
+
     const { messages, customerToken } = (await req.json()) as {
       messages: ChatMessage[];
       customerToken?: string | null;
     };
+
+    if (Array.isArray(messages) && messages.length > MAX_MESSAGES) {
+      return Response.json({
+        reply:
+          "This conversation is very long — please refresh the chat and start again.",
+      });
+    }
+    const lastUser = [...(messages || [])]
+      .reverse()
+      .find((m) => m?.role === "user");
+    if (
+      lastUser &&
+      typeof lastUser.content === "string" &&
+      lastUser.content.length > MAX_MESSAGE_CHARS
+    ) {
+      return Response.json({
+        reply:
+          "That message is a bit long for me — please shorten it and ask again.",
+      });
+    }
 
     if (!process.env.GROQ_API_KEY) {
       console.log("[api/chat] end (no key configured)");
