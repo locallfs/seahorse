@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { medusa } from "@/lib/medusa";
+import { getAllStoreProducts } from "@/lib/catalog";
 import FreeShippingBadge from "./FreeShippingBadge";
 import OutOfStockBanner from "./OutOfStockBanner";
 
@@ -162,31 +162,7 @@ export default function SideScrollGallery({
 
     (async () => {
       try {
-        const regionsRes = await medusa.store.region.list();
-        const regionId = regionsRes.regions?.[0]?.id;
-
-        const pageSize = 200;
-        const collected: any[] = [];
-        let offset = 0;
-        while (!cancelled) {
-          const res = await medusa.store.product.list({
-            fields:
-              "id,handle,title,thumbnail,tags.value,*images,*categories,*variants,*variants.calculated_price,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder",
-            region_id: regionId,
-            limit: pageSize,
-            offset,
-          } as any);
-          const page = (res.products as any[]) || [];
-          collected.push(...page);
-          const total =
-            typeof (res as any).count === "number"
-              ? (res as any).count
-              : collected.length;
-          offset += page.length;
-          if (page.length === 0 || offset >= total) break;
-          if (offset > 5000) break;
-        }
-
+        const collected = await getAllStoreProducts();
         if (cancelled) return;
 
         const filtered = collected.filter((p) => {
