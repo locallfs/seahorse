@@ -3,13 +3,18 @@
 // live site: /shipping-returns, the structured-data hours, and /care. Keep it
 // in sync if those pages change.
 
-export const STORE_NAME = "Woody's Seahorse Aquarium & Supply";
-export const STORE_EMAIL = "info@seahorseaquariumsupply.com";
-export const STORE_PHONE = "503-283-4788";
+import {
+  STORE_NAME,
+  STORE_EMAIL,
+  STORE_PHONE,
+  STORE_HOURS_TEXT,
+} from "@/lib/storeDetails";
+
+export { STORE_NAME, STORE_EMAIL, STORE_PHONE };
 
 const LOCATION = `${STORE_NAME} is at 106 NE Russet St., Portland, Oregon 97211 — on the gravel street (Rodney) around the corner. We've been Portland's saltwater fish and coral specialist since 1996. Phone: ${STORE_PHONE}. Free local pickup is available during open hours.`;
 
-const HOURS = `Store hours (Pacific time): Wednesday–Saturday 12:00 PM to 7:00 PM, and Sunday 12:00 PM to 6:00 PM. Closed Monday and Tuesday. Phone: ${STORE_PHONE}.`;
+const HOURS = `Store hours (Pacific time): ${STORE_HOURS_TEXT} Phone: ${STORE_PHONE}.`;
 
 const SHIPPING = `Shipping methods:
 - Live animals (fish, corals, inverts): UPS or FedEx Priority Overnight only — we do not ship livestock ground or two-day.
