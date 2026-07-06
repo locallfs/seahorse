@@ -12,7 +12,10 @@ import ExpertCareAgreementModal from "@/components/ExpertCareAgreementModal";
 import Image from "next/image";
 import Link from "next/link";
 import { medusa } from "@/lib/medusa";
-import { isLiveAnimal, isLiveAnimalByCategories } from "@/lib/liveAnimal";
+import {
+  isLiveAnimalByCategories,
+  isLiveAnimalItemByText,
+} from "@/lib/liveAnimal";
 
 function formatPrice(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -94,7 +97,7 @@ export default function CartPage() {
   const hasLive = items.some(
     (item: any) =>
       (item.product_id && liveProductIds.has(item.product_id)) ||
-      isLiveAnimal(item.product_title || item.title),
+      isLiveAnimalItemByText(item),
   );
 
   const hasExpert = items.some(

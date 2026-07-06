@@ -1,4 +1,13 @@
-export const LIVE_CATEGORY_HANDLES = ["fish", "corals", "inverts"];
+export const LIVE_CATEGORY_HANDLES = [
+  "fish",
+  "corals",
+  "inverts",
+  // alternate / legacy handles that also denote live animals
+  "coral",
+  "saltwater-fish",
+  "invertebrates",
+  "seahorses",
+];
 
 export const LIVE_KEYWORDS = [
   "fish",
@@ -16,6 +25,24 @@ export const LIVE_KEYWORDS = [
   "angel",
   "urchin",
   "starfish",
+  // common coral names
+  "torch",
+  "hammer",
+  "duncan",
+  "frogspawn",
+  "acro",
+  "zoa",
+  "zoanthid",
+  "mushroom",
+  "monti",
+  "chalice",
+  "euphyllia",
+  "gonio",
+  "blasto",
+  "candy cane",
+  "leather",
+  "xenia",
+  "scoly",
 ];
 
 type CategoryLike = { handle?: string | null } | null | undefined;
@@ -30,7 +57,7 @@ export function isLiveAnimalByCategories(
 ): boolean {
   if (!categories?.length) return false;
   return categories.some(
-    (c) => !!c?.handle && LIVE_CATEGORY_HANDLES.includes(c.handle),
+    (c) => !!c?.handle && LIVE_CATEGORY_HANDLES.includes(c.handle.toLowerCase()),
   );
 }
 
@@ -54,6 +81,22 @@ export function isLiveAnimal(
   }
   if (isLiveAnimalByCategories(productOrTitle.categories)) return true;
   return isLiveAnimalByTitle(productOrTitle.title);
+}
+
+type CartItemLike = {
+  product_handle?: string | null;
+  product_title?: string | null;
+  title?: string | null;
+  variant?: { product?: { handle?: string | null } | null } | null;
+} | null | undefined;
+
+// Keyword check for a cart line item — matches the product handle OR title.
+// Cart and checkout both use this so they classify a product identically.
+export function isLiveAnimalItemByText(item: CartItemLike): boolean {
+  if (!item) return false;
+  const handle = item.product_handle || item.variant?.product?.handle || null;
+  const title = item.product_title || item.title || null;
+  return isLiveAnimalByTitle(handle) || isLiveAnimalByTitle(title);
 }
 
 const CORAL_TITLE_KEYWORDS = ["coral", "zoa", "acan", "monti", "acro"];

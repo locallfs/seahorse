@@ -12,6 +12,10 @@ import {
 } from "@stripe/react-stripe-js";
 import { useCart } from "@/components/CartContext";
 import { medusa } from "@/lib/medusa";
+import {
+  isLiveAnimalByCategories,
+  isLiveAnimalItemByText,
+} from "@/lib/liveAnimal";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LiveArrivalAgreementModal from "@/components/LiveArrivalAgreementModal";
@@ -294,29 +298,10 @@ export default function CheckoutPage() {
   const [hasLiveItems, setHasLiveItems] = useState(false);
 
   useEffect(() => {
-    const LIVE_CATEGORY_HANDLES = new Set([
-      "corals",
-      "coral",
-      "fish",
-      "saltwater-fish",
-      "inverts",
-      "invertebrates",
-      "seahorses",
-    ]);
-    const LIVE_KEYWORDS = [
-      "fish", "coral", "invert", "shrimp", "crab", "snail", "anemone",
-      "seahorse", "clown", "tang", "wrasse", "goby", "angel", "urchin",
-      "starfish", "torch", "hammer", "duncan", "frogspawn", "acro",
-      "zoa", "zoanthid", "mushroom", "monti", "chalice", "euphyllia",
-      "gonio", "blasto", "candy cane", "leather", "xenia", "scoly",
-    ];
-
-    const keywordHit = items.some((item: any) => {
-      const handle = (item.product_handle || item.variant?.product?.handle || "").toLowerCase();
-      const title = (item.product_title || item.title || "").toLowerCase();
-      return LIVE_KEYWORDS.some((kw) => handle.includes(kw) || title.includes(kw));
-    });
-
+    // Shared live-animal detection (lib/liveAnimal.ts) so cart and checkout
+    // classify identically. Keyword match first (fast, no fetch), then a
+    // category lookup for anything not caught by keywords.
+    const keywordHit = items.some((item: any) => isLiveAnimalItemByText(item));
     if (keywordHit) {
       setHasLiveItems(true);
       return;
@@ -339,9 +324,7 @@ export default function CheckoutPage() {
         } as any);
         if (cancelled) return;
         const live = (res.products || []).some((p: any) =>
-          (p.categories || []).some((c: any) =>
-            LIVE_CATEGORY_HANDLES.has((c.handle || "").toLowerCase()),
-          ),
+          isLiveAnimalByCategories(p.categories),
         );
         setHasLiveItems(live);
       } catch {
