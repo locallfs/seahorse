@@ -156,7 +156,13 @@ export async function seedInventoryItems(container: {
       } catch (err: any) {
         r.failed++
         await qb
-          .recordError(`Resync failed for ${key} ("${name}"): ${err?.message}`)
+          .logSync({
+            direction: "medusa_to_qbo",
+            entityType: "resync",
+            sku: key,
+            status: "failed",
+            errorMessage: `${name}: ${err?.message}`,
+          })
           .catch(() => {})
       }
     }
@@ -172,10 +178,27 @@ export async function seedInventoryItems(container: {
     } catch (err: any) {
       r.failed++
       await qb
-        .recordError(`Retire failed for "${it.Name}": ${err?.message}`)
+        .logSync({
+          direction: "medusa_to_qbo",
+          entityType: "resync",
+          sku: it.Sku || it.Name,
+          status: "failed",
+          errorMessage: `Retire failed: ${err?.message}`,
+        })
         .catch(() => {})
     }
   }
+
+  // One summary row so the page's activity list + "Last successful sync"
+  // reflect the run (counts also land in the server logs).
+  await qb
+    .logSync({
+      direction: "medusa_to_qbo",
+      entityType: "resync",
+      sku: `resync: ${r.created} created, ${r.updated} overwritten, ${r.converted} converted, ${r.retired} retired, ${r.failed} failed`,
+      status: r.failed > 0 ? "needs_manual_review" : "success",
+    })
+    .catch(() => {})
 
   return r
 }
