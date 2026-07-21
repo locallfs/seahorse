@@ -37,7 +37,9 @@ export default async function quickbooksCdcSweep(container: MedusaContainer) {
         .catch(() => {})
     }
 
-    const changedSince = new Date(Date.now() - 45 * 60 * 1000).toISOString()
+    // 6h look-back: tiny cost at this catalog's change volume (equality-skip
+    // makes re-application a no-op) and makes window-miss impossible.
+    const changedSince = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
     const res = await qboRequest<{ CDCResponse?: any[] }>(qb, {
       method: "GET",
       path: `/cdc?entities=Item&changedSince=${encodeURIComponent(changedSince)}&minorversion=75`,
