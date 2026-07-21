@@ -14,8 +14,10 @@ import { applyQboItemToStore } from "../modules/quickbooks/apply-item"
 // webhook delivery is broken; webhooks remain the instant path when they work.
 // Requires MEDUSA_WORKER_MODE=shared (or worker) to run.
 // One heartbeat row per server boot so "is the sweeper alive?" is answerable
-// from the sync log without server access.
+// from the sync log without server access. The first few sweeps after boot
+// also log what CDC returned (even when empty) so silence is diagnosable.
 let announced = false
+let diagSweeps = 0
 
 export default async function quickbooksCdcSweep(container: MedusaContainer) {
   if (process.env.QUICKBOOKS_SYNC_ENABLED !== "true") return
@@ -39,7 +41,12 @@ export default async function quickbooksCdcSweep(container: MedusaContainer) {
 
     // 6h look-back: tiny cost at this catalog's change volume (equality-skip
     // makes re-application a no-op) and makes window-miss impossible.
-    const changedSince = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+    // QBO's docs use explicit-offset ISO timestamps ("...T10:00:00-07:00");
+    // avoid the "Z" suffix and milliseconds in case they're misparsed as
+    // company-local time (which would silently empty every response).
+    const changedSince =
+      new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 19) +
+      "+00:00"
     // Ask for changed Items AND changed InventoryAdjustments: QBO records a
     // quantity change as an adjustment transaction, which may not bump the
     // Item record itself — Item-only tracking can miss the one thing we sync.
@@ -77,6 +84,29 @@ export default async function quickbooksCdcSweep(container: MedusaContainer) {
         }
       }
     }
+    // First 3 sweeps after boot: log the result even when empty, with entity
+    // counts, so a silent-empty CDC is diagnosable from the sync log.
+    if (diagSweeps < 3) {
+      diagSweeps++
+      const itemCount = (res.CDCResponse || [])
+        .flatMap((c: any) => c?.QueryResponse || [])
+        .reduce((n: number, qr: any) => n + (qr?.Item?.length || 0), 0)
+      const adjCount = (res.CDCResponse || [])
+        .flatMap((c: any) => c?.QueryResponse || [])
+        .reduce(
+          (n: number, qr: any) => n + (qr?.InventoryAdjustment?.length || 0),
+          0
+        )
+      await qb
+        .logSync({
+          direction: "qbo_to_medusa",
+          entityType: "cdc",
+          sku: `sweep ${diagSweeps}: Item=${itemCount} Adj=${adjCount} apply=${ids.size}`,
+          status: "success",
+        })
+        .catch(() => {})
+    }
+
     if (ids.size === 0) return // quiet cycle — don't spam the log
 
     console.log(`[qb-cdc] ${ids.size} changed item(s)`)
