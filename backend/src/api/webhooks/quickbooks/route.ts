@@ -120,6 +120,7 @@ async function applyItemChange(
 export async function POST(req: any, res: any) {
   console.log("[qb-webhook] start")
   const verifier = process.env.QUICKBOOKS_WEBHOOK_VERIFIER_TOKEN
+  const hasRawBody = req.rawBody != null
   const raw =
     typeof req.rawBody === "string"
       ? req.rawBody
@@ -128,15 +129,39 @@ export async function POST(req: any, res: any) {
         : JSON.stringify(req.body || {})
   const signature = req.headers["intuit-signature"]
 
+  // Visibility: record every knock — accepted or rejected — in the sync log
+  // so webhook delivery problems are diagnosable from the admin page/DB.
+  const qbLog = (() => {
+    try {
+      return req.scope.resolve(QUICKBOOKS_MODULE) as QuickbooksModuleService
+    } catch {
+      return null
+    }
+  })()
+  const logKnock = async (status: string, msg: string) => {
+    await qbLog
+      ?.logSync({
+        direction: "qbo_to_medusa",
+        entityType: "webhook",
+        sku: msg.slice(0, 60),
+        status,
+        errorMessage: `rawBody=${hasRawBody} sig=${signature ? "present" : "MISSING"} bytes=${raw.length}`,
+      })
+      .catch(() => {})
+  }
+
   // Fail closed: without a verifier or a valid signature we do not process.
   if (!verifier) {
     console.warn("[qb-webhook] no verifier token configured")
+    await logKnock("failed", "rejected: no verifier configured")
     return res.sendStatus(200)
   }
   if (!verifySignature(raw, signature, verifier)) {
     console.warn("[qb-webhook] invalid signature")
+    await logKnock("failed", "rejected: invalid signature")
     return res.status(401).send("invalid signature")
   }
+  await logKnock("success", "webhook accepted")
 
   if (process.env.QUICKBOOKS_SYNC_ENABLED !== "true") {
     return res.sendStatus(200)
