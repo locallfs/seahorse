@@ -18,6 +18,13 @@ const requireAuctionsEnabled = (req: any, res: any, next: any) => {
 export default defineMiddlewares({
   routes: [
     {
+      // Intuit signs the raw request bytes; webhook signature verification
+      // needs the original body, not a re-serialization of the parsed JSON.
+      matcher: "/webhooks/quickbooks",
+      method: ["POST"],
+      bodyParser: { preserveRawBody: true },
+    },
+    {
       matcher: "/admin/smart-import",
       method: "POST",
       middlewares: [upload.single("file")],
