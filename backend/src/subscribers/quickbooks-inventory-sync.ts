@@ -5,7 +5,6 @@ import type QuickbooksModuleService from "../modules/quickbooks/service"
 import {
   itemDisplayName,
   resolveItemKey,
-  variantOnHand,
 } from "../modules/quickbooks/mapping"
 import { pushQuantityToQbo } from "../modules/quickbooks/sync"
 
@@ -73,43 +72,50 @@ export default async function quickbooksInventorySync({
       return
     }
 
-    const { data: variants } = await query.graph({
-      entity: "variant",
+    // Query from the inventory side — variants can't be FILTERED across the
+    // module link in this version ("not existing property
+    // ProductVariant.inventory_items"), but inventory items can be filtered by
+    // id and expose their linked variants.
+    const { data: invItems } = await query.graph({
+      entity: "inventory_item",
       fields: [
         "id",
-        "title",
-        "sku",
-        "upc",
-        "barcode",
-        "product.title",
-        "inventory_items.inventory_item_id",
-        "inventory_items.inventory.location_levels.stocked_quantity",
+        "location_levels.stocked_quantity",
+        "variants.id",
+        "variants.title",
+        "variants.sku",
+        "variants.upc",
+        "variants.barcode",
+        "variants.product.title",
       ],
-      filters: {
-        inventory_items: { inventory_item_id: Array.from(itemIds) },
-      } as any,
+      filters: { id: Array.from(itemIds) },
     })
 
-    for (const variant of (variants as any[]) || []) {
-      const key = resolveItemKey(variant)
-      if (!key) continue
-      const qty = variantOnHand(variant)
-      // Old identifiers + display name let the push re-find and re-stamp the
-      // QBO item if the join key just changed (e.g. a UPC was added).
-      const fallbackKeys = [variant.barcode, variant.sku]
-        .map((k: any) => String(k || "").trim())
-        .filter((k: string) => k && k !== key)
-      const name = variant.product?.title
-        ? itemDisplayName(variant.product.title, variant.title)
-        : undefined
-      const res = await pushQuantityToQbo(qb, { key, qty, fallbackKeys, name })
-      await qb.logSync({
-        direction: "medusa_to_qbo",
-        sku: key,
-        qboItemId: res.qboItemId ?? null,
-        status: res.ok ? "success" : "needs_manual_review",
-        errorMessage: res.error ?? null,
-      })
+    for (const inv of (invItems as any[]) || []) {
+      const qty = (inv?.location_levels || []).reduce(
+        (sum: number, lvl: any) => sum + Number(lvl?.stocked_quantity ?? 0),
+        0
+      )
+      for (const variant of inv?.variants || []) {
+        const key = resolveItemKey(variant)
+        if (!key) continue
+        // Old identifiers + display name let the push re-find and re-stamp
+        // the QBO item if the join key just changed (e.g. a UPC was added).
+        const fallbackKeys = [variant.barcode, variant.sku]
+          .map((k: any) => String(k || "").trim())
+          .filter((k: string) => k && k !== key)
+        const name = variant.product?.title
+          ? itemDisplayName(variant.product.title, variant.title)
+          : undefined
+        const res = await pushQuantityToQbo(qb, { key, qty, fallbackKeys, name })
+        await qb.logSync({
+          direction: "medusa_to_qbo",
+          sku: key,
+          qboItemId: res.qboItemId ?? null,
+          status: res.ok ? "success" : "needs_manual_review",
+          errorMessage: res.error ?? null,
+        })
+      }
     }
   } catch (err: any) {
     await qb
