@@ -40,9 +40,12 @@ export default async function quickbooksCdcSweep(container: MedusaContainer) {
     // 6h look-back: tiny cost at this catalog's change volume (equality-skip
     // makes re-application a no-op) and makes window-miss impossible.
     const changedSince = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+    // Ask for changed Items AND changed InventoryAdjustments: QBO records a
+    // quantity change as an adjustment transaction, which may not bump the
+    // Item record itself — Item-only tracking can miss the one thing we sync.
     const res = await qboRequest<{ CDCResponse?: any[] }>(qb, {
       method: "GET",
-      path: `/cdc?entities=Item&changedSince=${encodeURIComponent(changedSince)}&minorversion=75`,
+      path: `/cdc?entities=Item,InventoryAdjustment&changedSince=${encodeURIComponent(changedSince)}&minorversion=75`,
     })
 
     const ids = new Set<string>()
@@ -51,6 +54,26 @@ export default async function quickbooksCdcSweep(container: MedusaContainer) {
         for (const it of qr?.Item || []) {
           if (it?.status === "Deleted") continue
           if (it?.Id) ids.add(String(it.Id))
+        }
+        for (const adj of qr?.InventoryAdjustment || []) {
+          if (adj?.status === "Deleted") continue
+          let lines = adj?.Line
+          if (!Array.isArray(lines) && adj?.Id) {
+            // Sparse CDC entry — fetch the adjustment to read its lines.
+            try {
+              const full = await qboRequest<any>(qb, {
+                method: "GET",
+                path: `/inventoryadjustment/${encodeURIComponent(String(adj.Id))}?minorversion=75`,
+              })
+              lines = full?.InventoryAdjustment?.Line
+            } catch {
+              lines = []
+            }
+          }
+          for (const ln of lines || []) {
+            const itemId = ln?.ItemAdjustmentLineDetail?.ItemRef?.value
+            if (itemId) ids.add(String(itemId))
+          }
         }
       }
     }
