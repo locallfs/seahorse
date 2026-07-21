@@ -138,7 +138,7 @@ export async function POST(req: any, res: any) {
       return null
     }
   })()
-  const logKnock = async (status: string, msg: string) => {
+  const logKnock = async (status: "success" | "failed", msg: string) => {
     await qbLog
       ?.logSync({
         direction: "qbo_to_medusa",
