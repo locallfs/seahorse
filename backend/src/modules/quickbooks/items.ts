@@ -228,25 +228,57 @@ export async function deactivateItem(
   })
 }
 
-// Sets an Inventory item's absolute quantity on hand via a sparse update.
-// QBO records the difference as an inventory adjustment. Verify against the
-// sandbox; if QBO rejects the sparse QtyOnHand write, switch to an
-// InventoryAdjustment transaction.
-export async function setItemQuantity(
+// Finds the account inventory adjustments post against — QBO's auto-created
+// "Inventory Shrinkage" account, falling back to any Cost of Goods Sold.
+export async function findAdjustmentAccountId(
+  service: QuickbooksModuleService
+): Promise<string> {
+  const res = await qboQuery<{ QueryResponse: { Account?: QboAccount[] } }>(
+    service,
+    "select Id, Name, AccountType, AccountSubType from Account where AccountType = 'Cost of Goods Sold' maxresults 200"
+  )
+  const accounts = res.QueryResponse?.Account || []
+  const shrinkage = accounts.find((a) => /shrinkage/i.test(a.Name))
+  const chosen = shrinkage || accounts[0]
+  if (!chosen) {
+    throw new Error(
+      "QuickBooks: no Cost of Goods Sold account found for inventory adjustments. Turn on inventory tracking first."
+    )
+  }
+  return chosen.Id
+}
+
+// Moves an Inventory item's on-hand by a delta via an InventoryAdjustment
+// transaction. QBO SILENTLY IGNORES QtyOnHand on Item updates after creation
+// (verified in production 2026-07-21) — this transaction is the only way.
+export async function createInventoryAdjustment(
   service: QuickbooksModuleService,
-  params: { itemId: string; syncToken: string; qtyOnHand: number }
-): Promise<QboItem> {
-  const res = await qboRequest<{ Item: QboItem }>(service, {
+  params: {
+    itemId: string
+    qtyDiff: number
+    adjustAccountId: string
+    note?: string
+  }
+): Promise<void> {
+  await qboRequest(service, {
     method: "POST",
-    path: "/item?minorversion=75",
+    path: "/inventoryadjustment?minorversion=75",
     body: {
-      Id: params.itemId,
-      SyncToken: params.syncToken,
-      sparse: true,
-      QtyOnHand: Math.max(0, Math.floor(params.qtyOnHand)),
+      DocNumber: `WS${Date.now().toString(36).toUpperCase()}`.slice(0, 21),
+      TxnDate: new Date().toISOString().slice(0, 10),
+      AdjustAccountRef: { value: params.adjustAccountId },
+      PrivateNote: params.note?.slice(0, 4000),
+      Line: [
+        {
+          DetailType: "ItemAdjustmentLineDetail",
+          ItemAdjustmentLineDetail: {
+            QtyDiff: params.qtyDiff,
+            ItemRef: { value: params.itemId },
+          },
+        },
+      ],
     },
   })
-  return res.Item
 }
 
 // Fetches a single item by its QBO Id (returns Sku, QtyOnHand, SyncToken).

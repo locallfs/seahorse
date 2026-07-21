@@ -1,8 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type QuickbooksModuleService from "./service"
-import { findItemBySku, findItemByName, updateItemSparse } from "./items"
+import {
+  createInventoryAdjustment,
+  findAdjustmentAccountId,
+  findItemBySku,
+  findItemByName,
+  updateItemSparse,
+} from "./items"
 
 const RETRY_DELAYS_MS = [1000, 5000, 30000]
+
+// QBO account ids are stable for the life of a company — cache the
+// adjustment account after the first lookup.
+let cachedAdjustAccountId: string | null = null
 
 // Pushes an absolute on-hand quantity to the matching QBO Inventory item,
 // retrying transient failures (1s → 5s → 30s). Returns the outcome so the
@@ -56,20 +66,30 @@ export async function pushQuantityToQbo(
       }
 
       const target = Math.max(0, Math.floor(params.qty))
-      const fields: Record<string, unknown> = {}
-      if (adopt) fields.Sku = params.key
-      if (!(typeof item.QtyOnHand === "number" && item.QtyOnHand === target)) {
+      const current = Math.max(0, Math.floor(Number(item.QtyOnHand ?? 0)))
+
+      if (adopt) {
+        // Re-stamp the item's Sku to the new join key (QtyOnHand can NOT ride
+        // along — QBO ignores it on updates; quantity moves via adjustment).
+        await updateItemSparse(qb, {
+          itemId: item.Id,
+          syncToken: item.SyncToken,
+          fields: { Sku: params.key },
+        })
+      }
+
+      if (current !== target) {
         // Only write when different so the two directions don't loop.
-        fields.QtyOnHand = target
+        if (!cachedAdjustAccountId) {
+          cachedAdjustAccountId = await findAdjustmentAccountId(qb)
+        }
+        await createInventoryAdjustment(qb, {
+          itemId: item.Id,
+          qtyDiff: target - current,
+          adjustAccountId: cachedAdjustAccountId,
+          note: `Auto-sync from store (${params.key})`,
+        })
       }
-      if (Object.keys(fields).length === 0) {
-        return { ok: true, qboItemId: item.Id } // already in sync
-      }
-      await updateItemSparse(qb, {
-        itemId: item.Id,
-        syncToken: item.SyncToken,
-        fields,
-      })
       return { ok: true, qboItemId: item.Id }
     } catch (err: any) {
       lastErr = err?.message || String(err)

@@ -3,8 +3,10 @@ import { ContainerRegistrationKeys } from "@medusajs/utils"
 import { QUICKBOOKS_MODULE } from "."
 import type QuickbooksModuleService from "./service"
 import {
+  createInventoryAdjustment,
   createInventoryItem,
   deactivateItem,
+  findAdjustmentAccountId,
   findInventoryAccounts,
   listAllActiveItems,
   updateItemSparse,
@@ -70,6 +72,7 @@ export async function seedInventoryItems(container: {
   }
 
   const matched = new Set<string>()
+  let adjustAccountId: string | null = null
   const r: SeedResult = {
     created: 0,
     updated: 0,
@@ -99,26 +102,43 @@ export async function seedInventoryItems(container: {
         if (existing) {
           matched.add(existing.Id)
           if (existing.Type === "Inventory") {
+            // Sku/Name/Price go through an Item update; quantity can NOT —
+            // QBO silently ignores QtyOnHand on updates, so quantity moves
+            // via an InventoryAdjustment transaction instead.
             const fields: Record<string, unknown> = {}
             if (String(existing.Sku || "").trim() !== key) fields.Sku = key
             if (existing.Name !== name) fields.Name = name
-            const exQty = Math.max(
-              0,
-              Math.floor(Number(existing.QtyOnHand ?? 0))
-            )
-            if (exQty !== qty) fields.QtyOnHand = qty
             if (
               price != null &&
               round2(Number(existing.UnitPrice ?? -1)) !== price
             ) {
               fields.UnitPrice = price
             }
+            let acted = false
             if (Object.keys(fields).length) {
               await updateItemSparse(qb, {
                 itemId: existing.Id,
                 syncToken: existing.SyncToken,
                 fields,
               })
+              acted = true
+            }
+            const exQty = Math.max(
+              0,
+              Math.floor(Number(existing.QtyOnHand ?? 0))
+            )
+            if (exQty !== qty) {
+              adjustAccountId =
+                adjustAccountId || (await findAdjustmentAccountId(qb))
+              await createInventoryAdjustment(qb, {
+                itemId: existing.Id,
+                qtyDiff: qty - exQty,
+                adjustAccountId,
+                note: `Master resync from store (${key})`,
+              })
+              acted = true
+            }
+            if (acted) {
               r.updated++
             } else {
               r.unchanged++
