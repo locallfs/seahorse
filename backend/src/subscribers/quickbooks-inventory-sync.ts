@@ -34,28 +34,41 @@ export default async function quickbooksInventorySync({
     const conn = await qb.getConnection()
     if (!conn) return
 
-    const data = event?.data || {}
-    let inventoryItemId: string | undefined =
-      data.inventory_item_id || data.inventory_item?.id
+    // Payload may be a single object or a batch; entries carry either the
+    // inventory_item_id directly or just the level's id.
+    const raw: any = event?.data || {}
+    const entries: any[] = Array.isArray(raw) ? raw : [raw]
+    const levelIds: string[] = []
+    const itemIds = new Set<string>()
+    for (const e of entries) {
+      if (e?.inventory_item_id) itemIds.add(String(e.inventory_item_id))
+      else if (e?.inventory_item?.id) itemIds.add(String(e.inventory_item.id))
+      else if (e?.id) levelIds.push(String(e.id))
+    }
 
-    // Fall back to looking up the level by id to find its inventory item.
-    if (!inventoryItemId && data.id) {
-      try {
-        const { data: levels } = await query.graph({
-          entity: "inventory_level",
-          fields: ["inventory_item_id"],
-          filters: { id: data.id },
-        })
-        inventoryItemId = levels?.[0]?.inventory_item_id
-      } catch {
-        // entity/field name may differ by version; verified at enable time.
+    // Resolve level ids → inventory item ids (alias name varies by version).
+    if (levelIds.length) {
+      for (const entity of ["inventory_level", "inventory_levels"]) {
+        try {
+          const { data: levels } = await query.graph({
+            entity,
+            fields: ["inventory_item_id"],
+            filters: { id: levelIds },
+          })
+          for (const lvl of (levels as any[]) || []) {
+            if (lvl?.inventory_item_id) itemIds.add(String(lvl.inventory_item_id))
+          }
+          if ((levels as any[])?.length) break
+        } catch {
+          // try the next alias
+        }
       }
     }
 
-    if (!inventoryItemId) {
+    if (!itemIds.size) {
       console.warn(
         "[qb-sync] could not resolve inventory_item_id from event:",
-        JSON.stringify(data).slice(0, 200)
+        JSON.stringify(raw).slice(0, 200)
       )
       return
     }
@@ -73,7 +86,7 @@ export default async function quickbooksInventorySync({
         "inventory_items.inventory.location_levels.stocked_quantity",
       ],
       filters: {
-        inventory_items: { inventory_item_id: inventoryItemId },
+        inventory_items: { inventory_item_id: Array.from(itemIds) },
       } as any,
     })
 
@@ -109,4 +122,13 @@ export default async function quickbooksInventorySync({
   }
 }
 
-export const config = { event: "inventory-level.updated" }
+// The installed Medusa version namespaces module events (InventoryEvents in
+// @medusajs/utils): "inventory.inventory-level.updated", not the bare
+// "inventory-level.updated". Also listen for created — the first stock entry
+// on a product creates its level rather than updating one.
+export const config = {
+  event: [
+    "inventory.inventory-level.updated",
+    "inventory.inventory-level.created",
+  ],
+}
