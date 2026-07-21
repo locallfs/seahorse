@@ -27,7 +27,12 @@ export async function qboRequest<T = any>(
   const text = await res.text()
   if (!res.ok) {
     const snippet = text.slice(0, 500)
-    throw new Error(`QBO ${opts.method || "GET"} ${opts.path} → ${res.status}: ${snippet}`)
+    // intuit_tid is Intuit's per-request trace id; including it in the error
+    // (and thus every sync log entry) lets Intuit support locate the request.
+    const tid = res.headers.get("intuit_tid")
+    throw new Error(
+      `QBO ${opts.method || "GET"} ${opts.path} → ${res.status}${tid ? ` [intuit_tid ${tid}]` : ""}: ${snippet}`
+    )
   }
   try {
     return JSON.parse(text) as T
