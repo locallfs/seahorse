@@ -13,6 +13,10 @@ import { applyQboItemToStore } from "../modules/quickbooks/apply-item"
 // applyQboItemToStore). This guarantees QBO→store sync even while Intuit's
 // webhook delivery is broken; webhooks remain the instant path when they work.
 // Requires MEDUSA_WORKER_MODE=shared (or worker) to run.
+// One heartbeat row per server boot so "is the sweeper alive?" is answerable
+// from the sync log without server access.
+let announced = false
+
 export default async function quickbooksCdcSweep(container: MedusaContainer) {
   if (process.env.QUICKBOOKS_SYNC_ENABLED !== "true") return
 
@@ -21,7 +25,19 @@ export default async function quickbooksCdcSweep(container: MedusaContainer) {
     const conn = await qb.getConnection()
     if (!conn) return
 
-    const changedSince = new Date(Date.now() - 20 * 60 * 1000).toISOString()
+    if (!announced) {
+      announced = true
+      await qb
+        .logSync({
+          direction: "qbo_to_medusa",
+          entityType: "cdc",
+          sku: "cdc sweeper online",
+          status: "success",
+        })
+        .catch(() => {})
+    }
+
+    const changedSince = new Date(Date.now() - 45 * 60 * 1000).toISOString()
     const res = await qboRequest<{ CDCResponse?: any[] }>(qb, {
       method: "GET",
       path: `/cdc?entities=Item&changedSince=${encodeURIComponent(changedSince)}&minorversion=75`,
