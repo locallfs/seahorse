@@ -22,6 +22,37 @@ function verifySignature(
   return a.length === b.length && crypto.timingSafeEqual(a, b)
 }
 
+// Collects QBO Item ids from either webhook payload shape:
+// - Legacy: {eventNotifications:[{realmId, dataChangeEvent:{entities:[{name,id,operation}]}}]}
+// - CloudEvents (mandatory after 2026-07-31): [{type:"qbo.item.updated.v1",
+//   intuitentityid, intuitaccountid, ...}]
+// Skips deletes and events for other QBO companies.
+function collectItemIds(payload: any, realmId: string | null): string[] {
+  const ids: string[] = []
+  if (Array.isArray(payload)) {
+    for (const ev of payload) {
+      const [ns, entity, op] = String(ev?.type || "")
+        .toLowerCase()
+        .split(".")
+      if (ns !== "qbo" || entity !== "item") continue
+      if (op === "deleted") continue
+      if (realmId && ev?.intuitaccountid && String(ev.intuitaccountid) !== realmId)
+        continue
+      if (ev?.intuitentityid) ids.push(String(ev.intuitentityid))
+    }
+  } else {
+    for (const note of payload?.eventNotifications || []) {
+      if (realmId && note?.realmId && String(note.realmId) !== realmId) continue
+      for (const ent of note?.dataChangeEvent?.entities || []) {
+        if (ent?.name !== "Item") continue
+        if (ent?.operation === "Delete") continue
+        if (ent?.id) ids.push(String(ent.id))
+      }
+    }
+  }
+  return Array.from(new Set(ids))
+}
+
 async function applyItemChange(
   qb: QuickbooksModuleService,
   query: any,
@@ -126,12 +157,12 @@ export async function POST(req: any, res: any) {
       payload = req.body || {}
     }
 
-    for (const note of payload.eventNotifications || []) {
-      for (const ent of note?.dataChangeEvent?.entities || []) {
-        if (ent?.name !== "Item") continue
-        if (ent?.operation === "Delete") continue
-        await applyItemChange(qb, query, inventory, String(ent.id))
-      }
+    const itemIds = collectItemIds(
+      payload,
+      conn.realm_id ? String(conn.realm_id) : null
+    )
+    for (const id of itemIds) {
+      await applyItemChange(qb, query, inventory, id)
     }
     console.log("[qb-webhook] end")
     return res.sendStatus(200)
