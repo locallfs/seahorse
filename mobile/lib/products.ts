@@ -311,7 +311,11 @@ export async function listOrganizeOptions(): Promise<OrganizeOptions> {
     }
   }
   return {
-    tags: ((tagsRes as any).product_tags || []).map((t: any) => ({ id: t.id, label: t.value })),
+    tags: ((tagsRes as any).product_tags || [])
+      .map((t: any) => ({ id: t.id, label: t.value }))
+      .sort((a: OrganizeOption, b: OrganizeOption) =>
+        a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }),
+      ),
     types: ((typesRes as any).product_types || []).map((t: any) => ({ id: t.id, label: t.value })),
     collections: ((collectionsRes as any).collections || []).map((c: any) => ({ id: c.id, label: c.title })),
     categories: categoryRows.map((c: any) => ({ id: c.id, label: c.name })),
