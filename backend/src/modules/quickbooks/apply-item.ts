@@ -12,7 +12,24 @@ export async function applyQboItemToStore(
   qboItemId: string
 ): Promise<void> {
   const item = await getItemById(qb, qboItemId)
-  if (!item || !item.Sku) return
+  if (!item) {
+    await qb.logSync({
+      direction: "qbo_to_medusa",
+      qboItemId,
+      status: "needs_manual_review",
+      errorMessage: `QBO item ${qboItemId} not found`,
+    })
+    return
+  }
+  if (!item.Sku || !String(item.Sku).trim()) {
+    await qb.logSync({
+      direction: "qbo_to_medusa",
+      qboItemId,
+      status: "needs_manual_review",
+      errorMessage: `QBO item "${item.Name}" (${qboItemId}) has no SKU/barcode to match by — run Resync all`,
+    })
+    return
+  }
   const key = String(item.Sku).trim()
   const qty = Math.max(0, Math.floor(Number(item.QtyOnHand ?? 0)))
 
@@ -47,8 +64,10 @@ export async function applyQboItemToStore(
     location_id: string
     stocked_quantity: number
   }[] = []
+  let levelsSeen = 0
   for (const ii of variant.inventory_items || []) {
     for (const lvl of ii?.inventory?.location_levels || []) {
+      levelsSeen++
       const current = Number(lvl?.stocked_quantity ?? 0)
       if (current === qty) continue // already in sync — skip to avoid a loop
       updates.push({
@@ -59,7 +78,18 @@ export async function applyQboItemToStore(
     }
   }
 
-  if (updates.length === 0) return // nothing changed
+  if (levelsSeen === 0) {
+    await qb.logSync({
+      direction: "qbo_to_medusa",
+      sku: key,
+      qboItemId,
+      status: "needs_manual_review",
+      errorMessage:
+        "Store product has no stock level record to write to (no location level found)",
+    })
+    return
+  }
+  if (updates.length === 0) return // already equal everywhere — normal no-op
   await inventory.updateInventoryLevels(updates)
   await qb.logSync({
     direction: "qbo_to_medusa",
