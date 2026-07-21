@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MedusaContainer } from "@medusajs/types"
-import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
 import { QUICKBOOKS_MODULE } from "../modules/quickbooks"
 import type QuickbooksModuleService from "../modules/quickbooks/service"
 import { qboRequest } from "../modules/quickbooks/qbo-client"
@@ -110,10 +109,8 @@ export default async function quickbooksCdcSweep(container: MedusaContainer) {
     if (ids.size === 0) return // quiet cycle — don't spam the log
 
     console.log(`[qb-cdc] ${ids.size} changed item(s)`)
-    const query = container.resolve(ContainerRegistrationKeys.QUERY)
-    const inventory = container.resolve(Modules.INVENTORY)
     for (const id of ids) {
-      await applyQboItemToStore(qb, query, inventory, id)
+      await applyQboItemToStore(qb, container, id)
     }
   } catch (err: any) {
     await qb

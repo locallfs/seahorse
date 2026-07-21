@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from "crypto"
-import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
 import { QUICKBOOKS_MODULE } from "../../../modules/quickbooks"
 import type QuickbooksModuleService from "../../../modules/quickbooks/service"
 import { applyQboItemToStore } from "../../../modules/quickbooks/apply-item"
@@ -104,8 +103,6 @@ export async function POST(req: any, res: any) {
   }
 
   const qb = req.scope.resolve(QUICKBOOKS_MODULE) as QuickbooksModuleService
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-  const inventory = req.scope.resolve(Modules.INVENTORY)
 
   try {
     const conn = await qb.getConnection()
@@ -123,7 +120,7 @@ export async function POST(req: any, res: any) {
       conn.realm_id ? String(conn.realm_id) : null
     )
     for (const id of itemIds) {
-      await applyQboItemToStore(qb, query, inventory, id)
+      await applyQboItemToStore(qb, req.scope, id)
     }
     console.log("[qb-webhook] end")
     return res.sendStatus(200)
