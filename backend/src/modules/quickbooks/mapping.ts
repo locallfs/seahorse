@@ -12,6 +12,21 @@ export function resolveItemKey(variant: {
   return (variant?.upc || variant?.barcode || variant?.sku || "").trim()
 }
 
+// The item's display name in QuickBooks: "Product — Variant", except when the
+// variant is the auto-generated default. QBO caps names at 100 chars; both the
+// seed and the by-name fallback matching rely on this exact rule.
+export function itemDisplayName(
+  productTitle: string,
+  variantTitle?: string | null
+): string {
+  const vt =
+    variantTitle && variantTitle !== "Default variant" && variantTitle !== "Default"
+      ? variantTitle
+      : null
+  const name = vt ? `${productTitle} — ${vt}` : productTitle
+  return name.slice(0, 100)
+}
+
 // Sums a variant's on-hand quantity across its inventory items and stock
 // locations, from a query.graph result that included
 // variants.inventory_items.inventory.location_levels.stocked_quantity.

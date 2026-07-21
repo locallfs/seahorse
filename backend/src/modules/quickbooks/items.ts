@@ -15,6 +15,8 @@ export interface QboItem {
   Type: "Service" | "Inventory" | "NonInventory"
   SyncToken: string
   QtyOnHand?: number
+  UnitPrice?: number
+  Active?: boolean
   IncomeAccountRef?: { value: string; name?: string }
 }
 
@@ -158,6 +160,72 @@ export async function createInventoryItem(
     body,
   })
   return res.Item
+}
+
+// Finds an active item by exact display name (used as the self-heal fallback
+// when a variant's join key changed, e.g. a UPC was added over an old SKU).
+export async function findItemByName(
+  service: QuickbooksModuleService,
+  name: string
+): Promise<QboItem | null> {
+  const escaped = name.replace(/'/g, "''")
+  const res = await qboQuery<{ QueryResponse: { Item?: QboItem[] } }>(
+    service,
+    `select Id, Name, Sku, Type, SyncToken, QtyOnHand, UnitPrice from Item where Name = '${escaped}' maxresults 1`
+  )
+  return res.QueryResponse?.Item?.[0] || null
+}
+
+// Pages through every active item in the QBO company (query API caps at 1000
+// per page). Used by the master resync to diff QBO against the store catalog.
+export async function listAllActiveItems(
+  service: QuickbooksModuleService
+): Promise<QboItem[]> {
+  const out: QboItem[] = []
+  const page = 1000
+  let start = 1
+  while (true) {
+    const res = await qboQuery<{ QueryResponse: { Item?: QboItem[] } }>(
+      service,
+      `select Id, Name, Sku, Type, SyncToken, QtyOnHand, UnitPrice from Item where Active = true startposition ${start} maxresults ${page}`
+    )
+    const items = res.QueryResponse?.Item || []
+    out.push(...items)
+    if (items.length < page) break
+    start += page
+  }
+  return out
+}
+
+// Sparse-updates arbitrary fields on an item (Sku, Name, QtyOnHand, UnitPrice…).
+export async function updateItemSparse(
+  service: QuickbooksModuleService,
+  params: { itemId: string; syncToken: string; fields: Record<string, unknown> }
+): Promise<QboItem> {
+  const res = await qboRequest<{ Item: QboItem }>(service, {
+    method: "POST",
+    path: "/item?minorversion=75",
+    body: {
+      Id: params.itemId,
+      SyncToken: params.syncToken,
+      sparse: true,
+      ...params.fields,
+    },
+  })
+  return res.Item
+}
+
+// Retires an item. QBO never hard-deletes: it marks the item inactive and
+// appends "(deleted)" to its name, which also frees the name for reuse.
+export async function deactivateItem(
+  service: QuickbooksModuleService,
+  params: { itemId: string; syncToken: string }
+): Promise<QboItem> {
+  return updateItemSparse(service, {
+    itemId: params.itemId,
+    syncToken: params.syncToken,
+    fields: { Active: false },
+  })
 }
 
 // Sets an Inventory item's absolute quantity on hand via a sparse update.

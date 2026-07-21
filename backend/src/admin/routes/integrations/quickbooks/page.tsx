@@ -121,7 +121,7 @@ const QuickbooksPage = () => {
   const resync = async () => {
     if (
       !confirm(
-        "Push all products to QuickBooks now? Creates any missing Inventory items with current stock. Safe to run repeatedly."
+        "Push the store catalog to QuickBooks as the MASTER list? Matching QuickBooks items are overwritten (stock, price, name, barcode), missing ones are created, and product items not on the site are retired (recoverable). Service items are never touched. Safe to re-run."
       )
     )
       return
@@ -135,7 +135,7 @@ const QuickbooksPage = () => {
       const data = await res.json()
       const r = data.result || {}
       toast.success(
-        `Resync done — created ${r.created}, existed ${r.existed}, failed ${r.failed}`
+        `Resync done — created ${r.created}, overwritten ${r.updated}, converted ${r.converted}, retired ${r.retired}, failed ${r.failed}`
       )
       await loadStatus()
     } catch (err: any) {

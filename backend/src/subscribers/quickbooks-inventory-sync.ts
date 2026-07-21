@@ -2,7 +2,11 @@
 import { ContainerRegistrationKeys } from "@medusajs/utils"
 import { QUICKBOOKS_MODULE } from "../modules/quickbooks"
 import type QuickbooksModuleService from "../modules/quickbooks/service"
-import { resolveItemKey, variantOnHand } from "../modules/quickbooks/mapping"
+import {
+  itemDisplayName,
+  resolveItemKey,
+  variantOnHand,
+} from "../modules/quickbooks/mapping"
 import { pushQuantityToQbo } from "../modules/quickbooks/sync"
 
 type SubscriberArgs = {
@@ -60,9 +64,11 @@ export default async function quickbooksInventorySync({
       entity: "variant",
       fields: [
         "id",
+        "title",
         "sku",
         "upc",
         "barcode",
+        "product.title",
         "inventory_items.inventory_item_id",
         "inventory_items.inventory.location_levels.stocked_quantity",
       ],
@@ -75,7 +81,15 @@ export default async function quickbooksInventorySync({
       const key = resolveItemKey(variant)
       if (!key) continue
       const qty = variantOnHand(variant)
-      const res = await pushQuantityToQbo(qb, { key, qty })
+      // Old identifiers + display name let the push re-find and re-stamp the
+      // QBO item if the join key just changed (e.g. a UPC was added).
+      const fallbackKeys = [variant.barcode, variant.sku]
+        .map((k: any) => String(k || "").trim())
+        .filter((k: string) => k && k !== key)
+      const name = variant.product?.title
+        ? itemDisplayName(variant.product.title, variant.title)
+        : undefined
+      const res = await pushQuantityToQbo(qb, { key, qty, fallbackKeys, name })
       await qb.logSync({
         direction: "medusa_to_qbo",
         sku: key,
