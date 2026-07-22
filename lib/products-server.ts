@@ -3,7 +3,7 @@ const BACKEND_URL =
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "";
 
 const PRODUCT_FIELDS =
-  "id,handle,title,description,thumbnail,metadata,*images,*options,*variants,*variants.calculated_price,*variants.options,*categories,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder";
+  "id,handle,title,description,thumbnail,metadata,*images,*options,*variants,*variants.calculated_price,*variants.options,*categories,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder,variants.upc,variants.barcode";
 
 type RegionsResponse = {
   regions?: { id: string }[];
@@ -13,6 +13,8 @@ type Variant = {
   id: string;
   title: string;
   sku?: string | null;
+  upc?: string | null;
+  barcode?: string | null;
   calculated_price?: {
     calculated_amount: number;
     currency_code: string;

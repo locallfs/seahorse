@@ -35,19 +35,33 @@ export async function generateMetadata({
   };
 }
 
+// A GTIN Google will accept: the digits of a real scanned UPC/EAN barcode.
+function gtinOf(v: { upc?: string | null; barcode?: string | null }): string | undefined {
+  const raw = (v.upc || v.barcode || "").trim();
+  return /^\d{8}$|^\d{12,14}$/.test(raw) ? raw : undefined;
+}
+
 function buildProductSchema(product: StoreProduct) {
   const offers = product.variants
     .filter((v) => v.calculated_price)
     .map((v) => {
       const price = v.calculated_price!;
+      // Truthful stock status: untracked or backorderable counts as available.
+      const inStock =
+        v.manage_inventory === false ||
+        v.allow_backorder === true ||
+        (v.inventory_quantity ?? 0) > 0;
       return {
         "@type": "Offer",
         url: `${SITE_URL}/products/${product.handle}`,
         price: price.calculated_amount.toFixed(2),
         priceCurrency: price.currency_code.toUpperCase(),
-        availability: "https://schema.org/InStock",
+        availability: inStock
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
         itemCondition: "https://schema.org/NewCondition",
         sku: v.sku ?? undefined,
+        gtin: gtinOf(v),
         seller: { "@type": "Organization", name: "Woody's Seahorse Aquarium & Supply" },
       };
     });

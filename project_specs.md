@@ -614,3 +614,24 @@ Free tiers have daily / per-minute limits. Fine for the store's volume; a big tr
 - Common store questions (shipping, returns, hours, location, care) are answered.
 - Off-topic questions get a friendly redirect, and the bot never invents stock or order info.
 - The AI key is not exposed in the browser, `npm run build` passes, and there are no console errors.
+
+## Google Product Visibility (Phase 6)
+
+**Goal:** When someone searches Google for a fish, coral, or supply we carry, our product shows in the results.
+
+**Already in place (verified):** Product + Breadcrumb JSON-LD on every product page, canonical URLs, OpenGraph, sitemap.xml including every product.
+
+**A. Merchant Center product feed (code)**
+- New route: `GET /api/merchant-feed` — Google Shopping RSS 2.0 XML.
+- **Supplies only.** Live animals (fish/corals/inverts) are excluded — Google suspends Merchant accounts for live animals in feeds (documented cases). Filter: products in the `supplies` category.
+- Fields per item: `g:id` (variant SKU), `g:title`, `g:description`, `g:link` (product URL), `g:image_link`, `g:price` (USD), `g:availability` from real stock, `g:condition` new, `g:brand`, `g:gtin` when the variant has a scanned UPC else `g:identifier_exists=false`, `g:google_product_category` = Animals & Pet Supplies > Pet Supplies > Fish Supplies.
+- Cached ~1h; served from the storefront (Vercel).
+
+**B. Truthful availability in product JSON-LD (code)**
+- Product-page schema currently hardcodes `InStock`. Use real variant stock: `InStock` / `OutOfStock` (Google penalizes mismatches).
+
+**C. User-run steps (walked through)**
+1. Google Search Console: verify www.seahorseaquariumsupply.com, submit /sitemap.xml → all products (fish included) become indexable in regular Google Search. This is the path for livestock searches.
+2. Google Merchant Center: create free account, add feed URL → supplies appear in Google Shopping free listings.
+
+**Done means:** feed URL validates in Merchant Center with 0 errors; a supply product appears in the Shopping tab; Search Console shows the sitemap accepted; product pages pass Google's Rich Results test with correct availability.
