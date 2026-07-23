@@ -70,10 +70,15 @@ export async function applyQboItemToStore(
     .map((r: any) => r.inventory_item_id)
     .filter(Boolean)
 
-  let levels: { inventory_item_id: string; location_id: string; stocked_quantity: number }[] = []
+  let levels: {
+    inventory_item_id: string
+    location_id: string
+    stocked_quantity: number
+    updated_at?: string | Date
+  }[] = []
   if (invItemIds.length) {
     const lvlRes = await pg.raw(
-      `select inventory_item_id, location_id, stocked_quantity from inventory_level
+      `select inventory_item_id, location_id, stocked_quantity, updated_at from inventory_level
        where inventory_item_id = any(?) and deleted_at is null`,
       [invItemIds]
     )
@@ -101,6 +106,21 @@ export async function applyQboItemToStore(
     }))
 
   if (updates.length === 0) return // already equal everywhere — normal no-op
+
+  // LAST-WRITE-WINS: if the store's stock record was touched more recently
+  // than the QuickBooks item changed, the store's number is newer — never
+  // shove an older QBO value over a fresh store edit (this reverted staff
+  // edits whenever a store→QBO push had failed, e.g. on rate limits).
+  const qboChangedAt = Date.parse(item.MetaData?.LastUpdatedTime ?? "")
+  const storeTouchedAt = Math.max(
+    ...levels.map((l) => new Date(l.updated_at ?? 0).getTime() || 0)
+  )
+  if (qboChangedAt > 0 && storeTouchedAt > qboChangedAt) {
+    console.log(
+      `[qb-apply] store newer than QBO for ${key} — keeping store value`
+    )
+    return
+  }
 
   await inventory.updateInventoryLevels(updates)
   await qb.logSync({

@@ -38,13 +38,14 @@ export default async function quickbooksCdcSweep(container: MedusaContainer) {
         .catch(() => {})
     }
 
-    // 6h look-back: tiny cost at this catalog's change volume (equality-skip
-    // makes re-application a no-op) and makes window-miss impossible.
+    // 30-min look-back (was 6h during debugging — that magnified post-resync
+    // echo storms). Overlaps the 5-min cadence 6×; equality-skip and
+    // last-write-wins in the applier make re-application a no-op.
     // QBO's docs use explicit-offset ISO timestamps ("...T10:00:00-07:00");
     // avoid the "Z" suffix and milliseconds in case they're misparsed as
     // company-local time (which would silently empty every response).
     const changedSince =
-      new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 19) +
+      new Date(Date.now() - 30 * 60 * 1000).toISOString().slice(0, 19) +
       "+00:00"
     // Ask for changed Items AND changed InventoryAdjustments: QBO records a
     // quantity change as an adjustment transaction, which may not bump the

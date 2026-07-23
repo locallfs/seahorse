@@ -18,6 +18,7 @@ export interface QboItem {
   UnitPrice?: number
   Active?: boolean
   IncomeAccountRef?: { value: string; name?: string }
+  MetaData?: { CreateTime?: string; LastUpdatedTime?: string }
 }
 
 export interface QboAccountRefs {
