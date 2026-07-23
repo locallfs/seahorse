@@ -21,6 +21,7 @@ import {
   COUNTRY_OF_ORIGIN,
   deriveTypeKeyFromCategories,
   EMPTY_PADS,
+  ensureVariantInventory,
   getStoreDefaults,
   hasNewArrivalCategory,
   isLiveType,
@@ -273,29 +274,31 @@ export default function ProductEditScreen() {
 
       if (manageInventory && !Number.isNaN(nextStock) && variant) {
         const link = variant.inventory_items?.[0];
-        const inventoryId = link?.inventory?.id;
+        // Heal instead of silently skipping: a product born without a stock
+        // record gets one created here, so the number always sticks.
+        const inventoryId =
+          link?.inventory?.id ??
+          (await ensureVariantInventory(id, variant.id, null));
         const existingLevel = link?.inventory?.location_levels?.[0];
-        if (inventoryId) {
-          if (existingLevel?.location_id) {
-            await sdk.admin.inventoryItem.updateLevel(inventoryId, existingLevel.location_id, {
-              stocked_quantity: nextStock,
-            });
-          } else {
-            const defaults = await getStoreDefaults();
-            if (!defaults.stockLocationId) {
-              throw new Error(
-                'No stock location exists. Open Medusa admin → Settings → Locations and add one.'
-              );
-            }
-            await sdk.admin.inventoryItem.batchUpdateLevels(inventoryId, {
-              create: [
-                {
-                  location_id: defaults.stockLocationId,
-                  stocked_quantity: nextStock,
-                },
-              ],
-            });
+        if (existingLevel?.location_id) {
+          await sdk.admin.inventoryItem.updateLevel(inventoryId, existingLevel.location_id, {
+            stocked_quantity: nextStock,
+          });
+        } else {
+          const defaults = await getStoreDefaults();
+          if (!defaults.stockLocationId) {
+            throw new Error(
+              'No stock location exists. Open Medusa admin → Settings → Locations and add one.'
+            );
           }
+          await sdk.admin.inventoryItem.batchUpdateLevels(inventoryId, {
+            create: [
+              {
+                location_id: defaults.stockLocationId,
+                stocked_quantity: nextStock,
+              },
+            ],
+          });
         }
       }
 

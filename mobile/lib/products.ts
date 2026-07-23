@@ -375,6 +375,37 @@ function resolveTypeCategoryIds(
   return ids;
 }
 
+// Makes sure a variant has an inventory item + link, creating them if absent
+// (products born without one can never hold stock — saves silently no-op).
+// Returns the inventory item id.
+export async function ensureVariantInventory(
+  productId: string,
+  variantId: string,
+  sku?: string | null,
+): Promise<string> {
+  const { product } = await sdk.admin.product.retrieve(productId, {
+    fields: '*variants.inventory_items',
+  } as any);
+  const variant = (product as any).variants?.find((v: any) => v.id === variantId);
+  const link = variant?.inventory_items?.[0];
+  const existingId = link?.inventory?.id || link?.inventory_item_id;
+  if (existingId) return existingId;
+
+  const { inventory_item } = (await sdk.admin.inventoryItem.create({
+    sku: sku || undefined,
+  } as any)) as any;
+  await sdk.admin.product.batchVariantInventoryItems(productId, {
+    create: [
+      {
+        variant_id: variantId,
+        inventory_item_id: inventory_item.id,
+        required_quantity: 1,
+      },
+    ],
+  } as any);
+  return inventory_item.id as string;
+}
+
 export async function createProduct(input: NewProductInput): Promise<string> {
   const defaults = await getStoreDefaults();
 
@@ -440,25 +471,25 @@ export async function createProduct(input: NewProductInput): Promise<string> {
 
   const { product } = await sdk.admin.product.create(payload);
 
-  if (input.manageInventory && input.stock > 0 && defaults.stockLocationId) {
-    const { product: full } = await sdk.admin.product.retrieve(product.id, {
-      fields: '*variants.inventory_items',
-    } as any);
-    const link = (full as any).variants?.[0]?.inventory_items?.[0];
-    const inventoryId = link?.inventory?.id || link?.inventory_item_id;
-    if (inventoryId) {
-      try {
-        await sdk.admin.inventoryItem.batchUpdateLevels(inventoryId, {
-          create: [
-            {
-              location_id: defaults.stockLocationId,
-              stocked_quantity: input.stock,
-            },
-          ],
-        });
-      } catch (err) {
-        console.warn('Could not set initial stock level.', err);
-      }
+  // Every tracked product gets a stock record at birth — even at 0 — so
+  // stock edits (app, admin, QuickBooks sync) always have somewhere to land.
+  if (input.manageInventory) {
+    if (!defaults.stockLocationId) {
+      throw new Error(
+        'Product created, but no stock location exists to attach inventory. Open Medusa admin → Settings → Locations.'
+      );
+    }
+    const variantId = (product as any).variants?.[0]?.id;
+    if (variantId) {
+      const inventoryId = await ensureVariantInventory(product.id, variantId);
+      await sdk.admin.inventoryItem.batchUpdateLevels(inventoryId, {
+        create: [
+          {
+            location_id: defaults.stockLocationId,
+            stocked_quantity: Math.max(0, input.stock),
+          },
+        ],
+      });
     }
   }
 
