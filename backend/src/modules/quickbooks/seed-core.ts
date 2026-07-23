@@ -18,7 +18,6 @@ export type SeedResult = {
   created: number
   updated: number
   converted: number
-  retired: number
   unchanged: number
   skipped: number
   failed: number
@@ -27,15 +26,15 @@ export type SeedResult = {
 const norm = (s: string) => s.trim().toLowerCase()
 const round2 = (n: number) => Math.round(n * 100) / 100
 
-// MASTER-LIST resync: the store catalog overwrites QuickBooks.
+// MASTER-FOR-MATCHES resync: the store catalog overwrites the QBO items it
+// matches, and creates the ones it's missing. Items that exist only in
+// QuickBooks are NEVER touched (owner-approved 2026-07-23 after a retire
+// step wiped 680 owner-added items — retirement is permanently removed).
 // - Store variant matches a QBO item (by join key, else by display name):
 //   - Inventory item → overwrite Sku/Name/QtyOnHand/UnitPrice to store values
-//   - Service/NonInventory item → retire it (QBO frees the name) and recreate
-//     as an Inventory item, since only Inventory items can hold stock
+//   - Service/NonInventory item → retire that matched item (QBO frees the
+//     name) and recreate as Inventory, since only Inventory items hold stock
 // - No match → create a new Inventory item with the store's current stock
-// - QBO product items (Inventory/NonInventory) with no store counterpart →
-//   retired (marked inactive; reversible in QBO). Service items are NEVER
-//   touched — invoiced services like maintenance stay as they are.
 // Shared by the seed script and the admin "Resync all" button. Idempotent.
 export async function seedInventoryItems(container: {
   resolve: (k: string) => any
@@ -71,13 +70,11 @@ export async function seedInventoryItems(container: {
     byName.set(norm(it.Name), it)
   }
 
-  const matched = new Set<string>()
   let adjustAccountId: string | null = null
   const r: SeedResult = {
     created: 0,
     updated: 0,
     converted: 0,
-    retired: 0,
     unchanged: 0,
     skipped: 0,
     failed: 0,
@@ -100,7 +97,6 @@ export async function seedInventoryItems(container: {
       const existing = bySku.get(norm(key)) || byName.get(norm(name))
       try {
         if (existing) {
-          matched.add(existing.Id)
           if (existing.Type === "Inventory") {
             // Sku/Name/Price go through an Item update; quantity can NOT —
             // QBO silently ignores QtyOnHand on updates, so quantity moves
@@ -188,26 +184,9 @@ export async function seedInventoryItems(container: {
     }
   }
 
-  // Store is master: retire product items QBO has that the site doesn't.
-  for (const it of all) {
-    if (matched.has(it.Id)) continue
-    if (it.Type !== "Inventory" && it.Type !== "NonInventory") continue
-    try {
-      await deactivateItem(qb, { itemId: it.Id, syncToken: it.SyncToken })
-      r.retired++
-    } catch (err: any) {
-      r.failed++
-      await qb
-        .logSync({
-          direction: "medusa_to_qbo",
-          entityType: "resync",
-          sku: it.Sku || it.Name,
-          status: "failed",
-          errorMessage: `Retire failed: ${err?.message}`,
-        })
-        .catch(() => {})
-    }
-  }
+  // NOTE (2026-07-23, owner-approved change): resync NEVER retires QBO items
+  // anymore. Items added directly in QuickBooks are left completely alone —
+  // a prior retire step here wiped 680 owner-added items and is removed.
 
   // One summary row so the page's activity list + "Last successful sync"
   // reflect the run (counts also land in the server logs).
@@ -215,7 +194,7 @@ export async function seedInventoryItems(container: {
     .logSync({
       direction: "medusa_to_qbo",
       entityType: "resync",
-      sku: `resync: ${r.created} created, ${r.updated} overwritten, ${r.converted} converted, ${r.retired} retired, ${r.failed} failed`,
+      sku: `resync: ${r.created} created, ${r.updated} overwritten, ${r.converted} converted, ${r.failed} failed`,
       status: r.failed > 0 ? "needs_manual_review" : "success",
     })
     .catch(() => {})
