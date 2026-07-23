@@ -1,6 +1,7 @@
 import { MedusaService } from "@medusajs/utils"
 import { QuickbooksConnection } from "./models/connection"
 import { QuickbooksSyncLog } from "./models/sync-log"
+import { QuickbooksItemMap } from "./models/item-map"
 import { encrypt, decrypt } from "./crypto"
 import {
   exchangeCodeForTokens,
@@ -12,7 +13,38 @@ import {
 class QuickbooksModuleService extends MedusaService({
   QuickbooksConnection,
   QuickbooksSyncLog,
+  QuickbooksItemMap,
 }) {
+  // ---- variant ↔ QBO item ledger (survives SKU→UPC replacement) ----
+
+  async mapVariantToQboItem(variantId: string, qboItemId: string): Promise<void> {
+    if (!variantId || !qboItemId) return
+    const existing = await this.listQuickbooksItemMaps({ variant_id: variantId })
+    if (existing.length > 0) {
+      if (existing[0].qbo_item_id !== qboItemId) {
+        await this.updateQuickbooksItemMaps({
+          id: existing[0].id,
+          qbo_item_id: qboItemId,
+        })
+      }
+      return
+    }
+    await this.createQuickbooksItemMaps({
+      variant_id: variantId,
+      qbo_item_id: qboItemId,
+    })
+  }
+
+  async qboItemIdForVariant(variantId: string): Promise<string | null> {
+    const rows = await this.listQuickbooksItemMaps({ variant_id: variantId })
+    return rows.length ? rows[0].qbo_item_id : null
+  }
+
+  async variantIdForQboItem(qboItemId: string): Promise<string | null> {
+    const rows = await this.listQuickbooksItemMaps({ qbo_item_id: qboItemId })
+    return rows.length ? rows[0].variant_id : null
+  }
+
   async saveTokens(params: {
     realmId: string
     tokens: TokenResponse

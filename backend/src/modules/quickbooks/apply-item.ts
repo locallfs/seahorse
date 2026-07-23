@@ -21,44 +21,37 @@ export async function applyQboItemToStore(
   const pg = scope.resolve(ContainerRegistrationKeys.PG_CONNECTION)
 
   const item = await getItemById(qb, qboItemId)
-  if (!item) {
-    await qb.logSync({
-      direction: "qbo_to_medusa",
-      qboItemId,
-      status: "needs_manual_review",
-      errorMessage: `QBO item ${qboItemId} not found`,
-    })
-    return
-  }
-  if (!item.Sku || !String(item.Sku).trim()) {
-    await qb.logSync({
-      direction: "qbo_to_medusa",
-      qboItemId,
-      status: "needs_manual_review",
-      errorMessage: `QBO item "${item.Name}" (${qboItemId}) has no SKU/barcode to match by — run Resync all`,
-    })
-    return
-  }
-  const key = String(item.Sku).trim()
+  if (!item) return // transient fetch failure — next sweep retries
+
+  const key = String(item.Sku ?? "").trim()
   const qty = Math.max(0, Math.floor(Number(item.QtyOnHand ?? 0)))
 
-  const { data: variants } = await query.graph({
-    entity: "variant",
-    fields: ["id", "sku", "upc", "barcode"],
-    filters: { $or: [{ upc: key }, { barcode: key }, { sku: key }] },
-  })
-
-  const variant = (variants as any[])?.[0]
-  if (!variant) {
-    await qb.logSync({
-      direction: "qbo_to_medusa",
-      sku: key,
-      qboItemId,
-      status: "needs_manual_review",
-      errorMessage: "No matching store product for this key",
+  // Ledger first: the stored pairing survives SKU→UPC replacement and works
+  // even when the QBO item carries no Sku at all.
+  let variant: any = null
+  const mappedVariantId = await qb.variantIdForQboItem(String(item.Id))
+  if (mappedVariantId) {
+    const { data } = await query.graph({
+      entity: "variant",
+      fields: ["id", "sku", "upc", "barcode"],
+      filters: { id: mappedVariantId },
     })
-    return
+    variant = (data as any[])?.[0] ?? null
   }
+  if (!variant && key) {
+    const { data: variants } = await query.graph({
+      entity: "variant",
+      fields: ["id", "sku", "upc", "barcode"],
+      filters: { $or: [{ upc: key }, { barcode: key }, { sku: key }] },
+    })
+    variant = (variants as any[])?.[0] ?? null
+    if (variant) {
+      await qb.mapVariantToQboItem(variant.id, String(item.Id)).catch(() => {})
+    }
+  }
+  // No match → this is a QuickBooks-only item (owner's local water/services).
+  // By design the site never touches those: silently ignore.
+  if (!variant) return
 
   // Link + level rows read straight from the tables — deterministic.
   const linkRes = await pg.raw(
@@ -88,7 +81,7 @@ export async function applyQboItemToStore(
   if (levels.length === 0) {
     await qb.logSync({
       direction: "qbo_to_medusa",
-      sku: key,
+      sku: key || variant.sku || variant.id,
       qboItemId,
       status: "needs_manual_review",
       errorMessage:
@@ -125,7 +118,7 @@ export async function applyQboItemToStore(
   await inventory.updateInventoryLevels(updates)
   await qb.logSync({
     direction: "qbo_to_medusa",
-    sku: key,
+    sku: key || variant.sku || variant.id,
     qboItemId,
     status: "success",
   })

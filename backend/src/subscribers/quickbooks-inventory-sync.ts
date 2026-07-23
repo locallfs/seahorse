@@ -2,10 +2,7 @@
 import { ContainerRegistrationKeys } from "@medusajs/utils"
 import { QUICKBOOKS_MODULE } from "../modules/quickbooks"
 import type QuickbooksModuleService from "../modules/quickbooks/service"
-import {
-  itemDisplayName,
-  resolveItemKey,
-} from "../modules/quickbooks/mapping"
+import { resolveItemKey } from "../modules/quickbooks/mapping"
 import { pushQuantityToQbo } from "../modules/quickbooks/sync"
 
 type SubscriberArgs = {
@@ -99,15 +96,18 @@ export default async function quickbooksInventorySync({
       for (const variant of inv?.variants || []) {
         const key = resolveItemKey(variant)
         if (!key) continue
-        // Old identifiers + display name let the push re-find and re-stamp
-        // the QBO item if the join key just changed (e.g. a UPC was added).
+        // Old identifiers let the push re-find and re-stamp the QBO item if
+        // the join key just changed (e.g. a UPC replaced the SKU). No name
+        // matching — QBO-only items must never be grabbed by name.
         const fallbackKeys = [variant.barcode, variant.sku]
           .map((k: any) => String(k || "").trim())
           .filter((k: string) => k && k !== key)
-        const name = variant.product?.title
-          ? itemDisplayName(variant.product.title, variant.title)
-          : undefined
-        const res = await pushQuantityToQbo(qb, { key, qty, fallbackKeys, name })
+        const res = await pushQuantityToQbo(qb, {
+          key,
+          qty,
+          fallbackKeys,
+          variantId: variant.id,
+        })
         await qb.logSync({
           direction: "medusa_to_qbo",
           sku: key,

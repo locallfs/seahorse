@@ -63,11 +63,15 @@ export async function seedInventoryItems(container: {
   })
 
   const all = await listAllActiveItems(qb)
+  // Match by the permanent variant↔item ledger first, then by OUR stamped
+  // identifiers (UPC → barcode → old SKU). Name matching is banned: QBO-only
+  // items (owner's local water/services) must never be grabbed by a website
+  // product that happens to share a name.
   const bySku = new Map<string, QboItem>()
-  const byName = new Map<string, QboItem>()
+  const byId = new Map<string, QboItem>()
   for (const it of all) {
     if (it.Sku && String(it.Sku).trim()) bySku.set(norm(String(it.Sku)), it)
-    byName.set(norm(it.Name), it)
+    byId.set(String(it.Id), it)
   }
 
   let adjustAccountId: string | null = null
@@ -94,7 +98,21 @@ export async function seedInventoryItems(container: {
       const price =
         usd && typeof usd.amount === "number" ? round2(usd.amount) : undefined
 
-      const existing = bySku.get(norm(key)) || byName.get(norm(name))
+      // Ledger first: the stored QBO item id survives any identifier change.
+      let existing: QboItem | undefined
+      const mappedId = await qb.qboItemIdForVariant(variant.id)
+      if (mappedId) existing = byId.get(String(mappedId))
+      // Identifier trail fallback (first pairing, or ledger points at a
+      // retired item): current key, then the variant's other codes.
+      if (!existing) {
+        const trail = [variant.upc, variant.barcode, variant.sku]
+          .map((k: any) => String(k || "").trim())
+          .filter(Boolean)
+        for (const t of trail) {
+          existing = bySku.get(norm(t))
+          if (existing) break
+        }
+      }
       try {
         if (existing) {
           if (existing.Type === "Inventory") {
@@ -139,6 +157,7 @@ export async function seedInventoryItems(container: {
             } else {
               r.unchanged++
             }
+            await qb.mapVariantToQboItem(variant.id, String(existing.Id))
           } else {
             // Wrong type — can't hold stock, and the API can't change an
             // item's type in place. Retire it (frees the name) and recreate.
@@ -146,7 +165,7 @@ export async function seedInventoryItems(container: {
               itemId: existing.Id,
               syncToken: existing.SyncToken,
             })
-            await createInventoryItem(qb, {
+            const madeItem = await createInventoryItem(qb, {
               name,
               sku: key,
               qtyOnHand: qty,
@@ -155,10 +174,11 @@ export async function seedInventoryItems(container: {
               accounts,
               invStartDate,
             })
+            await qb.mapVariantToQboItem(variant.id, String(madeItem.Id))
             r.converted++
           }
         } else {
-          await createInventoryItem(qb, {
+          const madeItem = await createInventoryItem(qb, {
             name,
             sku: key,
             qtyOnHand: qty,
@@ -167,6 +187,7 @@ export async function seedInventoryItems(container: {
             accounts,
             invStartDate,
           })
+          await qb.mapVariantToQboItem(variant.id, String(madeItem.Id))
           r.created++
         }
       } catch (err: any) {

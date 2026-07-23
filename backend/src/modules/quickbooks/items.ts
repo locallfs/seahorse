@@ -163,20 +163,6 @@ export async function createInventoryItem(
   return res.Item
 }
 
-// Finds an active item by exact display name (used as the self-heal fallback
-// when a variant's join key changed, e.g. a UPC was added over an old SKU).
-export async function findItemByName(
-  service: QuickbooksModuleService,
-  name: string
-): Promise<QboItem | null> {
-  const escaped = name.replace(/'/g, "''")
-  const res = await qboQuery<{ QueryResponse: { Item?: QboItem[] } }>(
-    service,
-    `select Id, Name, Sku, Type, SyncToken, QtyOnHand, UnitPrice from Item where Name = '${escaped}' maxresults 1`
-  )
-  return res.QueryResponse?.Item?.[0] || null
-}
-
 // Pages through every active item in the QBO company (query API caps at 1000
 // per page). Used by the master resync to diff QBO against the store catalog.
 export async function listAllActiveItems(
