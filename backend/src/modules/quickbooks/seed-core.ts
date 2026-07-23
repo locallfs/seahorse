@@ -12,7 +12,11 @@ import {
   updateItemSparse,
   type QboItem,
 } from "./items"
-import { itemDisplayName, resolveItemKey, variantOnHand } from "./mapping"
+import { itemDisplayName } from "./mapping"
+import {
+  assertCatalogIdentifiersPresent,
+  readCatalogVariants,
+} from "./db-reads"
 
 export type SeedResult = {
   created: number
@@ -30,37 +34,26 @@ const round2 = (n: number) => Math.round(n * 100) / 100
 // matches, and creates the ones it's missing. Items that exist only in
 // QuickBooks are NEVER touched (owner-approved 2026-07-23 after a retire
 // step wiped 680 owner-added items — retirement is permanently removed).
-// - Store variant matches a QBO item (by join key, else by display name):
+// - Store variant matches a QBO item (ledger id first, then identifier trail
+//   UPC → barcode → SKU — name matching is banned):
 //   - Inventory item → overwrite Sku/Name/QtyOnHand/UnitPrice to store values
 //   - Service/NonInventory item → retire that matched item (QBO frees the
 //     name) and recreate as Inventory, since only Inventory items hold stock
 // - No match → create a new Inventory item with the store's current stock
+// ALL store-side reads are direct SQL (db-reads.ts); the regression guard
+// aborts before any QBO write if the catalog read comes back identifier-less.
 // Shared by the seed script and the admin "Resync all" button. Idempotent.
 export async function seedInventoryItems(container: {
   resolve: (k: string) => any
 }): Promise<SeedResult> {
-  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  const pg = container.resolve(ContainerRegistrationKeys.PG_CONNECTION)
   const qb = container.resolve(QUICKBOOKS_MODULE) as QuickbooksModuleService
+
+  const rows = await readCatalogVariants(pg)
+  assertCatalogIdentifiersPresent(rows) // abort before ANY QBO write
 
   const accounts = await findInventoryAccounts(qb)
   const invStartDate = new Date().toISOString().slice(0, 10)
-
-  const { data: products } = await query.graph({
-    entity: "product",
-    fields: [
-      "id",
-      "title",
-      "description",
-      "variants.id",
-      "variants.title",
-      "variants.sku",
-      "variants.upc",
-      "variants.barcode",
-      "variants.prices.amount",
-      "variants.prices.currency_code",
-      "variants.inventory_items.inventory.location_levels.stocked_quantity",
-    ],
-  })
 
   const all = await listAllActiveItems(qb)
   // Match by the permanent variant↔item ledger first, then by OUR stamped
@@ -84,30 +77,27 @@ export async function seedInventoryItems(container: {
     failed: 0,
   }
 
-  for (const product of products as any[]) {
-    for (const variant of product.variants || []) {
-      const key = resolveItemKey(variant)
+  for (const row of rows) {
+    {
+      const key = row.upc || row.barcode || row.sku || ""
       if (!key) {
         r.skipped++
         continue
       }
-      const name = itemDisplayName(product.title, variant.title)
-      const qty = variantOnHand(variant)
-      const prices = (variant.prices || []) as any[]
-      const usd = prices.find((p) => p?.currency_code === "usd") || prices[0]
-      const price =
-        usd && typeof usd.amount === "number" ? round2(usd.amount) : undefined
+      const name = itemDisplayName(row.product_title, row.variant_title)
+      const qty = Math.max(0, Math.floor(row.on_hand))
+      const price = row.usd_amount != null ? round2(row.usd_amount) : undefined
 
       // Ledger first: the stored QBO item id survives any identifier change.
       let existing: QboItem | undefined
-      const mappedId = await qb.qboItemIdForVariant(variant.id)
+      const mappedId = await qb.qboItemIdForVariant(row.variant_id)
       if (mappedId) existing = byId.get(String(mappedId))
       // Identifier trail fallback (first pairing, or ledger points at a
       // retired item): current key, then the variant's other codes.
       if (!existing) {
-        const trail = [variant.upc, variant.barcode, variant.sku]
-          .map((k: any) => String(k || "").trim())
-          .filter(Boolean)
+        const trail = [row.upc, row.barcode, row.sku].filter(
+          Boolean
+        ) as string[]
         for (const t of trail) {
           existing = bySku.get(norm(t))
           if (existing) break
@@ -157,7 +147,7 @@ export async function seedInventoryItems(container: {
             } else {
               r.unchanged++
             }
-            await qb.mapVariantToQboItem(variant.id, String(existing.Id))
+            await qb.mapVariantToQboItem(row.variant_id, String(existing.Id))
           } else {
             // Wrong type — can't hold stock, and the API can't change an
             // item's type in place. Retire it (frees the name) and recreate.
@@ -170,11 +160,11 @@ export async function seedInventoryItems(container: {
               sku: key,
               qtyOnHand: qty,
               unitPrice: price,
-              description: product.description ?? undefined,
+              description: row.description ?? undefined,
               accounts,
               invStartDate,
             })
-            await qb.mapVariantToQboItem(variant.id, String(madeItem.Id))
+            await qb.mapVariantToQboItem(row.variant_id, String(madeItem.Id))
             r.converted++
           }
         } else {
@@ -183,11 +173,11 @@ export async function seedInventoryItems(container: {
             sku: key,
             qtyOnHand: qty,
             unitPrice: price,
-            description: product.description ?? undefined,
+            description: row.description ?? undefined,
             accounts,
             invStartDate,
           })
-          await qb.mapVariantToQboItem(variant.id, String(madeItem.Id))
+          await qb.mapVariantToQboItem(row.variant_id, String(madeItem.Id))
           r.created++
         }
       } catch (err: any) {

@@ -2,6 +2,7 @@ import { MedusaService } from "@medusajs/utils"
 import { QuickbooksConnection } from "./models/connection"
 import { QuickbooksSyncLog } from "./models/sync-log"
 import { QuickbooksItemMap } from "./models/item-map"
+import { QuickbooksLedgerBaseline } from "./models/ledger-baseline"
 import { encrypt, decrypt } from "./crypto"
 import {
   exchangeCodeForTokens,
@@ -14,7 +15,32 @@ class QuickbooksModuleService extends MedusaService({
   QuickbooksConnection,
   QuickbooksSyncLog,
   QuickbooksItemMap,
+  QuickbooksLedgerBaseline,
 }) {
+  // ---- structured reconciliation baseline (G-BASELINE guard reads this) ----
+
+  async saveLedgerBaseline(counts: {
+    paired: number
+    codeBearing: number
+    variants: number
+    qboItems: number
+  }): Promise<void> {
+    await this.createQuickbooksLedgerBaselines({
+      paired_count: counts.paired,
+      code_bearing_count: counts.codeBearing,
+      variant_count: counts.variants,
+      qbo_item_count: counts.qboItems,
+    })
+  }
+
+  async getLedgerBaseline(): Promise<number | null> {
+    const rows = await this.listQuickbooksLedgerBaselines(
+      {},
+      { take: 1, order: { created_at: "DESC" } }
+    )
+    return rows.length ? Number(rows[0].paired_count) : null
+  }
+
   // ---- variant ↔ QBO item ledger (survives SKU→UPC replacement) ----
 
   async mapVariantToQboItem(variantId: string, qboItemId: string): Promise<void> {

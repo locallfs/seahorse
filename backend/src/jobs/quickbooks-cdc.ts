@@ -4,7 +4,6 @@ import { QUICKBOOKS_MODULE } from "../modules/quickbooks"
 import type QuickbooksModuleService from "../modules/quickbooks/service"
 import { qboRequest } from "../modules/quickbooks/qbo-client"
 import { applyQboItemToStore } from "../modules/quickbooks/apply-item"
-import { stampLedger } from "../modules/quickbooks/ledger-stamp"
 
 // QBO → store sweeper. Every 5 minutes asks QuickBooks' Change Data Capture
 // API "which Items changed in the last 20 minutes?" and applies each one to
@@ -18,7 +17,6 @@ import { stampLedger } from "../modules/quickbooks/ledger-stamp"
 // also log what CDC returned (even when empty) so silence is diagnosable.
 let announced = false
 let diagSweeps = 0
-let ledgerChecked = false
 
 export default async function quickbooksCdcSweep(container: MedusaContainer) {
   if (process.env.QUICKBOOKS_SYNC_ENABLED !== "true") return
@@ -40,37 +38,8 @@ export default async function quickbooksCdcSweep(container: MedusaContainer) {
         .catch(() => {})
     }
 
-    // Self-stamping: if the permanent variant↔item ledger is (near-)empty,
-    // build it now — read-only towards QuickBooks, no human timing needed.
-    if (!ledgerChecked) {
-      ledgerChecked = true
-      try {
-        const [, mapCount] = await (qb as any).listAndCountQuickbooksItemMaps(
-          {},
-          { take: 1 }
-        )
-        if (mapCount < 100) {
-          const r = await stampLedger(container, qb)
-          await qb
-            .logSync({
-              direction: "medusa_to_qbo",
-              entityType: "ledger",
-              sku: `ledger stamped: ${r.paired} paired, ${r.unmatched} unmatched`,
-              status: "success",
-            })
-            .catch(() => {})
-        }
-      } catch (err: any) {
-        await qb
-          .logSync({
-            direction: "medusa_to_qbo",
-            entityType: "ledger",
-            status: "failed",
-            errorMessage: `Ledger stamping failed: ${err?.message || err}`,
-          })
-          .catch(() => {})
-      }
-    }
+    // NOTE: ledger stamping is MANUAL-ONLY (admin route) — no boot-time or
+    // scheduled execution, per owner directive 2026-07-23.
 
     // 30-min look-back (was 6h during debugging — that magnified post-resync
     // echo storms). Overlaps the 5-min cadence 6×; equality-skip and

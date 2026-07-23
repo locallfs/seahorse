@@ -2,58 +2,78 @@
 import { ContainerRegistrationKeys } from "@medusajs/utils"
 import type QuickbooksModuleService from "./service"
 import { listAllActiveItems } from "./items"
+import { readCatalogVariants } from "./db-reads"
+import { reconcile, type ReconcileResult } from "./reconcile"
 
-const norm = (s: string) => s.trim().toLowerCase()
+export type StampResult = {
+  paired: number
+  unmatched: number
+  aborted: string | null
+  stats: ReconcileResult["stats"] | null
+}
 
-// One-shot, READ-ONLY (towards QuickBooks) ledger stamping: pairs every store
-// variant with its QBO item by identifier trail (UPC → barcode → SKU) and
-// records the pairing in quickbooks_item_map. Writes nothing to QuickBooks.
-// Runs automatically from the sweeper when the ledger is empty, so no human
-// has to time anything around the store's ongoing SKU→UPC replacement.
+// READ-ONLY (towards QuickBooks) ledger stamping: pairs store variants with
+// QBO items via the shared reconcile() engine and records pairings in
+// quickbooks_item_map. Writes nothing to QuickBooks. Runs ONLY when invoked
+// explicitly (admin route) — no boot-time or scheduled execution.
+// On ANY reconcile abort (blank reads, empty QBO list, duplicate/ambiguous
+// codes, SKU/UPC conflicts, <85% pairing rate, >5% drop vs the last
+// successful run) it writes NOTHING.
 export async function stampLedger(
   container: { resolve: (k: string) => any },
-  qb: QuickbooksModuleService
-): Promise<{ paired: number; unmatched: number }> {
-  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  qb: QuickbooksModuleService,
+  opts?: { allowInitial?: boolean }
+): Promise<StampResult> {
+  const pg = container.resolve(ContainerRegistrationKeys.PG_CONNECTION)
 
-  const { data: products } = await query.graph({
-    entity: "product",
-    fields: [
-      "id",
-      "variants.id",
-      "variants.sku",
-      "variants.upc",
-      "variants.barcode",
-    ],
-  })
+  const rows = await readCatalogVariants(pg)
+  const items = await listAllActiveItems(qb)
 
-  const all = await listAllActiveItems(qb)
-  const bySku = new Map<string, string>()
-  for (const it of all) {
-    if (it.Sku && String(it.Sku).trim()) {
-      bySku.set(norm(String(it.Sku)), String(it.Id))
+  // Structured baseline (typed table) — never parsed from log text. A missing
+  // baseline ABORTS unless the operator explicitly declares an initial run.
+  const baselinePaired = await qb.getLedgerBaseline()
+
+  const result = reconcile(
+    rows.map((r) => ({
+      variant_id: r.variant_id,
+      title: r.product_title,
+      sku: r.sku,
+      upc: r.upc,
+      barcode: r.barcode,
+    })),
+    items.map((it) => ({
+      id: String(it.Id),
+      sku: it.Sku ?? null,
+      name: it.Name,
+    })),
+    { baselinePaired, requireBaseline: !opts?.allowInitial }
+  )
+
+  if (result.abort) {
+    return {
+      paired: 0,
+      unmatched: result.stats.variants,
+      aborted: result.abort,
+      stats: result.stats,
     }
   }
 
-  let paired = 0
-  let unmatched = 0
-  for (const product of products as any[]) {
-    for (const variant of product.variants || []) {
-      const trail = [variant.upc, variant.barcode, variant.sku]
-        .map((k: any) => String(k || "").trim())
-        .filter(Boolean)
-      let qboId: string | undefined
-      for (const t of trail) {
-        qboId = bySku.get(norm(t))
-        if (qboId) break
-      }
-      if (qboId) {
-        await qb.mapVariantToQboItem(variant.id, qboId).catch(() => {})
-        paired++
-      } else {
-        unmatched++
-      }
-    }
+  for (const p of result.pairs) {
+    await qb.mapVariantToQboItem(p.variantId, p.qboItemId).catch(() => {})
   }
-  return { paired, unmatched }
+  await qb
+    .saveLedgerBaseline({
+      paired: result.pairs.length,
+      codeBearing: result.stats.codeBearing,
+      variants: result.stats.variants,
+      qboItems: result.stats.qboItems,
+    })
+    .catch(() => {})
+  return {
+    paired: result.pairs.length,
+    unmatched:
+      result.stats.unmatchedCodeBearingVariants + result.stats.noCode,
+    aborted: null,
+    stats: result.stats,
+  }
 }

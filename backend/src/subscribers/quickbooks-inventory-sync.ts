@@ -12,11 +12,8 @@ type SubscriberArgs = {
 
 // Site → QuickBooks. On any stock-level change, push the affected variant(s)'
 // on-hand quantity to their QuickBooks Inventory items. Disabled unless
-// QUICKBOOKS_SYNC_ENABLED=true, so it deploys dormant.
-//
-// NOTE: the inventory-level.updated payload shape and the level→inventory-item
-// lookup are handled defensively; verify against the sandbox when sync is first
-// enabled (a mismatch logs a warning rather than throwing).
+// QUICKBOOKS_SYNC_ENABLED=true. ALL store-side reads are direct SQL —
+// query.graph is banned in the sync paths (silent blanks in some contexts).
 export default async function quickbooksInventorySync({
   event,
   container,
@@ -24,7 +21,7 @@ export default async function quickbooksInventorySync({
   if (process.env.QUICKBOOKS_SYNC_ENABLED !== "true") return
 
   const qb = container.resolve(QUICKBOOKS_MODULE) as QuickbooksModuleService
-  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  const pg = container.resolve(ContainerRegistrationKeys.PG_CONNECTION)
 
   try {
     const conn = await qb.getConnection()
@@ -42,22 +39,13 @@ export default async function quickbooksInventorySync({
       else if (e?.id) levelIds.push(String(e.id))
     }
 
-    // Resolve level ids → inventory item ids (alias name varies by version).
     if (levelIds.length) {
-      for (const entity of ["inventory_level", "inventory_levels"]) {
-        try {
-          const { data: levels } = await query.graph({
-            entity,
-            fields: ["inventory_item_id"],
-            filters: { id: levelIds },
-          })
-          for (const lvl of (levels as any[]) || []) {
-            if (lvl?.inventory_item_id) itemIds.add(String(lvl.inventory_item_id))
-          }
-          if ((levels as any[])?.length) break
-        } catch {
-          // try the next alias
-        }
+      const res = await pg.raw(
+        `select distinct inventory_item_id from inventory_level where id = any(?)`,
+        [levelIds]
+      )
+      for (const row of res?.rows || []) {
+        if (row?.inventory_item_id) itemIds.add(String(row.inventory_item_id))
       }
     }
 
@@ -69,31 +57,26 @@ export default async function quickbooksInventorySync({
       return
     }
 
-    // Query from the inventory side — variants can't be FILTERED across the
-    // module link in this version ("not existing property
-    // ProductVariant.inventory_items"), but inventory items can be filtered by
-    // id and expose their linked variants.
-    const { data: invItems } = await query.graph({
-      entity: "inventory_item",
-      fields: [
-        "id",
-        "location_levels.stocked_quantity",
-        "variants.id",
-        "variants.title",
-        "variants.sku",
-        "variants.upc",
-        "variants.barcode",
-        "variants.product.title",
-      ],
-      filters: { id: Array.from(itemIds) },
-    })
-
-    for (const inv of (invItems as any[]) || []) {
-      const qty = (inv?.location_levels || []).reduce(
-        (sum: number, lvl: any) => sum + Number(lvl?.stocked_quantity ?? 0),
-        0
+    for (const invItemId of itemIds) {
+      const vres = await pg.raw(
+        `select pv.id,
+                nullif(trim(coalesce(pv.sku,'')),'') as sku,
+                nullif(trim(coalesce(pv.upc,'')),'') as upc,
+                nullif(trim(coalesce(pv.barcode,'')),'') as barcode
+           from product_variant_inventory_item l
+           join product_variant pv on pv.id = l.variant_id and pv.deleted_at is null
+           join product p on p.id = pv.product_id and p.deleted_at is null
+          where l.inventory_item_id = ? and l.deleted_at is null`,
+        [invItemId]
       )
-      for (const variant of inv?.variants || []) {
+      const qres = await pg.raw(
+        `select coalesce(sum(stocked_quantity),0) as qty from inventory_level
+          where inventory_item_id = ? and deleted_at is null`,
+        [invItemId]
+      )
+      const qty = Math.max(0, Math.floor(Number(qres?.rows?.[0]?.qty ?? 0)))
+
+      for (const variant of vres?.rows || []) {
         const key = resolveItemKey(variant)
         if (!key) continue
         // Old identifiers let the push re-find and re-stamp the QBO item if

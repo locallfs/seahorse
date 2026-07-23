@@ -50,7 +50,9 @@ export async function findItemBySku(
   const escaped = sku.replace(/'/g, "''")
   const res = await qboQuery<{ QueryResponse: { Item?: QboItem[] } }>(
     service,
-    `select Id, Name, Sku, Type, SyncToken, QtyOnHand from Item where Sku = '${escaped}' maxresults 1`
+    // select * is REQUIRED: QBO silently omits Sku from explicit field-list
+    // projections (proven in production 2026-07-23) — never use field lists here.
+    `select * from Item where Sku = '${escaped}' maxresults 1`
   )
   return res.QueryResponse?.Item?.[0] || null
 }
@@ -174,7 +176,9 @@ export async function listAllActiveItems(
   while (true) {
     const res = await qboQuery<{ QueryResponse: { Item?: QboItem[] } }>(
       service,
-      `select Id, Name, Sku, Type, SyncToken, QtyOnHand, UnitPrice from Item where Active = true startposition ${start} maxresults ${page}`
+      // select * is REQUIRED: QBO silently omits Sku from explicit field-list
+      // projections (proven in production 2026-07-23).
+      `select * from Item where Active = true startposition ${start} maxresults ${page}`
     )
     const items = res.QueryResponse?.Item || []
     out.push(...items)

@@ -2,21 +2,18 @@
 import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
 import type QuickbooksModuleService from "./service"
 import { getItemById } from "./items"
+import { readVariantById, readVariantByIdentifier } from "./db-reads"
 
 // QBO → store: re-reads one QuickBooks item and writes its quantity onto the
 // matching store variant's stock levels. Skips levels already equal so the two
 // sync directions can't loop. Shared by the webhook route and the CDC sweeper.
-//
-// The variant match uses query.graph on the variant's own columns (proven
-// reliable). The variant→inventory-level hop reads the link and level tables
-// directly via SQL: the graph-link expansion from the variant side silently
-// returns empty in this Medusa version (verified in production 2026-07-21).
+// ALL store-side reads are direct SQL (see db-reads.ts) — query.graph is
+// banned in this module for returning silent blanks in some contexts.
 export async function applyQboItemToStore(
   qb: QuickbooksModuleService,
   scope: { resolve: (k: string) => any },
   qboItemId: string
 ): Promise<void> {
-  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
   const inventory = scope.resolve(Modules.INVENTORY)
   const pg = scope.resolve(ContainerRegistrationKeys.PG_CONNECTION)
 
@@ -28,25 +25,17 @@ export async function applyQboItemToStore(
 
   // Ledger first: the stored pairing survives SKU→UPC replacement and works
   // even when the QBO item carries no Sku at all.
-  let variant: any = null
+  let variant = null
   const mappedVariantId = await qb.variantIdForQboItem(String(item.Id))
   if (mappedVariantId) {
-    const { data } = await query.graph({
-      entity: "variant",
-      fields: ["id", "sku", "upc", "barcode"],
-      filters: { id: mappedVariantId },
-    })
-    variant = (data as any[])?.[0] ?? null
+    variant = await readVariantById(pg, mappedVariantId)
   }
   if (!variant && key) {
-    const { data: variants } = await query.graph({
-      entity: "variant",
-      fields: ["id", "sku", "upc", "barcode"],
-      filters: { $or: [{ upc: key }, { barcode: key }, { sku: key }] },
-    })
-    variant = (variants as any[])?.[0] ?? null
+    variant = await readVariantByIdentifier(pg, key)
     if (variant) {
-      await qb.mapVariantToQboItem(variant.id, String(item.Id)).catch(() => {})
+      await qb
+        .mapVariantToQboItem(variant.variant_id, String(item.Id))
+        .catch(() => {})
     }
   }
   // No match → this is a QuickBooks-only item (owner's local water/services).
@@ -57,7 +46,7 @@ export async function applyQboItemToStore(
   const linkRes = await pg.raw(
     `select inventory_item_id from product_variant_inventory_item
      where variant_id = ? and deleted_at is null`,
-    [variant.id]
+    [variant.variant_id]
   )
   const invItemIds: string[] = (linkRes?.rows || [])
     .map((r: any) => r.inventory_item_id)
@@ -78,10 +67,12 @@ export async function applyQboItemToStore(
     levels = lvlRes?.rows || []
   }
 
+  const logKey = key || variant.sku || variant.upc || variant.variant_id
+
   if (levels.length === 0) {
     await qb.logSync({
       direction: "qbo_to_medusa",
-      sku: key || variant.sku || variant.id,
+      sku: logKey,
       qboItemId,
       status: "needs_manual_review",
       errorMessage:
@@ -110,7 +101,7 @@ export async function applyQboItemToStore(
   )
   if (qboChangedAt > 0 && storeTouchedAt > qboChangedAt) {
     console.log(
-      `[qb-apply] store newer than QBO for ${key} — keeping store value`
+      `[qb-apply] store newer than QBO for ${logKey} — keeping store value`
     )
     return
   }
@@ -118,7 +109,7 @@ export async function applyQboItemToStore(
   await inventory.updateInventoryLevels(updates)
   await qb.logSync({
     direction: "qbo_to_medusa",
-    sku: key || variant.sku || variant.id,
+    sku: logKey,
     qboItemId,
     status: "success",
   })
