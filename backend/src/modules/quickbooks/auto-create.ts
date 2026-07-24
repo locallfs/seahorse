@@ -25,6 +25,24 @@ const APPROVED_ACCOUNTS = {
   cogs: "36",
 } as const
 
+// The existing QuickBooks "Website" category (verified live 2026-07-24).
+// New auto-created items are filed under it in the creation request itself.
+// Env-overridable; a blanked value FAILS VISIBLY instead of creating an
+// uncategorized item.
+const APPROVED_WEBSITE_CATEGORY_ID = "2627"
+
+export function resolveWebsiteCategoryId(
+  env: Record<string, string | undefined> = process.env
+): string {
+  const id = env.QUICKBOOKS_WEBSITE_CATEGORY_ID ?? APPROVED_WEBSITE_CATEGORY_ID
+  if (!id.trim()) {
+    throw new MissingAccountingConfigError(
+      "QuickBooks Website category id is blank — refusing to create an uncategorized item"
+    )
+  }
+  return id.trim()
+}
+
 export class MissingAccountingConfigError extends Error {}
 
 export function resolveConfiguredAccounts(
@@ -127,6 +145,7 @@ export type EnsureOutcome =
   | { outcome: "config_error"; reason: string }
 
 export type EnsureDeps = {
+  categoryId: () => string
   ledgerLookup: (variantId: string) => Promise<string | null>
   codeLookup: (code: string) => Promise<QboItem | null>
   nameLookup: (name: string) => Promise<QboItem[]>
@@ -186,8 +205,10 @@ export async function ensureQboItemForVariant(
 
   // action === "create"
   let accounts: QboInventoryAccounts
+  let categoryId: string
   try {
     accounts = deps.accounts()
+    categoryId = deps.categoryId()
   } catch (e: any) {
     await deps.alert(key || null, `AUTO-CREATE BLOCKED for "${name}": ${e?.message}`)
     return { outcome: "config_error", reason: String(e?.message || e) }
@@ -204,7 +225,18 @@ export async function ensureQboItemForVariant(
     description: description ?? undefined,
     accounts,
     invStartDate: new Date().toISOString().slice(0, 10),
+    parentCategoryId: categoryId,
   })
+  // Confirm the created item actually carries the category. If QuickBooks
+  // silently dropped it, the item still exists — map it, but raise a visible
+  // alert so it cannot pass as fully synced.
+  const createdParent = String((item as any).ParentRef?.value ?? "")
+  if (createdParent !== categoryId) {
+    await deps.alert(
+      key,
+      `AUTO-CREATE WARNING for "${name}": QuickBooks item ${item.Id} was created but is NOT under the Website category (got "${createdParent || "none"}", expected ${categoryId})`
+    )
+  }
   try {
     await deps.mapWrite(variant.variant_id, String(item.Id))
   } catch (e: any) {
@@ -253,6 +285,7 @@ export function defaultEnsureDeps(
       }
     },
     accounts: () => resolveConfiguredAccounts(),
+    categoryId: () => resolveWebsiteCategoryId(),
     create: (params) => createInventoryItem(qb, params),
     mapWrite: (variantId, qboItemId) => qb.mapVariantToQboItem(variantId, qboItemId),
     alert: (sku, message) => alertVisible(qb, sku, message),

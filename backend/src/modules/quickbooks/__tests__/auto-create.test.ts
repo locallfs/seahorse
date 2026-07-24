@@ -4,6 +4,7 @@ import path from "node:path"
 import {
   decideNewItemAction,
   resolveConfiguredAccounts,
+  resolveWebsiteCategoryId,
   ensureQboItemForVariant,
   MissingAccountingConfigError,
   type EnsureDeps,
@@ -30,6 +31,7 @@ const makeDeps = (over: Partial<EnsureDeps> = {}): EnsureDeps & {
     created,
     mapped,
     alerts,
+    categoryId: () => "2627",
     ledgerLookup: async () => null,
     codeLookup: async () => null,
     nameLookup: async () => [],
@@ -138,6 +140,10 @@ describe("ensureQboItemForVariant — exactly-once workflow", () => {
   })
   it("partial failure (item created, ledger write fails) is loudly distinct from success", async () => {
     const deps = makeDeps({
+      create: async (p: any) => {
+        deps.created.push(p)
+        return { Id: "9001", Name: p.name, Type: "Inventory", SyncToken: "0", SubItem: true, ParentRef: { value: p.parentCategoryId } } as any
+      },
       mapWrite: async () => {
         throw new Error("db down")
       },
@@ -147,6 +153,44 @@ describe("ensureQboItemForVariant — exactly-once workflow", () => {
     expect(deps.alerts).toHaveLength(1)
     expect(deps.alerts[0].message).toMatch(/PARTIAL SYNC/)
     expect(deps.alerts[0].message).toMatch(/mapping write FAILED/)
+  })
+})
+
+describe("Website category on creation (id 2627)", () => {
+  it("resolves the approved category id by default and respects env override", () => {
+    expect(resolveWebsiteCategoryId({})).toBe("2627")
+    expect(resolveWebsiteCategoryId({ QUICKBOOKS_WEBSITE_CATEGORY_ID: "9999" })).toBe("9999")
+  })
+  it("blanked category id fails visibly — no uncategorized item is created", async () => {
+    const deps = makeDeps({
+      categoryId: () => resolveWebsiteCategoryId({ QUICKBOOKS_WEBSITE_CATEGORY_ID: " " }),
+    })
+    const r = await ensureQboItemForVariant(variant, deps)
+    expect(r.outcome).toBe("config_error")
+    expect(deps.created).toHaveLength(0)
+    expect(deps.alerts).toHaveLength(1)
+    expect(deps.alerts[0].message).toMatch(/BLOCKED/)
+  })
+  it("the creation request itself carries SubItem+ParentRef to 2627", async () => {
+    const deps = makeDeps({
+      create: async (p: any) => {
+        deps.created.push(p)
+        return { Id: "9001", Name: p.name, Type: "Inventory", SyncToken: "0", SubItem: true, ParentRef: { value: p.parentCategoryId } } as any
+      },
+    })
+    const r = await ensureQboItemForVariant(variant, deps)
+    expect(r.outcome).toBe("created")
+    expect(deps.created[0].parentCategoryId).toBe("2627")
+    expect(deps.alerts).toHaveLength(0) // categorized — no warning
+    expect(deps.mapped).toEqual([{ variantId: "v1", qboItemId: "9001" }])
+  })
+  it("if QuickBooks silently drops the category, the item is still mapped but a visible warning fires", async () => {
+    const deps = makeDeps() // default create returns NO ParentRef
+    const r = await ensureQboItemForVariant(variant, deps)
+    expect(r.outcome).toBe("created")
+    expect(deps.mapped).toHaveLength(1) // permanently mapped
+    expect(deps.alerts).toHaveLength(1)
+    expect(deps.alerts[0].message).toMatch(/NOT under the Website category/)
   })
 })
 

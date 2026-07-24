@@ -19,6 +19,8 @@ export interface QboItem {
   Active?: boolean
   IncomeAccountRef?: { value: string; name?: string }
   MetaData?: { CreateTime?: string; LastUpdatedTime?: string }
+  SubItem?: boolean
+  ParentRef?: { value?: string; name?: string }
 }
 
 export interface QboAccountRefs {
@@ -139,6 +141,10 @@ export async function createInventoryItem(
     description?: string
     accounts: QboInventoryAccounts
     invStartDate: string
+    // When set, the new item is filed under this category IN THE CREATION
+    // REQUEST itself (SubItem + ParentRef) — used by auto-create so new items
+    // are born inside the Website category.
+    parentCategoryId?: string
   }
 ): Promise<QboItem> {
   const body: Record<string, unknown> = {
@@ -156,6 +162,10 @@ export async function createInventoryItem(
   if (params.description) body.Description = params.description.slice(0, 4000)
   if (typeof params.unitPrice === "number" && params.unitPrice > 0) {
     body.UnitPrice = Math.round(params.unitPrice * 100) / 100
+  }
+  if (params.parentCategoryId) {
+    body.SubItem = true
+    body.ParentRef = { value: params.parentCategoryId }
   }
   const res = await qboRequest<{ Item: QboItem }>(service, {
     method: "POST",
