@@ -7,11 +7,11 @@ import {
   createInventoryItem,
   deactivateItem,
   findAdjustmentAccountId,
-  findInventoryAccounts,
   listAllActiveItems,
   updateItemSparse,
   type QboItem,
 } from "./items"
+import { resolveConfiguredAccounts } from "./auto-create"
 import { itemDisplayName } from "./mapping"
 import {
   assertCatalogIdentifiersPresent,
@@ -52,7 +52,9 @@ export async function seedInventoryItems(container: {
   const rows = await readCatalogVariants(pg)
   assertCatalogIdentifiersPresent(rows) // abort before ANY QBO write
 
-  const accounts = await findInventoryAccounts(qb)
+  // Explicit configured account IDs — never "first available" (owner-approved
+  // config in auto-create.ts; env-overridable by the accountant).
+  const accounts = resolveConfiguredAccounts()
   const invStartDate = new Date().toISOString().slice(0, 10)
 
   const all = await listAllActiveItems(qb)

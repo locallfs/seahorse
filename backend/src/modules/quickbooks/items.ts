@@ -12,7 +12,7 @@ export interface QboItem {
   Id: string
   Name: string
   Sku?: string
-  Type: "Service" | "Inventory" | "NonInventory"
+  Type: "Service" | "Inventory" | "NonInventory" | "Category"
   SyncToken: string
   QtyOnHand?: number
   UnitPrice?: number

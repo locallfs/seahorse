@@ -3,6 +3,7 @@ import crypto from "crypto"
 import { QUICKBOOKS_MODULE } from "../../../modules/quickbooks"
 import type QuickbooksModuleService from "../../../modules/quickbooks/service"
 import { applyQboItemToStore } from "../../../modules/quickbooks/apply-item"
+import { maybeImportMarkedItem } from "../../../modules/quickbooks/qbo-import"
 
 // HMAC-SHA256 of the raw body with the verifier token, base64, constant-time
 // compared to the intuit-signature header (Intuit's documented scheme).
@@ -121,6 +122,7 @@ export async function POST(req: any, res: any) {
     )
     for (const id of itemIds) {
       await applyQboItemToStore(qb, req.scope, id)
+      await maybeImportMarkedItem(qb, req.scope, id).catch(() => {})
     }
     console.log("[qb-webhook] end")
     return res.sendStatus(200)

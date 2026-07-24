@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MedusaContainer } from "@medusajs/types"
+import { ContainerRegistrationKeys } from "@medusajs/utils"
 import { QUICKBOOKS_MODULE } from "../modules/quickbooks"
 import type QuickbooksModuleService from "../modules/quickbooks/service"
 import { qboRequest } from "../modules/quickbooks/qbo-client"
 import { applyQboItemToStore } from "../modules/quickbooks/apply-item"
+import { maybeImportMarkedItem } from "../modules/quickbooks/qbo-import"
 
 // QBO → store sweeper. Every 5 minutes asks QuickBooks' Change Data Capture
 // API "which Items changed in the last 20 minutes?" and applies each one to
@@ -110,11 +112,55 @@ export default async function quickbooksCdcSweep(container: MedusaContainer) {
         .catch(() => {})
     }
 
+    // MONITOR: any coded store product still without a QuickBooks mapping
+    // 30+ minutes after creation raises a VISIBLE alert (once per day each).
+    try {
+      const pg = container.resolve(ContainerRegistrationKeys.PG_CONNECTION)
+      const stale = await pg.raw(
+        `select pv.id as variant_id, p.title,
+                coalesce(nullif(trim(coalesce(pv.upc,'')),''), nullif(trim(coalesce(pv.barcode,'')),''), nullif(trim(coalesce(pv.sku,'')),'')) as key
+           from product p join product_variant pv on pv.product_id = p.id
+          where p.deleted_at is null and pv.deleted_at is null
+            and p.created_at < now() - interval '30 minutes'
+            and p.created_at > now() - interval '7 days'
+            and coalesce(nullif(trim(coalesce(pv.upc,'')),''), nullif(trim(coalesce(pv.barcode,'')),''), nullif(trim(coalesce(pv.sku,'')),'')) is not null
+            and not exists (select 1 from quickbooks_item_map m where m.variant_id = pv.id and m.deleted_at is null)
+            and not exists (select 1 from quickbooks_sync_log s where s.entity_type = 'monitor'
+                             and s.sku = coalesce(nullif(trim(coalesce(pv.upc,'')),''), nullif(trim(coalesce(pv.barcode,'')),''), nullif(trim(coalesce(pv.sku,'')),''))
+                             and s.created_at > date_trunc('day', now()))
+          limit 10`
+      )
+      const rows = stale?.rows || []
+      for (const r of rows) {
+        await qb
+          .logSync({
+            direction: "medusa_to_qbo",
+            entityType: "monitor",
+            sku: r.key,
+            status: "failed",
+            errorMessage: `MONITOR: "${r.title}" has no QuickBooks item 30+ minutes after creation`,
+          })
+          .catch(() => {})
+      }
+      if (rows.length > 0) {
+        await qb
+          .recordError(
+            `MONITOR: ${rows.length} product(s) still missing QuickBooks items 30+ min after creation (see activity log)`
+          )
+          .catch(() => {})
+      }
+    } catch {
+      // monitoring must never break the sweep
+    }
+
     if (ids.size === 0) return // quiet cycle — don't spam the log
 
     console.log(`[qb-cdc] ${ids.size} changed item(s)`)
     for (const id of ids) {
       await applyQboItemToStore(qb, container, id)
+      // Website-marked QuickBooks items import/link to Medusa (CDC is the
+      // catch-up path; the webhook does the same instantly when delivered).
+      await maybeImportMarkedItem(qb, container, id).catch(() => {})
     }
   } catch (err: any) {
     await qb

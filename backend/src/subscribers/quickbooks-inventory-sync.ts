@@ -4,6 +4,10 @@ import { QUICKBOOKS_MODULE } from "../modules/quickbooks"
 import type QuickbooksModuleService from "../modules/quickbooks/service"
 import { resolveItemKey } from "../modules/quickbooks/mapping"
 import { pushQuantityToQbo } from "../modules/quickbooks/sync"
+import {
+  defaultEnsureDeps,
+  ensureQboItemForVariant,
+} from "../modules/quickbooks/auto-create"
 
 type SubscriberArgs = {
   event: { data: any }
@@ -60,6 +64,8 @@ export default async function quickbooksInventorySync({
     for (const invItemId of itemIds) {
       const vres = await pg.raw(
         `select pv.id,
+                pv.title as variant_title,
+                p.title as product_title,
                 nullif(trim(coalesce(pv.sku,'')),'') as sku,
                 nullif(trim(coalesce(pv.upc,'')),'') as upc,
                 nullif(trim(coalesce(pv.barcode,'')),'') as barcode
@@ -85,12 +91,61 @@ export default async function quickbooksInventorySync({
         const fallbackKeys = [variant.barcode, variant.sku]
           .map((k: any) => String(k || "").trim())
           .filter((k: string) => k && k !== key)
-        const res = await pushQuantityToQbo(qb, {
+        let res = await pushQuantityToQbo(qb, {
           key,
           qty,
           fallbackKeys,
           variantId: variant.id,
         })
+        // AUTO-CREATE: a brand-new product has no QuickBooks item yet. Run
+        // the exactly-once ensure workflow (duplicate-protected), then push
+        // once more so the quantity lands. Ambiguity → visible alert, no
+        // creation. QuickBooks-only local items are unaffected (this is the
+        // store→QBO direction only).
+        if (!res.ok && /No QuickBooks item found/.test(res.error ?? "")) {
+          const ensured = await ensureQboItemForVariant(
+            {
+              variant_id: variant.id,
+              product_title: variant.product_title,
+              variant_title: variant.variant_title,
+              sku: variant.sku,
+              upc: variant.upc,
+              barcode: variant.barcode,
+            },
+            defaultEnsureDeps(qb, pg)
+          )
+          if (ensured.outcome === "created") {
+            await qb.logSync({
+              direction: "medusa_to_qbo",
+              entityType: "auto-create",
+              sku: key,
+              qboItemId: ensured.qboItemId,
+              status: "success",
+              errorMessage: JSON.stringify({
+                created_qbo_item: ensured.qboItemId,
+                initial_qty_set: ensured.initialQty,
+              }),
+            })
+            continue // creation seeded the quantity; nothing left to push
+          }
+          if (ensured.outcome === "adopted") {
+            res = await pushQuantityToQbo(qb, {
+              key,
+              qty,
+              fallbackKeys,
+              variantId: variant.id,
+            })
+          }
+          // review / config_error / created_unmapped already raised their
+          // own visible alerts inside the ensure workflow.
+          if (
+            ensured.outcome === "review" ||
+            ensured.outcome === "config_error" ||
+            ensured.outcome === "created_unmapped"
+          ) {
+            continue
+          }
+        }
         await qb.logSync({
           direction: "medusa_to_qbo",
           sku: key,

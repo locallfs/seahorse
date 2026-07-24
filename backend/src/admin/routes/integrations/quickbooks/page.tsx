@@ -30,6 +30,13 @@ interface SyncLogRow {
   created_at: string
 }
 
+interface ProductSyncStatus {
+  synced: number
+  pending: number
+  failed_24h: number
+  pending_list: { title: string; sku: string; age_minutes: number }[]
+}
+
 interface StatusPayload {
   configured: boolean
   connected: boolean
@@ -40,6 +47,7 @@ interface StatusPayload {
   health?: string
   last_sync_at?: string | null
   sync_log?: SyncLogRow[]
+  product_sync?: ProductSyncStatus | null
 }
 
 const QuickbooksPage = () => {
@@ -289,6 +297,45 @@ const QuickbooksPage = () => {
                 </>
               )}
             </div>
+
+            {status.connected && status.product_sync && (
+              <div className="flex flex-col gap-2 rounded border border-ui-border-base p-4">
+                <Text size="small" weight="plus">
+                  Product sync
+                </Text>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Badge size="2xsmall" color="green">
+                    {status.product_sync.synced} synced
+                  </Badge>
+                  <Badge
+                    size="2xsmall"
+                    color={status.product_sync.pending > 0 ? "orange" : "grey"}
+                  >
+                    {status.product_sync.pending} pending
+                  </Badge>
+                  <Badge
+                    size="2xsmall"
+                    color={
+                      status.product_sync.failed_24h > 0 ? "red" : "grey"
+                    }
+                  >
+                    {status.product_sync.failed_24h} failed/review (24h)
+                  </Badge>
+                </div>
+                {status.product_sync.pending_list.length > 0 && (
+                  <div className="text-xs text-ui-fg-subtle">
+                    {status.product_sync.pending_list.map((r) => (
+                      <div key={r.sku} className="flex justify-between gap-2">
+                        <span className="truncate">{r.title}</span>
+                        <span className="whitespace-nowrap">
+                          {r.age_minutes} min
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {status.connected && (
               <div className="flex flex-col gap-3 rounded border border-ui-border-base p-4">
