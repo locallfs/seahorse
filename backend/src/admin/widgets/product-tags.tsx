@@ -5,131 +5,35 @@ import {
   Container,
   Heading,
   Input,
+  Select,
   Text,
   toast,
 } from "@medusajs/ui"
 import { useEffect, useMemo, useState } from "react"
+import {
+  GroupableTag,
+  UNCATEGORIZED,
+  buildTagGroupMetadata,
+  groupTagsForDisplay,
+  orderedGroups,
+  planGroupOrder,
+} from "../lib/tag-groups"
 
 declare const __BACKEND_URL__: string | undefined
 
-type Tag = { id: string; value: string }
-
-const MAIN_TAG_NAMES = [
-  "Fish",
-  "Corals",
-  "Inverts",
-  "New Arrivals",
-  "Supplies",
-  "WYSIWYG Fish",
-  "WYSIWYG Corals",
-]
-const MAIN_TAG_SET = new Set(MAIN_TAG_NAMES.map((n) => n.toLowerCase()))
-const mainOrder = (v: string) => {
-  const i = MAIN_TAG_NAMES.findIndex(
-    (n) => n.toLowerCase() === v.toLowerCase(),
-  )
-  return i === -1 ? MAIN_TAG_NAMES.length : i
-}
-
-const FISH_TAG_NAMES = [
-  // Care
-  "Reef Safe",
-  "With Caution",
-  "Aggressive",
-  // Species
-  "Clownfish",
-  "Tangs",
-  "Angelfish",
-  "Wrasses",
-  "Gobies",
-  "Blennies",
-  "Basslets & Grammas",
-  "Dottybacks",
-  "Cardinalfish",
-  "Damselfish & Chromis",
-  "Hawkfish",
-  "Butterflyfish",
-  "Triggerfish",
-  "Pufferfish",
-  "Lionfish & Scorpionfish",
-  "Eels",
-  "Rabbitfish & Foxfaces",
-  "Anthias",
-  "Seahorses & Pipefish",
-  "Dragonets",
-  "Filefish",
-]
-const FISH_TAG_SET = new Set(FISH_TAG_NAMES.map((n) => n.toLowerCase()))
-
-const CORAL_TAG_NAMES = [
-  "Soft",
-  "LPS",
-  "SPS",
-  "Zoanthids",
-  "Mushrooms",
-  "Gorgonians",
-  "NPS",
-  "Macro",
-  "Macroalgae",
-  "Acanthophyllia",
-  "Acropora",
-  "Alveopora",
-  "Birdsnest",
-  "Chalice",
-  "Clove Polyp",
-  "Colony",
-  "Coral",
-  "Cyphastrea",
-  "Digitata",
-  "Duncan",
-  "Encrusters",
-  "Euphyllia",
-  "Frag Pack",
-  "Frag Rack",
-  "Galaxea",
-  "Goniopora",
-  "Grafted",
-  "Hammer",
-  "Large Frag",
-  "Leather",
-  "Leptoseris",
-  "Montipora",
-  "Pectinia",
-  "Pipe Organ",
-  "Plate Coral",
-  "Pocillopora",
-  "Scolymia",
-  "Signature Coral",
-  "Stylophora",
-  "Torch",
-  "Trachyphyllia",
-  "Xenia",
-  "XL Frag",
-]
-const CORAL_TAG_SET = new Set(CORAL_TAG_NAMES.map((n) => n.toLowerCase()))
-
-const SUPPLIES_TAG_NAMES = [
-  "Sea Salt",
-  "Chemicals",
-  "Test Kits",
-  "Lighting",
-  "Pumps",
-  "Filtration",
-  "Food",
-  "Plumbing",
-  "Maintenance",
-]
-const SUPPLIES_TAG_SET = new Set(
-  SUPPLIES_TAG_NAMES.map((n) => n.toLowerCase()),
-)
-
+// Product-page tag picker. Grouping/ordering comes from the shared tag-group
+// system (metadata.tag_group / metadata.sort_position, with the legacy name
+// lists as fallback) — the same one the Product Tags page manages. Tags
+// without a group show under "Uncategorized"; they are never hidden and never
+// mixed into other groups.
 const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   const backendUrl = __BACKEND_URL__ ?? ""
-  const [allTags, setAllTags] = useState<Tag[]>([])
+  const [allTags, setAllTags] = useState<GroupableTag[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [query, setQuery] = useState("")
   const [newTag, setNewTag] = useState("")
+  const [newTagGroup, setNewTagGroup] = useState<string>(UNCATEGORIZED)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -147,25 +51,22 @@ const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
       setLoading(true)
       try {
         const pageSize = 200
-        const all: Tag[] = []
+        const all: GroupableTag[] = []
         let offset = 0
         while (!cancelled) {
           const res = await fetch(
-            `${backendUrl}/admin/product-tags?limit=${pageSize}&offset=${offset}&fields=id,value`,
+            `${backendUrl}/admin/product-tags?limit=${pageSize}&offset=${offset}&fields=id,value,metadata`,
             { credentials: "include" },
           )
           if (!res.ok) break
           const body = await res.json()
-          const page: Tag[] = body.product_tags ?? []
+          const page: GroupableTag[] = body.product_tags ?? []
           all.push(...page)
           if (page.length < pageSize) break
           offset += page.length
           if (offset > 10000) break
         }
-        if (!cancelled) {
-          all.sort((a, b) => a.value.localeCompare(b.value))
-          setAllTags(all)
-        }
+        if (!cancelled) setAllTags(all)
       } catch {
         if (!cancelled) toast.error("Failed to load tags")
       } finally {
@@ -189,33 +90,9 @@ const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
     return allTags.filter((t) => t.value.toLowerCase().includes(q))
   }, [allTags, query])
 
-  const { mainTags, fishTags, coralTags, suppliesTags, miscTags } = useMemo(() => {
-    const main: Tag[] = []
-    const fish: Tag[] = []
-    const coral: Tag[] = []
-    const supplies: Tag[] = []
-    const misc: Tag[] = []
-    for (const t of filtered) {
-      const v = t.value.toLowerCase()
-      if (MAIN_TAG_SET.has(v)) main.push(t)
-      else if (FISH_TAG_SET.has(v)) fish.push(t)
-      else if (CORAL_TAG_SET.has(v)) coral.push(t)
-      else if (SUPPLIES_TAG_SET.has(v)) supplies.push(t)
-      else misc.push(t)
-    }
-    main.sort((a, b) => mainOrder(a.value) - mainOrder(b.value))
-    fish.sort((a, b) => a.value.localeCompare(b.value))
-    coral.sort((a, b) => a.value.localeCompare(b.value))
-    supplies.sort((a, b) => a.value.localeCompare(b.value))
-    misc.sort((a, b) => a.value.localeCompare(b.value))
-    return {
-      mainTags: main,
-      fishTags: fish,
-      coralTags: coral,
-      suppliesTags: supplies,
-      miscTags: misc,
-    }
-  }, [filtered])
+  // Grouped + ordered exactly like the Product Tags page (shared logic).
+  const sections = useMemo(() => groupTagsForDisplay(filtered), [filtered])
+  const groups = useMemo(() => orderedGroups(allTags), [allTags])
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -252,22 +129,63 @@ const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
     if (!value) return
     setSaving(true)
     try {
+      // The group is assigned AT CREATION (saved on the tag itself).
       const res = await fetch(`${backendUrl}/admin/product-tags`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value }),
+        body: JSON.stringify({
+          value,
+          metadata: buildTagGroupMetadata(newTagGroup, null),
+        }),
       })
       if (!res.ok) throw new Error()
       const body = await res.json()
-      const tag: Tag = body.product_tag
+      const tag: GroupableTag = body.product_tag
       if (!tag?.id) throw new Error()
-      setAllTags((prev) =>
-        [...prev, tag].sort((a, b) => a.value.localeCompare(b.value)),
-      )
+
+      // Place it at the END of the chosen group (renumbers just that group,
+      // preserving its current visible order).
+      let placed: GroupableTag = tag
+      if (newTagGroup !== UNCATEGORIZED) {
+        const section = groupTagsForDisplay(allTags).find(
+          (s) => s.group === newTagGroup,
+        )
+        const plan = planGroupOrder(
+          (section?.tags ?? []).map((t) => ({ id: t.id })),
+          { id: tag.id },
+        )
+        for (const step of plan) {
+          const existing = allTags.find((t) => t.id === step.id)
+          const meta = {
+            ...((step.id === tag.id ? tag.metadata : existing?.metadata) ?? {}),
+            ...buildTagGroupMetadata(newTagGroup, step.sort_position),
+          }
+          const ur = await fetch(
+            `${backendUrl}/admin/product-tags/${step.id}`,
+            {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ metadata: meta }),
+            },
+          )
+          if (!ur.ok) throw new Error()
+          if (step.id === tag.id) placed = { ...tag, metadata: meta }
+          else if (existing) existing.metadata = meta
+        }
+      }
+      setAllTags((prev) => [
+        ...prev.filter((t) => t.id !== placed.id),
+        placed,
+      ])
       setSelected((prev) => new Set(prev).add(tag.id))
       setNewTag("")
-      toast.success(`Created "${value}"`)
+      toast.success(
+        newTagGroup !== UNCATEGORIZED
+          ? `Created "${value}" in ${newTagGroup}`
+          : `Created "${value}" (Uncategorized)`,
+      )
     } catch {
       toast.error("Failed to create tag")
     } finally {
@@ -290,6 +208,7 @@ const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
       <div className="flex flex-col gap-4 px-6 py-4">
         <Text size="small" className="text-ui-fg-subtle">
           Click a tag to toggle it. Scroll or filter to find what you need.
+          Groups and order are managed on the Product Tags page.
         </Text>
         <Input
           value={query}
@@ -306,88 +225,50 @@ const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
             No tags match.
           </Text>
         ) : (
-          <>
-            <div className="flex flex-col gap-2">
-              <Text
-                size="xsmall"
-                className="text-ui-fg-muted uppercase tracking-wider"
-              >
-                Main Categories
-              </Text>
-              <div className="flex flex-wrap gap-2 border border-ui-border-base rounded-md p-3">
-                {mainTags.length === 0 ? (
-                  <Text size="small" className="text-ui-fg-muted">
-                    No main category tags match your filter.
-                  </Text>
-                ) : (
-                  mainTags.map((tag) => {
-                    const active = selected.has(tag.id)
-                    return (
-                      <Button
-                        key={tag.id}
-                        type="button"
-                        variant={active ? "primary" : "secondary"}
-                        size="small"
-                        onClick={() => toggle(tag.id)}
-                        disabled={saving}
-                      >
-                        {tag.value}
-                      </Button>
-                    )
-                  })
-                )}
-              </div>
-            </div>
-            {[
-              { label: "Fish Tags", tags: fishTags },
-              { label: "Coral Tags", tags: coralTags },
-              { label: "Supplies Tags", tags: suppliesTags },
-              { label: "Misc Tags", tags: miscTags },
-            ].map(({ label, tags }) =>
-              tags.length === 0 && query.trim() === "" ? null : (
-                <div key={label} className="flex flex-col gap-2">
-                  <Text
-                    size="xsmall"
-                    className="text-ui-fg-muted uppercase tracking-wider"
-                  >
-                    {label} ({tags.length})
-                  </Text>
-                  <div
-                    className="flex flex-wrap gap-2 overflow-y-auto border border-ui-border-base rounded-md p-3"
-                    style={{ maxHeight: 240 }}
-                  >
-                    {tags.length === 0 ? (
-                      <Text size="small" className="text-ui-fg-muted">
-                        No {label.toLowerCase()} match your filter.
-                      </Text>
-                    ) : (
-                      tags.map((tag) => {
-                        const active = selected.has(tag.id)
-                        return (
-                          <Button
-                            key={tag.id}
-                            type="button"
-                            variant={active ? "primary" : "secondary"}
-                            size="small"
-                            onClick={() => toggle(tag.id)}
-                            disabled={saving}
-                          >
-                            {tag.value}
-                          </Button>
-                        )
-                      })
-                    )}
-                  </div>
+          sections.map(({ group, tags }) =>
+            tags.length === 0 && query.trim() !== "" ? null : (
+              <div key={group} className="flex flex-col gap-2">
+                <Text
+                  size="xsmall"
+                  className="text-ui-fg-muted uppercase tracking-wider"
+                >
+                  {group} ({tags.length})
+                </Text>
+                <div
+                  className="flex flex-wrap gap-2 overflow-y-auto border border-ui-border-base rounded-md p-3"
+                  style={{ maxHeight: 240 }}
+                >
+                  {tags.length === 0 ? (
+                    <Text size="small" className="text-ui-fg-muted">
+                      No tags here yet.
+                    </Text>
+                  ) : (
+                    tags.map((tag) => {
+                      const active = selected.has(tag.id)
+                      return (
+                        <Button
+                          key={tag.id}
+                          type="button"
+                          variant={active ? "primary" : "secondary"}
+                          size="small"
+                          onClick={() => toggle(tag.id)}
+                          disabled={saving}
+                        >
+                          {tag.value}
+                        </Button>
+                      )
+                    })
+                  )}
                 </div>
-              ),
-            )}
-          </>
+              </div>
+            ),
+          )
         )}
         <div className="flex flex-col gap-2">
           <Text size="small" className="text-ui-fg-subtle">
-            Create new tag
+            Create new tag — pick its group now (or leave Uncategorized)
           </Text>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Input
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
@@ -400,6 +281,29 @@ const ProductTagsWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
                 }
               }}
             />
+            <div className="w-48">
+              <Select
+                value={newTagGroup}
+                onValueChange={setNewTagGroup}
+                disabled={saving}
+              >
+                <Select.Trigger>
+                  <Select.Value placeholder="Tag group" />
+                </Select.Trigger>
+                <Select.Content>
+                  {groups
+                    .filter((g) => g !== UNCATEGORIZED)
+                    .map((g) => (
+                      <Select.Item key={g} value={g}>
+                        {g}
+                      </Select.Item>
+                    ))}
+                  <Select.Item value={UNCATEGORIZED}>
+                    Uncategorized (no group)
+                  </Select.Item>
+                </Select.Content>
+              </Select>
+            </div>
             <Button
               type="button"
               variant="secondary"

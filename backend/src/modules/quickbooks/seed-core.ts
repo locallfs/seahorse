@@ -12,6 +12,7 @@ import {
   type QboItem,
 } from "./items"
 import { resolveConfiguredAccounts } from "./auto-create"
+import { sanitizeQbDescription } from "./qb-description"
 import { itemDisplayName } from "./mapping"
 import {
   assertCatalogIdentifiersPresent,
@@ -162,7 +163,8 @@ export async function seedInventoryItems(container: {
               sku: key,
               qtyOnHand: qty,
               unitPrice: price,
-              description: row.description ?? undefined,
+              // Separate QuickBooks Description only — never the website copy.
+              description: sanitizeQbDescription(row.qb_description) || undefined,
               accounts,
               invStartDate,
             })
@@ -175,7 +177,8 @@ export async function seedInventoryItems(container: {
             sku: key,
             qtyOnHand: qty,
             unitPrice: price,
-            description: row.description ?? undefined,
+            // Separate QuickBooks Description only — never the website copy.
+            description: sanitizeQbDescription(row.qb_description) || undefined,
             accounts,
             invStartDate,
           })

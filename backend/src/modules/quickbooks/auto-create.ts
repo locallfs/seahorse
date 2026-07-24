@@ -8,6 +8,7 @@ import {
 } from "./items"
 import { itemDisplayName } from "./mapping"
 import { qboQuery } from "./qbo-client"
+import { QB_DESCRIPTION_METADATA_KEY, sanitizeQbDescription } from "./qb-description"
 
 // ---------------------------------------------------------------------------
 // Automatic QuickBooks item creation for new store products.
@@ -149,6 +150,8 @@ export type EnsureDeps = {
   ledgerLookup: (variantId: string) => Promise<string | null>
   codeLookup: (code: string) => Promise<QboItem | null>
   nameLookup: (name: string) => Promise<QboItem[]>
+  // `description` is the separate QuickBooks Description (short plain text),
+  // NEVER the website description. null = the QBO item Description stays blank.
   qtyPrice: (variantId: string) => Promise<{ qty: number; price: number | null; description: string | null }>
   accounts: () => QboInventoryAccounts
   create: (params: Parameters<typeof createInventoryItem>[1]) => Promise<QboItem>
@@ -261,6 +264,9 @@ export function defaultEnsureDeps(
     codeLookup: (code) => findItemBySku(qb, code),
     nameLookup: (name) => findActiveItemsByExactName(qb, name),
     qtyPrice: async (variantId) => {
+      // Description comes ONLY from the separate QuickBooks Description field
+      // (product.metadata.quickbooks_description). The WEBSITE description
+      // (product.description) is never sent to QuickBooks — blank stays blank.
       const res = await pg.raw(
         `select
            coalesce((select sum(il.stocked_quantity)
@@ -273,15 +279,17 @@ export function defaultEnsureDeps(
                and pr.deleted_at is null and pr.currency_code = 'usd'
                and pr.price_list_id is null
              where pvps.variant_id = ? and pvps.deleted_at is null limit 1) as price,
-           (select p.description from product_variant pv join product p on p.id = pv.product_id
-             where pv.id = ? limit 1) as description`,
+           (select p.metadata->>'${QB_DESCRIPTION_METADATA_KEY}'
+              from product_variant pv join product p on p.id = pv.product_id
+             where pv.id = ? limit 1) as qb_description`,
         [variantId, variantId, variantId]
       )
       const row = res?.rows?.[0] ?? {}
+      const clean = sanitizeQbDescription(row.qb_description)
       return {
         qty: Math.max(0, Math.floor(Number(row.qty ?? 0))),
         price: row.price == null ? null : Number(row.price),
-        description: row.description ?? null,
+        description: clean || null,
       }
     },
     accounts: () => resolveConfiguredAccounts(),

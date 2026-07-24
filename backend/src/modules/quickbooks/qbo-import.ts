@@ -5,6 +5,10 @@ import type QuickbooksModuleService from "./service"
 import { getItemById, type QboItem } from "./items"
 import { qboQuery } from "./qbo-client"
 import { alertVisible } from "./auto-create"
+import {
+  QB_DESCRIPTION_METADATA_KEY,
+  sanitizeQbDescription,
+} from "./qb-description"
 
 // ---------------------------------------------------------------------------
 // QuickBooks → Medusa inclusion ("publish/sync to website").
@@ -223,12 +227,19 @@ export async function maybeImportMarkedItem(
       return
     }
     const price = item.UnitPrice != null ? Number(item.UnitPrice) : 0
+    // The QuickBooks item description lands ONLY in the separate QuickBooks
+    // Description field (metadata) — the website description stays empty for
+    // staff to write real marketing copy before publishing.
+    const qbDesc = sanitizeQbDescription(item.Description)
     const { result } = await createProductsWorkflow(container as any).run({
       input: {
         products: [
           {
             title: item.Name,
             status: "draft", // staff add photo/category, then publish
+            ...(qbDesc
+              ? { metadata: { [QB_DESCRIPTION_METADATA_KEY]: qbDesc } }
+              : {}),
             options: [{ title: "Default", values: ["Default"] }],
             sales_channels: [{ id: defaults.channel }],
             shipping_profile_id: defaults.profile,

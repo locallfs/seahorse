@@ -12,6 +12,9 @@ export interface QboItem {
   Id: string
   Name: string
   Sku?: string
+  // Sales-form description (invoices/receipts). Maps ONLY to the separate
+  // QuickBooks Description field in Medusa — never the website description.
+  Description?: string
   Type: "Service" | "Inventory" | "NonInventory" | "Category"
   SyncToken: string
   QtyOnHand?: number

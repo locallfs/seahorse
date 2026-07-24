@@ -3,6 +3,10 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
 import type QuickbooksModuleService from "./service"
 import { getItemById } from "./items"
 import { readVariantById, readVariantByIdentifier } from "./db-reads"
+import {
+  QB_DESCRIPTION_METADATA_KEY,
+  decideQboDescriptionImport,
+} from "./qb-description"
 
 // QBO → store: re-reads one QuickBooks item and writes its quantity onto the
 // matching store variant's stock levels. Skips levels already equal so the two
@@ -41,6 +45,35 @@ export async function applyQboItemToStore(
   // No match → this is a QuickBooks-only item (owner's local water/services).
   // By design the site never touches those: silently ignore.
   if (!variant) return
+
+  // Description: a QuickBooks item description lands ONLY in the separate
+  // QuickBooks Description field (product.metadata.quickbooks_description).
+  // It NEVER touches the website description (product.description), and a
+  // blank QuickBooks description never erases anything.
+  try {
+    const metaRes = await pg.raw(
+      `select p.id, p.metadata->>'${QB_DESCRIPTION_METADATA_KEY}' as qb_description
+         from product p join product_variant pv on pv.product_id = p.id
+        where pv.id = ? limit 1`,
+      [variant.variant_id]
+    )
+    const prod = metaRes?.rows?.[0]
+    if (prod?.id) {
+      const imp = decideQboDescriptionImport(item.Description, prod.qb_description)
+      if (imp.write) {
+        await pg.raw(
+          `update product
+              set metadata = coalesce(metadata, '{}'::jsonb)
+                             || jsonb_build_object('${QB_DESCRIPTION_METADATA_KEY}', ?::text)
+            where id = ?`,
+          [imp.value, prod.id]
+        )
+      }
+    }
+  } catch (e: any) {
+    // Non-fatal: stock sync below must still run; surface, don't hide.
+    console.log(`[qb-apply] qb-description import failed for ${qboItemId}: ${e?.message}`)
+  }
 
   // Link + level rows read straight from the tables — deterministic.
   const linkRes = await pg.raw(

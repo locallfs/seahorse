@@ -9,7 +9,10 @@
 export type CatalogVariantRow = {
   product_id: string
   product_title: string
-  description: string | null
+  // The separate QuickBooks Description (product.metadata.quickbooks_description).
+  // The WEBSITE description (product.description) is deliberately NOT read
+  // here — it must never reach a QuickBooks payload.
+  qb_description: string | null
   variant_id: string
   variant_title: string | null
   sku: string | null
@@ -24,7 +27,7 @@ export async function readCatalogVariants(pg: any): Promise<CatalogVariantRow[]>
     `select
        p.id as product_id,
        p.title as product_title,
-       p.description,
+       p.metadata->>'quickbooks_description' as qb_description,
        pv.id as variant_id,
        pv.title as variant_title,
        nullif(trim(coalesce(pv.sku,'')),'') as sku,
