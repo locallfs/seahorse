@@ -239,3 +239,120 @@ export function planGroupOrder(
   const order = [...rest.slice(0, at), { id: insert.id }, ...rest.slice(at)]
   return order.map((t, i) => ({ id: t.id, sort_position: (i + 1) * STEP }))
 }
+
+// Where a requested sort position lands in a group's display order: before
+// the first tag whose explicit position is >= the requested one. Tags without
+// positions sit after the positioned block, so a large request lands at the
+// end. Renumbering afterward guarantees no duplicate positions can exist.
+export function indexForPosition(
+  groupTagsInDisplayOrder: GroupableTag[],
+  requested: number
+): number {
+  const i = groupTagsInDisplayOrder.findIndex((t) => {
+    const p = getSortPosition(t)
+    return p != null && p >= requested
+  })
+  return i === -1 ? groupTagsInDisplayOrder.length : i
+}
+
+export type MovePlan = {
+  targetGroup: string | null // null = Uncategorized
+  // Metadata updates to save, MOVED TAGS FIRST (so a mid-run failure can
+  // never lose a tag's group assignment to a sibling-renumber error), then
+  // destination-group siblings being renumbered.
+  updates: Array<{ id: string; metadata: Record<string, unknown> }>
+  // Tags already in the destination group — explicit no-ops.
+  noops: string[]
+}
+
+// Plans moving one or many tags into `targetGroup` (existing OR brand-new —
+// a group is just a string; nothing needs pre-creating). Also used for
+// same-group repositioning. PURE and metadata-only:
+//  - never touches tag value/handle/products, never creates or deletes tags
+//  - preserves every unrelated metadata key on every touched tag
+//  - the destination group is fully renumbered (10-step), so duplicate or
+//    colliding sort positions cannot survive a move
+//  - tags NOT moved and groups NOT targeted appear nowhere in the plan
+export function planMoveToGroup(
+  allTags: GroupableTag[],
+  tagIds: string[],
+  targetGroup: string | null,
+  opts: { position?: number | null } = {}
+): MovePlan {
+  const target = (targetGroup ?? "").trim()
+  const isUncat = !target || target === UNCATEGORIZED
+  const moving = tagIds
+    .map((id) => allTags.find((t) => t.id === id))
+    .filter((t): t is GroupableTag => !!t)
+
+  // Moving to Uncategorized: store the EXPLICIT sentinel, not null — a null
+  // group falls back to the legacy name lists, which would immediately
+  // reclaim legacy-named tags (e.g. "Hammer" → Coral). An explicit staff
+  // move must win over the historical lists.
+  if (isUncat) {
+    const noops = moving
+      .filter((t) => resolveTagGroup(t) === UNCATEGORIZED)
+      .map((t) => t.id)
+    const updates = moving
+      .filter((t) => resolveTagGroup(t) !== UNCATEGORIZED)
+      .map((t) => ({
+        id: t.id,
+        metadata: {
+          ...(t.metadata ?? {}),
+          tag_group: UNCATEGORIZED,
+          sort_position: null,
+        },
+      }))
+    return { targetGroup: null, updates, noops }
+  }
+
+  const movingIds = new Set(moving.map((t) => t.id))
+  const already = moving.filter((t) => resolveTagGroup(t) === target)
+  const incoming = moving.filter((t) => resolveTagGroup(t) !== target)
+
+  // Same-group REPOSITION: when every "moved" tag is already in the target
+  // but an explicit position was requested, treat it as a reorder instead of
+  // a no-op.
+  const reposition = incoming.length === 0 && opts.position != null
+
+  if (incoming.length === 0 && !reposition) {
+    return { targetGroup: target, updates: [], noops: already.map((t) => t.id) }
+  }
+
+  const destCurrent = sortTagsInGroup(
+    allTags.filter(
+      (t) => resolveTagGroup(t) === target && !(reposition && movingIds.has(t.id))
+    ),
+    target
+  )
+  const toPlace = reposition ? already : incoming
+  const at =
+    opts.position != null
+      ? indexForPosition(destCurrent, opts.position)
+      : destCurrent.length // default: end of the destination group
+
+  const order = [
+    ...destCurrent.slice(0, at),
+    ...toPlace,
+    ...destCurrent.slice(at),
+  ]
+  const positionOf = new Map(order.map((t, i) => [t.id, (i + 1) * STEP]))
+
+  const mkUpdate = (t: GroupableTag) => ({
+    id: t.id,
+    metadata: {
+      ...(t.metadata ?? {}),
+      ...buildTagGroupMetadata(target, positionOf.get(t.id)!),
+    },
+  })
+  // Moved tags first, then renumbered siblings.
+  const updates = [
+    ...toPlace.map(mkUpdate),
+    ...destCurrent.filter((t) => !movingIds.has(t.id)).map(mkUpdate),
+  ]
+  return {
+    targetGroup: target,
+    updates,
+    noops: reposition ? [] : already.map((t) => t.id),
+  }
+}
