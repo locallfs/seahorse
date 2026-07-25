@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { medusa } from "@/lib/medusa";
 import { storeFetch } from "@/lib/storeFetch";
-import FreeShippingBadge from "./FreeShippingBadge";
-import OutOfStockBanner from "./OutOfStockBanner";
+import { sortProductsAlpha } from "@/lib/alphaSort";
+import ProductBadges from "./ProductBadges";
 
 type StoreProduct = {
   id: string;
@@ -107,7 +107,8 @@ export default function ProductGrid({
           const unique = Array.from(
             new Map(collected.map((p: any) => [p.id, p])).values(),
           );
-          setProducts(unique as StoreProduct[]);
+          // Browse pages are always alphabetical (A–Z, natural, case-insensitive).
+          setProducts(sortProductsAlpha(unique as StoreProduct[]));
           setLoading(false);
           return;
         }
@@ -142,7 +143,8 @@ export default function ProductGrid({
           if (offset > 10000) break;
         }
         if (cancelled) return;
-        setProducts(collected as StoreProduct[]);
+        // Browse pages are always alphabetical (A–Z, natural, case-insensitive).
+        setProducts(sortProductsAlpha(collected as StoreProduct[]));
         setLoading(false);
       } catch (err) {
         if (cancelled) return;
@@ -206,8 +208,10 @@ export default function ProductGrid({
                     No image
                   </div>
                 )}
-                {outOfStock && <OutOfStockBanner size="sm" />}
-                <FreeShippingBadge amount={price?.calculated_amount} />
+                <ProductBadges
+                  outOfStock={outOfStock}
+                  priceAmount={price?.calculated_amount}
+                />
               </div>
               <div className="p-3 bg-ocean-900">
                 <p className="text-sm text-white font-medium leading-snug mb-1">

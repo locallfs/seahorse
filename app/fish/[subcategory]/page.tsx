@@ -4,7 +4,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
 import CategoryJsonLd from "@/components/CategoryJsonLd";
-import FishNav from "@/components/FishNav";
+import ListingFilterBar from "@/components/ListingFilterBar";
+import { fishFiltersConfig } from "@/lib/filtersModel";
 import {
   FISH_SUBCATEGORIES,
   findFishSubcategory,
@@ -68,7 +69,7 @@ export default async function FishSubcategoryPage({
             </p>
           </div>
         </div>
-        <FishNav active={cat.handle} />
+        <ListingFilterBar config={fishFiltersConfig()} activeValue={cat.handle} />
         <div className="max-w-screen-xl mx-auto px-6 py-12">
           <ProductGrid tagValues={[cat.tag]} />
         </div>

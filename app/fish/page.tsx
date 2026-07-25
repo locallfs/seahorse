@@ -2,7 +2,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
 import CategoryJsonLd from "@/components/CategoryJsonLd";
-import FishNav from "@/components/FishNav";
+import ListingFilterBar from "@/components/ListingFilterBar";
+import { fishFiltersConfig } from "@/lib/filtersModel";
 
 export const metadata = {
   title: "Saltwater Fish for Sale",
@@ -32,7 +33,7 @@ export default function FishPage() {
             </h1>
           </div>
         </div>
-        <FishNav />
+        <ListingFilterBar config={fishFiltersConfig()} activeValue={null} />
         <div className="max-w-screen-xl mx-auto px-6 py-12">
           <ProductGrid tagValues={["Fish"]} />
         </div>

@@ -4,7 +4,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
 import CategoryJsonLd from "@/components/CategoryJsonLd";
-import CoralsNav from "@/components/CoralsNav";
+import ListingFilterBar from "@/components/ListingFilterBar";
+import { coralsFiltersConfig } from "@/lib/filtersModel";
 import {
   CORALS_SUBCATEGORIES,
   findCoralSubcategory,
@@ -68,7 +69,7 @@ export default async function CoralsSubcategoryPage({
             </p>
           </div>
         </div>
-        <CoralsNav active={cat.handle} />
+        <ListingFilterBar config={coralsFiltersConfig()} activeValue={cat.handle} />
         <div className="max-w-screen-xl mx-auto px-6 py-12">
           <ProductGrid tagValues={[cat.tag]} />
         </div>

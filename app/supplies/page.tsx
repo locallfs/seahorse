@@ -2,7 +2,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
 import CategoryJsonLd from "@/components/CategoryJsonLd";
-import SuppliesNav from "@/components/SuppliesNav";
+import ListingFilterBar from "@/components/ListingFilterBar";
+import { suppliesFiltersConfig } from "@/lib/filtersModel";
 
 export const metadata = {
   title: "Saltwater Aquarium Supplies",
@@ -32,7 +33,7 @@ export default function SuppliesPage() {
             </h1>
           </div>
         </div>
-        <SuppliesNav />
+        <ListingFilterBar config={suppliesFiltersConfig()} activeValue={null} />
         <div className="max-w-screen-xl mx-auto px-6 py-12">
           <ProductGrid category="supplies" />
         </div>

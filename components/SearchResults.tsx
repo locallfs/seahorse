@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { medusa } from "@/lib/medusa";
-import FreeShippingBadge from "./FreeShippingBadge";
+import { sortProductsAlpha } from "@/lib/alphaSort";
+import ProductBadges from "./ProductBadges";
 
 type StoreProduct = {
   id: string;
@@ -55,7 +56,8 @@ export default function SearchResults({ query }: { query: string }) {
         } as any);
 
         if (cancelled) return;
-        setProducts(res.products as StoreProduct[]);
+        // Search results list alphabetically (no relevance selector exists).
+        setProducts(sortProductsAlpha(res.products as StoreProduct[]));
         setLoading(false);
       } catch (err) {
         if (cancelled) return;
@@ -118,7 +120,7 @@ export default function SearchResults({ query }: { query: string }) {
             <Link key={product.id} href={`/products/${product.handle}`} className="group">
               <div className="rounded-lg border border-white/10 group-hover:border-white/30 overflow-hidden transition-all duration-300 glow-purple">
                 <div className="w-full aspect-square relative bg-black">
-                  <FreeShippingBadge amount={price?.calculated_amount} />
+                  <ProductBadges priceAmount={price?.calculated_amount} />
                   {product.thumbnail ? (
                     <Image
                       src={product.thumbnail}
