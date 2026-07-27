@@ -73,19 +73,60 @@ function summarizeCart(items, classifications) {
   };
 }
 
+// Supply line items of the cart — everything NOT classified as eligible live
+// Fish/Coral (so inverts, macro, equipment, and unclassified products are all
+// treated as the chargeable portion).
+function filterSupplyItems(items, classifications) {
+  return (items || []).filter((item) => {
+    const cls =
+      classifications instanceof Map
+        ? classifications.get(item.product_id)
+        : (classifications || {})[item.product_id];
+    return !isEligibleClassification(cls);
+  });
+}
+
+// Builds the request body for a GENUINE supplies-only Shippo quote: only the
+// supply line items are considered, packed under the supplies packaging rule,
+// to the customer's actual destination. No fish/coral line-item data reaches
+// the request. Returns null when the cart has no supply items — a live-only
+// cart needs no supplies quote.
+function buildSuppliesOnlyShipment({
+  addressFrom,
+  addressTo,
+  items,
+  classifications,
+  suppliesParcel,
+}) {
+  const supplyItems = filterSupplyItems(items, classifications);
+  if (supplyItems.length === 0) return null;
+  return {
+    supplyItems,
+    request: {
+      address_from: addressFrom,
+      address_to: addressTo,
+      parcels: [suppliesParcel],
+      async: false,
+    },
+  };
+}
+
 // summary null/undefined (classification unavailable) fails SAFE: full price.
 //
 // The waiver is the whole cost attributable to the live portion:
 //   live-only qualifying cart  → $0 (everything waived);
-//   mixed qualifying cart      → the customer pays ONLY what the supplies
-//     would cost shipped alone: the CHEAPEST (standard) carrier rate + the
-//     supplies handling fee. The overnight rate — forced by the fish — and
-//     the live handling fee are both waived, never partially split.
+//   mixed qualifying cart      → the customer pays the ACTUAL supplies-only
+//     carrier quote (a separate Shippo shipment built from the supply items
+//     alone) + the supplies handling fee. The livestock-forced overnight
+//     rate and the live handling fee are waived in full.
+//   supplies-only quote unavailable → the normal UNDISCOUNTED charge — we
+//     never guess and never substitute a rate from the mixed/livestock
+//     shipment's response.
 function decideShippingCharge({
   /** carrier rate of the option the customer selected (overnight when live) */
   carrierAmount,
-  /** cheapest available carrier rate = what supplies alone would ship for */
-  cheapestCarrierAmount,
+  /** carrier rate from the separate supplies-only shipment quote, or null */
+  suppliesOnlyCarrierAmount,
   handlingLive,
   handlingSupplies,
   cartHasLiveAnimals,
@@ -94,17 +135,31 @@ function decideShippingCharge({
   const normal =
     carrierAmount + (cartHasLiveAnimals ? handlingLive : handlingSupplies);
   if (!summary || !summary.qualifies) {
-    return { amount: normal, waived: 0, freeLivePortion: false };
+    return { amount: normal, waived: 0, freeLivePortion: false, reason: "not_qualifying" };
   }
   if (!summary.hasOtherItems) {
-    return { amount: 0, waived: normal, freeLivePortion: true };
+    return { amount: 0, waived: normal, freeLivePortion: true, reason: "live_only_free" };
   }
-  const suppliesOnly =
-    (cheapestCarrierAmount != null ? cheapestCarrierAmount : carrierAmount) +
-    handlingSupplies;
-  // Never charge MORE than the normal price (cheapest ≤ selected in practice).
+  if (
+    suppliesOnlyCarrierAmount == null ||
+    !Number.isFinite(Number(suppliesOnlyCarrierAmount))
+  ) {
+    return {
+      amount: normal,
+      waived: 0,
+      freeLivePortion: false,
+      reason: "supplies_quote_unavailable",
+    };
+  }
+  const suppliesOnly = Number(suppliesOnlyCarrierAmount) + handlingSupplies;
+  // The discounted charge can never exceed the normal charge.
   const amount = Math.min(suppliesOnly, normal);
-  return { amount, waived: normal - amount, freeLivePortion: true };
+  return {
+    amount,
+    waived: normal - amount,
+    freeLivePortion: true,
+    reason: "mixed_supplies_only_charge",
+  };
 }
 
 module.exports = {
@@ -113,5 +168,7 @@ module.exports = {
   ELIGIBLE_TAG_VALUES,
   isEligibleClassification,
   summarizeCart,
+  filterSupplyItems,
+  buildSuppliesOnlyShipment,
   decideShippingCharge,
 };

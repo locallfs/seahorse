@@ -5,8 +5,26 @@ const {
 } = require("@medusajs/framework/utils");
 const {
   summarizeCart,
+  buildSuppliesOnlyShipment,
   decideShippingCharge,
 } = require("./free-shipping");
+
+// One shared mapping from a Medusa shipping address to a Shippo address_to.
+function buildShippoAddressTo(shippingAddress) {
+  return {
+    name:
+      [shippingAddress.first_name, shippingAddress.last_name]
+        .filter(Boolean)
+        .join(" ") || "Customer",
+    street1: shippingAddress.address_1,
+    street2: shippingAddress.address_2 || "",
+    city: shippingAddress.city,
+    state: shippingAddress.province || "",
+    zip: shippingAddress.postal_code,
+    country: shippingAddress.country_code?.toUpperCase() || "US",
+    phone: shippingAddress.phone || "",
+  };
+}
 
 const SHIPPO_BASE = "https://api.goshippo.com";
 
@@ -109,6 +127,46 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
       });
     }
     return map;
+  }
+
+  // Genuine supplies-only carrier quote for a qualifying mixed cart: a
+  // separate Shippo shipment holding ONLY the supply items, packed under the
+  // supplies packaging rule, to the customer's actual destination. The
+  // supplies' default service is Standard, i.e. the cheapest rate OF THIS
+  // supplies-only shipment. Returns null on any failure — the caller then
+  // charges the normal undiscounted price and logs a diagnostic. We never
+  // guess and never reuse a rate from the mixed/livestock shipment.
+  async quoteSuppliesOnlyCarrierRate(shippingAddress, items) {
+    try {
+      const classifications = await this.classifyCartItems(items);
+      if (classifications.size === 0) return null;
+      const built = buildSuppliesOnlyShipment({
+        addressFrom: FROM_ADDRESS,
+        addressTo: buildShippoAddressTo(shippingAddress),
+        items: (items || []).map((i) => ({ product_id: i?.product_id })),
+        classifications,
+        suppliesParcel: DEFAULT_PARCEL,
+      });
+      if (!built) return null;
+      const shipment = await this.shippoRequest(
+        "/shipments/",
+        "POST",
+        built.request
+      );
+      const amounts = (shipment.rates || [])
+        .map((r) => parseFloat(r.amount))
+        .filter(Number.isFinite);
+      if (amounts.length === 0) {
+        this.logger.warn("Shippo: supplies-only quote returned no rates");
+        return null;
+      }
+      return Math.min(...amounts);
+    } catch (err) {
+      this.logger.warn(
+        `Shippo: supplies-only quote failed: ${err?.message || err}`
+      );
+      return null;
+    }
   }
 
   // Live Fish/Coral subtotal vs the threshold. Any failure returns null,
@@ -225,18 +283,7 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
     try {
       const shipment = await this.shippoRequest("/shipments/", "POST", {
         address_from: FROM_ADDRESS,
-        address_to: {
-          name: [shippingAddress.first_name, shippingAddress.last_name]
-            .filter(Boolean)
-            .join(" ") || "Customer",
-          street1: shippingAddress.address_1,
-          street2: shippingAddress.address_2 || "",
-          city: shippingAddress.city,
-          state: shippingAddress.province || "",
-          zip: shippingAddress.postal_code,
-          country: shippingAddress.country_code?.toUpperCase() || "US",
-          phone: shippingAddress.phone || "",
-        },
+        address_to: buildShippoAddressTo(shippingAddress),
         parcels: [DEFAULT_PARCEL],
         async: false,
       });
@@ -282,24 +329,40 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
       }
 
       const carrierAmount = parseFloat(selectedRate.amount);
-      const cheapestCarrierAmount = Math.min(
-        ...rates.map((r) => parseFloat(r.amount)).filter(Number.isFinite)
-      );
-      const { amount: totalAmount, waived, freeLivePortion } =
+
+      // Qualifying mixed cart: fetch a GENUINE supplies-only quote — a second
+      // Shippo shipment built from the supply items alone. Never a rate
+      // borrowed from this mixed/livestock shipment's response.
+      let suppliesOnlyCarrierAmount = null;
+      if (summary?.qualifies && summary.hasOtherItems) {
+        suppliesOnlyCarrierAmount = await this.quoteSuppliesOnlyCarrierRate(
+          shippingAddress,
+          context?.items
+        );
+      }
+
+      const { amount: totalAmount, waived, freeLivePortion, reason } =
         decideShippingCharge({
           carrierAmount,
-          cheapestCarrierAmount,
+          suppliesOnlyCarrierAmount,
           handlingLive: HANDLING_FEE_LIVE,
           handlingSupplies: HANDLING_FEE_SUPPLIES,
           cartHasLiveAnimals: hasLiveAnimals(context?.items),
           summary,
         });
 
+      if (reason === "supplies_quote_unavailable") {
+        this.logger.error(
+          "Shippo: supplies-only quote unavailable for a qualifying mixed cart — charging the normal undiscounted rate; NOT substituting a mixed/livestock rate"
+        );
+      }
       this.logger.info(
         `Shippo rate: ${selectedRate.servicelevel?.name} — $${carrierAmount} carrier → $${totalAmount} charged${
-          freeLivePortion
-            ? ` ($${waived} live-portion shipping waived; supplies pay their own standard rate $${cheapestCarrierAmount} + $${HANDLING_FEE_SUPPLIES} handling)`
-            : ""
+          freeLivePortion && summary?.hasOtherItems
+            ? ` ($${waived} live-portion shipping waived; supplies pay their own quoted rate $${suppliesOnlyCarrierAmount} + $${HANDLING_FEE_SUPPLIES} handling)`
+            : freeLivePortion
+              ? ` ($${waived} waived — qualifying live-only cart)`
+              : ""
         } (${selectedRate.provider})`
       );
 

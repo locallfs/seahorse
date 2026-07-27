@@ -4,6 +4,8 @@ const {
   FREE_SHIPPING_THRESHOLD,
   isEligibleClassification,
   summarizeCart,
+  filterSupplyItems,
+  buildSuppliesOnlyShipment,
   decideShippingCharge,
 } = require("../free-shipping")
 
@@ -44,6 +46,21 @@ describe("eligibility classification", () => {
     expect(isEligibleClassification(null)).toBe(false)
     expect(isEligibleClassification(undefined)).toBe(false)
   })
+
+  it("inverts, macroalgae, equipment, and unclassified products NEVER qualify", () => {
+    expect(
+      isEligibleClassification({ metadata_override: null, category_handles: ["inverts"], tag_values: ["Invert"] })
+    ).toBe(false)
+    expect(
+      isEligibleClassification({ metadata_override: null, category_handles: [], tag_values: ["Macroalgae"] })
+    ).toBe(false)
+    expect(
+      isEligibleClassification({ metadata_override: null, category_handles: [], tag_values: ["Lighting"] })
+    ).toBe(false)
+    expect(
+      isEligibleClassification({ metadata_override: null, category_handles: [], tag_values: [] })
+    ).toBe(false)
+  })
 })
 
 describe("cart summary — only live fish/coral counts toward the threshold", () => {
@@ -79,12 +96,62 @@ describe("cart summary — only live fish/coral counts toward the threshold", ()
   })
 })
 
+describe("supplies-only shipment quote builder", () => {
+  const cls = new Map([
+    ["fish_1", fishCls],
+    ["coral_1", coralCls],
+    ["supply_1", supplyCls],
+  ])
+  const suppliesParcel = { length: 12, width: 12, height: 10, weight: 5 }
+  const addresses = {
+    addressFrom: { city: "Portland", zip: "97211" },
+    addressTo: { city: "Austin", zip: "78701" },
+  }
+
+  it("the quote excludes ALL Fish and Coral data — only supply items remain", () => {
+    const built = buildSuppliesOnlyShipment({
+      ...addresses,
+      items: [
+        { product_id: "fish_1" },
+        { product_id: "coral_1" },
+        { product_id: "supply_1" },
+      ],
+      classifications: cls,
+      suppliesParcel,
+    })
+    expect(built.supplyItems.map((i: any) => i.product_id)).toEqual(["supply_1"])
+    const serialized = JSON.stringify(built.request)
+    expect(serialized).not.toContain("fish_1")
+    expect(serialized).not.toContain("coral_1")
+    expect(built.request.parcels).toEqual([suppliesParcel])
+    expect(built.request.address_to).toEqual(addresses.addressTo)
+  })
+
+  it("filterSupplyItems keeps inverts/unclassified as chargeable supply-side items", () => {
+    const kept = filterSupplyItems(
+      [{ product_id: "fish_1" }, { product_id: "mystery" }],
+      cls
+    )
+    expect(kept.map((i: any) => i.product_id)).toEqual(["mystery"])
+  })
+
+  it("a live-only cart builds NO supplies quote at all", () => {
+    const built = buildSuppliesOnlyShipment({
+      ...addresses,
+      items: [{ product_id: "fish_1" }, { product_id: "coral_1" }],
+      classifications: cls,
+      suppliesParcel,
+    })
+    expect(built).toBeNull()
+  })
+})
+
 describe("shipping charge decision", () => {
-  // Overnight (selected, forced by live animals): $60. Standard/cheapest —
-  // what the supplies would ship for on their own: $15.
+  // Overnight (selected, forced by live animals): $60. The GENUINE
+  // supplies-only shipment quote (separate Shippo request): $15.
   const fees = {
     carrierAmount: 60,
-    cheapestCarrierAmount: 15,
+    suppliesOnlyCarrierAmount: 15,
     handlingLive: 12,
     handlingSupplies: 7,
   }
@@ -95,7 +162,7 @@ describe("shipping charge decision", () => {
       new Map([["fish_1", fishCls]])
     )
     const d = decideShippingCharge({ ...fees, cartHasLiveAnimals: true, summary })
-    expect(d).toEqual({ amount: 72, waived: 0, freeLivePortion: false })
+    expect(d).toMatchObject({ amount: 72, waived: 0, freeLivePortion: false })
   })
 
   it("qualifying live-only cart ships COMPLETELY free — the whole $72 is waived", () => {
@@ -104,10 +171,10 @@ describe("shipping charge decision", () => {
       new Map([["fish_1", fishCls]])
     )
     const d = decideShippingCharge({ ...fees, cartHasLiveAnimals: true, summary })
-    expect(d).toEqual({ amount: 0, waived: 72, freeLivePortion: true })
+    expect(d).toMatchObject({ amount: 0, waived: 72, freeLivePortion: true })
   })
 
-  it("mixed cart: customer pays ONLY the supplies-only shipment (standard rate + $7); overnight + live handling waived", () => {
+  it("mixed cart: customer pays the ACTUAL supplies-only quote + $7; the livestock overnight rate does not inflate it", () => {
     const summary = summarizeCart(
       [item("fish_1", 600), item("supply_1", 50)],
       new Map([
@@ -116,12 +183,18 @@ describe("shipping charge decision", () => {
       ])
     )
     const d = decideShippingCharge({ ...fees, cartHasLiveAnimals: true, summary })
-    // normal would be 60 + 12 = 72; supplies-only is 15 + 7 = 22; waived 50
-    expect(d).toEqual({ amount: 22, waived: 50, freeLivePortion: true })
+    // normal 60 + 12 = 72; supplies-only quote 15 + 7 = 22; waived 50.
+    // The $60 overnight rate appears nowhere in the charge.
+    expect(d).toMatchObject({
+      amount: 22,
+      waived: 50,
+      freeLivePortion: true,
+      reason: "mixed_supplies_only_charge",
+    })
     expect(d.amount).toBeGreaterThan(0) // supplies never ride free
   })
 
-  it("mixed cart never charges MORE than the normal price even with odd rates", () => {
+  it("the discounted charge NEVER exceeds the normal charge", () => {
     const summary = summarizeCart(
       [item("fish_1", 600), item("supply_1", 50)],
       new Map([
@@ -131,7 +204,7 @@ describe("shipping charge decision", () => {
     )
     const d = decideShippingCharge({
       carrierAmount: 20,
-      cheapestCarrierAmount: 40, // pathological: "cheapest" above selected
+      suppliesOnlyCarrierAmount: 40, // pathological: quote above selected rate
       handlingLive: 12,
       handlingSupplies: 7,
       cartHasLiveAnimals: true,
@@ -140,7 +213,7 @@ describe("shipping charge decision", () => {
     expect(d.amount).toBe(32) // capped at normal (20 + 12)
   })
 
-  it("missing cheapest rate falls back to the selected rate (still waives live handling)", () => {
+  it("a FAILED supplies-only quote falls back to the normal undiscounted charge — no guessing, no substitute rate", () => {
     const summary = summarizeCart(
       [item("fish_1", 600), item("supply_1", 50)],
       new Map([
@@ -150,13 +223,18 @@ describe("shipping charge decision", () => {
     )
     const d = decideShippingCharge({
       carrierAmount: 60,
-      cheapestCarrierAmount: null,
+      suppliesOnlyCarrierAmount: null,
       handlingLive: 12,
       handlingSupplies: 7,
       cartHasLiveAnimals: true,
       summary,
     })
-    expect(d).toEqual({ amount: 67, waived: 5, freeLivePortion: true })
+    expect(d).toEqual({
+      amount: 72, // full normal price — NOT 67, NOT a borrowed rate
+      waived: 0,
+      freeLivePortion: false,
+      reason: "supplies_quote_unavailable",
+    })
   })
 
   it("supplies-only cart keeps normal supplies pricing (their chosen rate + $7)", () => {
@@ -165,11 +243,11 @@ describe("shipping charge decision", () => {
       new Map([["supply_1", supplyCls]])
     )
     const d = decideShippingCharge({ ...fees, cartHasLiveAnimals: false, summary })
-    expect(d).toEqual({ amount: 67, waived: 0, freeLivePortion: false })
+    expect(d).toMatchObject({ amount: 67, waived: 0, freeLivePortion: false })
   })
 
   it("classification unavailable (summary null) charges full price — never accidental free", () => {
     const d = decideShippingCharge({ ...fees, cartHasLiveAnimals: true, summary: null })
-    expect(d).toEqual({ amount: 72, waived: 0, freeLivePortion: false })
+    expect(d).toMatchObject({ amount: 72, waived: 0, freeLivePortion: false })
   })
 })
