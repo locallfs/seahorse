@@ -177,6 +177,35 @@ describe("updating sizes", () => {
     expect(plan.option_values).toEqual(["Medium", "Large"])
   })
 
+  it("existing blank SKUs stay blank — never silently minted or changed", () => {
+    const updatePlan = planSizeVariants(
+      base({
+        sizes: [size("Medium", 60)],
+        existing: [
+          { id: "var_1", title: "Medium", sku: null, size_value: "Medium" },
+        ],
+      })
+    )
+    expect(updatePlan.ok).toBe(true)
+    if (updatePlan.ok) {
+      // "" means "leave the variant's SKU untouched" downstream
+      expect(updatePlan.update[0].sku).toBe("")
+    }
+
+    const convertPlan = planSizeVariants(
+      base({
+        sizes: [size("Medium", 60)],
+        existing: [
+          { id: "var_1", title: "Default variant", sku: null, size_value: null },
+        ],
+      })
+    )
+    expect(convertPlan.ok).toBe(true)
+    if (convertPlan.ok) {
+      expect(convertPlan.convert?.sku).toBe("")
+    }
+  })
+
   it("disable is a flag, not a delete — the size stays in the plan", () => {
     const plan = planSizeVariants(
       base({

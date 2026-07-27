@@ -49,6 +49,83 @@ export default async function sizeVariantReport({ container }: ExecArgs) {
     byProduct.set(r.product_id, list)
   }
 
+  // Categories, tags, and options per product — for the classification and
+  // representability sections below.
+  const catRows = (
+    await pg.raw(
+      `select pcp.product_id, lower(pc.handle) as handle
+         from product_category_product pcp
+         join product_category pc on pc.id = pcp.product_category_id
+          and pc.deleted_at is null`
+    )
+  ).rows as any[]
+  const tagRows = (
+    await pg.raw(
+      `select ptj.product_id, lower(trim(pt.value)) as value
+         from product_tags ptj
+         join product_tag pt on pt.id = ptj.product_tag_id
+          and pt.deleted_at is null`
+    )
+  ).rows as any[]
+  const optRows = (
+    await pg.raw(
+      `select po.product_id, po.title
+         from product_option po
+        where po.deleted_at is null`
+    )
+  ).rows as any[]
+  const catsByProduct = new Map<string, Set<string>>()
+  for (const r of catRows) {
+    const s = catsByProduct.get(r.product_id) ?? new Set()
+    s.add(r.handle)
+    catsByProduct.set(r.product_id, s)
+  }
+  const tagsByProduct = new Map<string, Set<string>>()
+  for (const r of tagRows) {
+    const s = tagsByProduct.get(r.product_id) ?? new Set()
+    s.add(r.value)
+    tagsByProduct.set(r.product_id, s)
+  }
+  const optsByProduct = new Map<string, string[]>()
+  for (const r of optRows) {
+    const l = optsByProduct.get(r.product_id) ?? []
+    l.push(String(r.title ?? ""))
+    optsByProduct.set(r.product_id, l)
+  }
+
+  // Proposed classification (same stable data the size/shipping rules use).
+  const FISH_HANDLES = ["fish", "saltwater-fish", "seahorses"]
+  const CORAL_HANDLES = ["corals", "coral"]
+  const SUPPLY_HANDLES = ["supplies"]
+  const LIVE_OTHER_HANDLES = ["inverts", "invertebrates"]
+  const FISH_TAGS = ["fish", "wysiwyg fish"]
+  const CORAL_TAGS = ["coral", "corals", "wysiwyg coral", "wysiwyg corals"]
+  const SUPPLY_TAGS = ["supplies", "supply"]
+  const LIVE_OTHER_TAGS = ["invert", "inverts", "macro", "macroalgae"]
+  const classify = (productId: string): string => {
+    const cats = catsByProduct.get(productId) ?? new Set()
+    const tags = tagsByProduct.get(productId) ?? new Set()
+    const hasAny = (set: Set<string>, wanted: string[]) =>
+      wanted.some((w) => set.has(w))
+    if (hasAny(cats, FISH_HANDLES) || hasAny(tags, FISH_TAGS)) return "fish"
+    if (hasAny(cats, CORAL_HANDLES) || hasAny(tags, CORAL_TAGS)) return "coral"
+    if (hasAny(cats, SUPPLY_HANDLES) || hasAny(tags, SUPPLY_TAGS)) return "supply"
+    if (hasAny(cats, LIVE_OTHER_HANDLES) || hasAny(tags, LIVE_OTHER_TAGS))
+      return "other-live"
+    return "unclassified"
+  }
+
+  const FISH_SIZE_SET = new Set(
+    ["tiny", "small", "small–medium", "medium", "medium–large", "large", "show"]
+  )
+  const CORAL_SIZE_SET = new Set([
+    "½\"", "1\"", "1½\"", "2\"", "2½\"", "3\"", "3½\"", "4\"", "4½\"", "5\"",
+    "5½\"", "6\"", "colony",
+  ])
+  const PLACEHOLDER_TITLES = ["default variant", "default", "one size"]
+  const normTitle = (s: string | null) =>
+    String(s ?? "").toLowerCase().replace(/\s+/g, " ").trim()
+
   const multiVariant: string[] = []
   const singleVariant: string[] = []
   for (const [, variants] of byProduct) {
@@ -109,6 +186,82 @@ export default async function sizeVariantReport({ container }: ExecArgs) {
     )
   ).rows as any[]
 
+  // Inventory items whose stock is split across multiple locations.
+  const multiLoc = (
+    await pg.raw(
+      `select l.variant_id, il.inventory_item_id,
+              count(distinct il.location_id) as locations
+         from inventory_level il
+         join product_variant_inventory_item l
+           on l.inventory_item_id = il.inventory_item_id
+          and l.deleted_at is null
+        where il.deleted_at is null
+        group by l.variant_id, il.inventory_item_id
+       having count(distinct il.location_id) > 1`
+    )
+  ).rows as any[]
+
+  // Products whose lone placeholder variant would be CONVERTED in place the
+  // first time staff enables sizes (SKU/inventory/QBO mapping preserved).
+  const convertCandidates: string[] = []
+  for (const [, variants] of byProduct) {
+    if (variants.length !== 1) continue
+    const p = variants[0]
+    const vt = normTitle(p.variant_title)
+    if (PLACEHOLDER_TITLES.includes(vt) || vt === normTitle(p.title)) {
+      convertCandidates.push(
+        `${p.title} (variant "${p.variant_title ?? "—"}", sku=${p.sku ?? "—"})`
+      )
+    }
+  }
+
+  // Classification counts under the proposed rules.
+  const classCounts: Record<string, number> = {}
+  const unclassifiedTitles: string[] = []
+  for (const [productId, variants] of byProduct) {
+    const bucket = classify(productId)
+    classCounts[bucket] = (classCounts[bucket] ?? 0) + 1
+    if (bucket === "unclassified") unclassifiedTitles.push(variants[0].title)
+  }
+
+  // Products whose CURRENT variants can't be represented by their proposed
+  // size system without manual review.
+  const unrepresentable: string[] = []
+  for (const [productId, variants] of byProduct) {
+    const p = variants[0]
+    const bucket = classify(productId)
+    const reasons: string[] = []
+    const titles = variants.map((v: any) => normTitle(v.variant_title))
+    const dupTitles = titles.filter((t, i) => titles.indexOf(t) !== i)
+    if (dupTitles.length > 0) {
+      reasons.push(`duplicate variant titles (${[...new Set(dupTitles)].join(", ")})`)
+    }
+    const realOptions = (optsByProduct.get(productId) ?? []).filter(
+      (t) => !["size", "default", "default option", "title"].includes(normTitle(t))
+    )
+    if (realOptions.length > 0) {
+      reasons.push(`non-Size option(s): ${realOptions.join(", ")}`)
+    }
+    if (variants.length > 1 && (bucket === "fish" || bucket === "coral")) {
+      const set = bucket === "fish" ? FISH_SIZE_SET : CORAL_SIZE_SET
+      const bad = titles.filter((t) => !set.has(t))
+      if (bad.length > 0) {
+        reasons.push(
+          `variant titles outside the fixed ${bucket} sizes: ${bad.join(", ")}`
+        )
+      }
+    }
+    if (reasons.length > 0) {
+      unrepresentable.push(`${p.title} — ${reasons.join("; ")}`)
+    }
+  }
+
+  // Products with several variants mapped to several QBO items — EXPECTED
+  // under sizes (informational only; conflicts are the double-mapped list).
+  const multiMappedProducts = [...byProduct.values()].filter(
+    (variants) => variants.filter((v: any) => v.qbo_item_id).length > 1
+  ).length
+
   const line = (s = "") => console.log(s)
   line("=".repeat(72))
   line("SIZE-VARIANT MIGRATION REPORT (read-only — nothing was changed)")
@@ -149,6 +302,38 @@ export default async function sizeVariantReport({ container }: ExecArgs) {
   line()
   line(`— Variants with duplicate inventory links (${dupInv.length}):`)
   for (const r of dupInv) line(`    • variant ${r.variant_id}: ${r.links} links`)
+  line()
+  line(
+    `— Inventory items split across multiple stock locations (${multiLoc.length}):`
+  )
+  for (const r of multiLoc)
+    line(
+      `    • variant ${r.variant_id}: item ${r.inventory_item_id} in ${r.locations} locations`
+    )
+  line()
+  line(
+    `— Products whose lone Default variant WOULD be converted in place when sizes are enabled (${convertCandidates.length}):`
+  )
+  for (const t of convertCandidates) line(`    • ${t}`)
+  line()
+  line("— Classification under the proposed size/shipping rules:")
+  for (const bucket of ["fish", "coral", "supply", "other-live", "unclassified"])
+    line(`    • ${bucket}: ${classCounts[bucket] ?? 0}`)
+  if (unclassifiedTitles.length > 0) {
+    line(`    unclassified titles:`)
+    for (const t of unclassifiedTitles.slice(0, 40)) line(`      - ${t}`)
+    if (unclassifiedTitles.length > 40)
+      line(`      … and ${unclassifiedTitles.length - 40} more`)
+  }
+  line()
+  line(
+    `— Products needing MANUAL review before a size system can represent them (${unrepresentable.length}):`
+  )
+  for (const t of unrepresentable) line(`    • ${t}`)
+  line()
+  line(
+    `— Products with several variants mapped to several QuickBooks items (expected under sizes): ${multiMappedProducts}`
+  )
   line()
   line("Done. No data was modified.")
 }

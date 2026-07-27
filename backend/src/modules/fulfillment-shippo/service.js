@@ -282,18 +282,23 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
       }
 
       const carrierAmount = parseFloat(selectedRate.amount);
-      const { amount: totalAmount, freeLivePortion } = decideShippingCharge({
-        carrierAmount,
-        handlingLive: HANDLING_FEE_LIVE,
-        handlingSupplies: HANDLING_FEE_SUPPLIES,
-        cartHasLiveAnimals: hasLiveAnimals(context?.items),
-        summary,
-      });
+      const cheapestCarrierAmount = Math.min(
+        ...rates.map((r) => parseFloat(r.amount)).filter(Number.isFinite)
+      );
+      const { amount: totalAmount, waived, freeLivePortion } =
+        decideShippingCharge({
+          carrierAmount,
+          cheapestCarrierAmount,
+          handlingLive: HANDLING_FEE_LIVE,
+          handlingSupplies: HANDLING_FEE_SUPPLIES,
+          cartHasLiveAnimals: hasLiveAnimals(context?.items),
+          summary,
+        });
 
       this.logger.info(
         `Shippo rate: ${selectedRate.servicelevel?.name} — $${carrierAmount} carrier → $${totalAmount} charged${
           freeLivePortion
-            ? " (live fish/coral portion is free; supplies charged as a supplies-only shipment)"
+            ? ` ($${waived} live-portion shipping waived; supplies pay their own standard rate $${cheapestCarrierAmount} + $${HANDLING_FEE_SUPPLIES} handling)`
             : ""
         } (${selectedRate.provider})`
       );

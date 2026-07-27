@@ -74,8 +74,18 @@ function summarizeCart(items, classifications) {
 }
 
 // summary null/undefined (classification unavailable) fails SAFE: full price.
+//
+// The waiver is the whole cost attributable to the live portion:
+//   live-only qualifying cart  → $0 (everything waived);
+//   mixed qualifying cart      → the customer pays ONLY what the supplies
+//     would cost shipped alone: the CHEAPEST (standard) carrier rate + the
+//     supplies handling fee. The overnight rate — forced by the fish — and
+//     the live handling fee are both waived, never partially split.
 function decideShippingCharge({
+  /** carrier rate of the option the customer selected (overnight when live) */
   carrierAmount,
+  /** cheapest available carrier rate = what supplies alone would ship for */
+  cheapestCarrierAmount,
   handlingLive,
   handlingSupplies,
   cartHasLiveAnimals,
@@ -84,14 +94,17 @@ function decideShippingCharge({
   const normal =
     carrierAmount + (cartHasLiveAnimals ? handlingLive : handlingSupplies);
   if (!summary || !summary.qualifies) {
-    return { amount: normal, freeLivePortion: false };
+    return { amount: normal, waived: 0, freeLivePortion: false };
   }
   if (!summary.hasOtherItems) {
-    return { amount: 0, freeLivePortion: true };
+    return { amount: 0, waived: normal, freeLivePortion: true };
   }
-  // Mixed cart: the live portion rides free, the supplies portion is charged
-  // exactly like a supplies-only shipment (carrier rate + supplies handling).
-  return { amount: carrierAmount + handlingSupplies, freeLivePortion: true };
+  const suppliesOnly =
+    (cheapestCarrierAmount != null ? cheapestCarrierAmount : carrierAmount) +
+    handlingSupplies;
+  // Never charge MORE than the normal price (cheapest ≤ selected in practice).
+  const amount = Math.min(suppliesOnly, normal);
+  return { amount, waived: normal - amount, freeLivePortion: true };
 }
 
 module.exports = {

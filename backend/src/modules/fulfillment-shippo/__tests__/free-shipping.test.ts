@@ -80,27 +80,34 @@ describe("cart summary — only live fish/coral counts toward the threshold", ()
 })
 
 describe("shipping charge decision", () => {
-  const fees = { carrierAmount: 60, handlingLive: 12, handlingSupplies: 7 }
+  // Overnight (selected, forced by live animals): $60. Standard/cheapest —
+  // what the supplies would ship for on their own: $15.
+  const fees = {
+    carrierAmount: 60,
+    cheapestCarrierAmount: 15,
+    handlingLive: 12,
+    handlingSupplies: 7,
+  }
 
-  it("below the threshold nothing changes: carrier + live handling", () => {
+  it("below the threshold nothing changes: overnight carrier + live handling", () => {
     const summary = summarizeCart(
       [item("fish_1", 200)],
       new Map([["fish_1", fishCls]])
     )
     const d = decideShippingCharge({ ...fees, cartHasLiveAnimals: true, summary })
-    expect(d).toEqual({ amount: 72, freeLivePortion: false })
+    expect(d).toEqual({ amount: 72, waived: 0, freeLivePortion: false })
   })
 
-  it("qualifying live-only cart ships free", () => {
+  it("qualifying live-only cart ships COMPLETELY free — the whole $72 is waived", () => {
     const summary = summarizeCart(
       [item("fish_1", 600)],
       new Map([["fish_1", fishCls]])
     )
     const d = decideShippingCharge({ ...fees, cartHasLiveAnimals: true, summary })
-    expect(d).toEqual({ amount: 0, freeLivePortion: true })
+    expect(d).toEqual({ amount: 0, waived: 72, freeLivePortion: true })
   })
 
-  it("mixed cart: live portion free, supplies STILL charged (carrier + supplies handling)", () => {
+  it("mixed cart: customer pays ONLY the supplies-only shipment (standard rate + $7); overnight + live handling waived", () => {
     const summary = summarizeCart(
       [item("fish_1", 600), item("supply_1", 50)],
       new Map([
@@ -109,21 +116,60 @@ describe("shipping charge decision", () => {
       ])
     )
     const d = decideShippingCharge({ ...fees, cartHasLiveAnimals: true, summary })
-    expect(d).toEqual({ amount: 67, freeLivePortion: true })
+    // normal would be 60 + 12 = 72; supplies-only is 15 + 7 = 22; waived 50
+    expect(d).toEqual({ amount: 22, waived: 50, freeLivePortion: true })
     expect(d.amount).toBeGreaterThan(0) // supplies never ride free
   })
 
-  it("supplies-only cart keeps normal supplies pricing", () => {
+  it("mixed cart never charges MORE than the normal price even with odd rates", () => {
+    const summary = summarizeCart(
+      [item("fish_1", 600), item("supply_1", 50)],
+      new Map([
+        ["fish_1", fishCls],
+        ["supply_1", supplyCls],
+      ])
+    )
+    const d = decideShippingCharge({
+      carrierAmount: 20,
+      cheapestCarrierAmount: 40, // pathological: "cheapest" above selected
+      handlingLive: 12,
+      handlingSupplies: 7,
+      cartHasLiveAnimals: true,
+      summary,
+    })
+    expect(d.amount).toBe(32) // capped at normal (20 + 12)
+  })
+
+  it("missing cheapest rate falls back to the selected rate (still waives live handling)", () => {
+    const summary = summarizeCart(
+      [item("fish_1", 600), item("supply_1", 50)],
+      new Map([
+        ["fish_1", fishCls],
+        ["supply_1", supplyCls],
+      ])
+    )
+    const d = decideShippingCharge({
+      carrierAmount: 60,
+      cheapestCarrierAmount: null,
+      handlingLive: 12,
+      handlingSupplies: 7,
+      cartHasLiveAnimals: true,
+      summary,
+    })
+    expect(d).toEqual({ amount: 67, waived: 5, freeLivePortion: true })
+  })
+
+  it("supplies-only cart keeps normal supplies pricing (their chosen rate + $7)", () => {
     const summary = summarizeCart(
       [item("supply_1", 800)],
       new Map([["supply_1", supplyCls]])
     )
     const d = decideShippingCharge({ ...fees, cartHasLiveAnimals: false, summary })
-    expect(d).toEqual({ amount: 67, freeLivePortion: false })
+    expect(d).toEqual({ amount: 67, waived: 0, freeLivePortion: false })
   })
 
   it("classification unavailable (summary null) charges full price — never accidental free", () => {
     const d = decideShippingCharge({ ...fees, cartHasLiveAnimals: true, summary: null })
-    expect(d).toEqual({ amount: 72, freeLivePortion: false })
+    expect(d).toEqual({ amount: 72, waived: 0, freeLivePortion: false })
   })
 })

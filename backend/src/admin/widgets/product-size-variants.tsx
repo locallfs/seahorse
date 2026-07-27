@@ -99,6 +99,12 @@ const ProductSizeVariantsWidget = ({ data }: DetailWidgetProps<AdminProduct>) =>
   const [rows, setRows] = useState<Row[]>([])
   const [customValue, setCustomValue] = useState("")
   const [errors, setErrors] = useState<string[]>([])
+  // Preview of what saving would do — staff sees every SKU (typed or
+  // auto-generated) before anything is written.
+  const [confirm, setConfirm] = useState<{
+    creates: Array<{ value: string; sku: string }>
+    convert: { value: string; sku: string | null } | null
+  } | null>(null)
 
   const buildRows = useCallback(
     (state: ServerState, sys: SizeSystem | "none"): Row[] => {
@@ -200,12 +206,62 @@ const ProductSizeVariantsWidget = ({ data }: DetailWidgetProps<AdminProduct>) =>
 
   const enabledRows = useMemo(() => rows.filter((r) => r.enabled), [rows])
 
-  const save = async () => {
+  const buildSizesPayload = (skuByValue: Record<string, string> = {}) =>
+    enabledRows.map((r) => ({
+      value: r.value,
+      price: parseFloat(r.price),
+      sale_price: r.sale_price.trim() === "" ? null : parseFloat(r.sale_price),
+      // On confirm, the previewed (minted) SKU is sent explicitly so exactly
+      // what staff saw is what gets saved.
+      sku: r.sku.trim() || skuByValue[r.value] || null,
+      upc_barcode: r.upc_barcode.trim() || null,
+      quantity: r.quantity.trim() === "" ? null : parseInt(r.quantity, 10),
+      disabled: r.disabled,
+    }))
+
+  // Step 1: dry-run on the server. If any variant would be created or
+  // converted, show its exact SKU and wait for staff confirmation.
+  const requestSave = async () => {
     if (system === "none") {
       toast.error("Pick a size system first")
       return
     }
     setErrors([])
+    setConfirm(null)
+    setSaving(true)
+    try {
+      const res = await fetch(`${backendUrl}/admin/size-variants/${data.id}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          preview: true,
+          size_system: system,
+          sizes: buildSizesPayload(),
+        }),
+      })
+      const json: any = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setErrors(json?.errors ?? [json?.error ?? "Preview failed"])
+        toast.error("Sizes were not saved — fix the issues below")
+        return
+      }
+      const creates = json?.plan?.create ?? []
+      const convert = json?.plan?.convert ?? null
+      if (creates.length > 0 || convert) {
+        setConfirm({ creates, convert })
+        return
+      }
+      await executeSave({})
+    } catch (err) {
+      toast.error((err as Error)?.message || "Preview failed")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Step 2: the real save, locking in the previewed SKUs.
+  const executeSave = async (skuByValue: Record<string, string>) => {
     setSaving(true)
     try {
       const res = await fetch(`${backendUrl}/admin/size-variants/${data.id}`, {
@@ -214,15 +270,7 @@ const ProductSizeVariantsWidget = ({ data }: DetailWidgetProps<AdminProduct>) =>
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           size_system: system,
-          sizes: enabledRows.map((r) => ({
-            value: r.value,
-            price: parseFloat(r.price),
-            sale_price: r.sale_price.trim() === "" ? null : parseFloat(r.sale_price),
-            sku: r.sku.trim() || null,
-            upc_barcode: r.upc_barcode.trim() || null,
-            quantity: r.quantity.trim() === "" ? null : parseInt(r.quantity, 10),
-            disabled: r.disabled,
-          })),
+          sizes: buildSizesPayload(skuByValue),
         }),
       })
       const json: any = await res.json().catch(() => ({}))
@@ -231,6 +279,7 @@ const ProductSizeVariantsWidget = ({ data }: DetailWidgetProps<AdminProduct>) =>
         toast.error("Sizes were not saved — fix the issues below")
         return
       }
+      setConfirm(null)
 
       // Stock goes through the proven variant-inventory route, per size.
       const variantIdByValue: Record<string, string> = json?.variants ?? {}
@@ -387,7 +436,7 @@ const ProductSizeVariantsWidget = ({ data }: DetailWidgetProps<AdminProduct>) =>
                       value={row.sku}
                       disabled={!row.enabled}
                       onChange={(e) => patchRow(idx, { sku: e.target.value })}
-                      placeholder="auto"
+                      placeholder="auto (shown before save)"
                     />
                   </Table.Cell>
                   <Table.Cell>
@@ -490,13 +539,55 @@ const ProductSizeVariantsWidget = ({ data }: DetailWidgetProps<AdminProduct>) =>
             </div>
           )}
 
+          {confirm && (
+            <div className="rounded-md border border-ui-border-base bg-ui-bg-subtle px-4 py-3 flex flex-col gap-2">
+              <Text size="small" weight="plus">
+                Review before saving — these SKUs will be used:
+              </Text>
+              {confirm.convert && (
+                <Text size="small" className="text-ui-fg-subtle">
+                  Existing variant becomes “{confirm.convert.value}” — SKU{" "}
+                  {confirm.convert.sku ?? "(stays blank)"} (unchanged)
+                </Text>
+              )}
+              {confirm.creates.map((c) => (
+                <Text key={c.value} size="small" className="text-ui-fg-subtle">
+                  New size “{c.value}” — SKU {c.sku}
+                </Text>
+              ))}
+              <div className="flex gap-2 justify-end pt-1">
+                <Button
+                  size="small"
+                  variant="secondary"
+                  onClick={() => setConfirm(null)}
+                  disabled={saving}
+                >
+                  Go Back
+                </Button>
+                <Button
+                  size="small"
+                  onClick={() =>
+                    executeSave(
+                      Object.fromEntries(
+                        confirm.creates.map((c) => [c.value, c.sku])
+                      )
+                    )
+                  }
+                  isLoading={saving}
+                >
+                  Confirm &amp; Save
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <Text size="small" className="text-ui-fg-subtle">
               {enabledRows.length} size{enabledRows.length === 1 ? "" : "s"}{" "}
               enabled. New sizes get their own QuickBooks item automatically;
               existing mappings are never changed.
             </Text>
-            <Button onClick={save} isLoading={saving} disabled={loading}>
+            <Button onClick={requestSave} isLoading={saving} disabled={loading || !!confirm}>
               Save Sizes
             </Button>
           </div>

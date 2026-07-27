@@ -231,6 +231,34 @@ export async function POST(req: any, res: any) {
       return res.status(400).json({ errors: plan.errors })
     }
 
+    // Preview mode: return exactly what WOULD happen — including every SKU
+    // that would be minted — without executing anything. The widget shows
+    // this to staff for confirmation before the real save; on confirm it
+    // sends the previewed SKUs back explicitly, so what staff saw is what
+    // gets saved (and any conflict that appeared in between fails visibly).
+    if (body.preview === true) {
+      console.log(`[size-variants] POST end (preview) product=${productId}`)
+      return res.json({
+        ok: true,
+        preview: true,
+        plan: {
+          convert: plan.convert
+            ? {
+                value: plan.convert.value,
+                sku: plan.convert.sku || null,
+                variant_id: plan.convert.variant_id,
+              }
+            : null,
+          create: plan.create.map((c) => ({ value: c.value, sku: c.sku })),
+          update: plan.update.map((u) => ({
+            value: u.value,
+            variant_id: u.variant_id,
+          })),
+          option_values: plan.option_values,
+        },
+      })
+    }
+
     // 1. Ensure the Size option carries every needed value.
     if (sizeOption) {
       await updateProductOptionsWorkflow(req.scope).run({
