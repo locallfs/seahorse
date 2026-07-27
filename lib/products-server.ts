@@ -3,20 +3,23 @@ const BACKEND_URL =
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "";
 
 const PRODUCT_FIELDS =
-  "id,handle,title,description,thumbnail,metadata,*images,*options,*variants,*variants.calculated_price,*variants.options,*categories,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder,variants.upc,variants.barcode";
+  "id,handle,title,description,thumbnail,metadata,tags.value,*images,*options,*variants,*variants.calculated_price,*variants.options,*categories,variants.metadata,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder,variants.upc,variants.barcode";
 
 type RegionsResponse = {
   regions?: { id: string }[];
 };
 
-type Variant = {
+export type Variant = {
   id: string;
   title: string;
   sku?: string | null;
   upc?: string | null;
   barcode?: string | null;
+  metadata?: Record<string, unknown> | null;
   calculated_price?: {
     calculated_amount: number;
+    /** Base price when a sale price list applies — used for strikethrough. */
+    original_amount?: number | null;
     currency_code: string;
   };
   options?: { value: string; option_id?: string | null }[] | null;
@@ -57,8 +60,14 @@ export type StoreProduct = {
   images?: ProductImage[] | null;
   variants: Variant[];
   options?: { id: string; title: string }[] | null;
-  metadata?: { pads?: Pads } | null;
+  metadata?: {
+    pads?: Pads;
+    size_system?: string;
+    size_order?: string[];
+    free_shipping_eligible?: boolean;
+  } | null;
   categories?: { id: string; handle: string }[] | null;
+  tags?: { value?: string | null }[] | null;
 };
 
 type ProductsResponse = {

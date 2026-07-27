@@ -92,7 +92,7 @@ export default function Header() {
               <span aria-hidden="true">&#9733;</span>
               <span>$20 off if you spend $250 or more!</span>
               <span aria-hidden="true">&#9733;</span>
-              <span>FREE SHIPPING on orders over $500!</span>
+              <span>FREE SHIPPING on live fish &amp; coral orders over $500!</span>
               <span aria-hidden="true">&#9733;</span>
             </span>
           ))}

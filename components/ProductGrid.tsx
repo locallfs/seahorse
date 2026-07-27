@@ -6,6 +6,8 @@ import Image from "next/image";
 import { medusa } from "@/lib/medusa";
 import { storeFetch } from "@/lib/storeFetch";
 import { sortProductsAlpha } from "@/lib/alphaSort";
+import { allVariantsUnavailable, getStartingPrice } from "@/lib/sizes";
+import { isFreeShippingEligible } from "@/lib/freeShipping";
 import ProductBadges from "./ProductBadges";
 
 type StoreProduct = {
@@ -13,7 +15,12 @@ type StoreProduct = {
   handle: string;
   title: string;
   thumbnail: string | null;
+  metadata?: Record<string, unknown> | null;
+  categories?: Array<{ handle?: string | null }> | null;
+  tags?: Array<{ value?: string | null }> | null;
   variants: Array<{
+    title?: string | null;
+    metadata?: Record<string, unknown> | null;
     calculated_price?: {
       calculated_amount: number;
       currency_code: string;
@@ -23,16 +30,6 @@ type StoreProduct = {
     allow_backorder?: boolean | null;
   }>;
 };
-
-function isProductOutOfStock(product: StoreProduct): boolean {
-  const variants = product.variants ?? [];
-  if (variants.length === 0) return false;
-  return variants.every((v) => {
-    if (!v?.manage_inventory) return false;
-    if (v.allow_backorder) return false;
-    return (v.inventory_quantity ?? 0) <= 0;
-  });
-}
 
 function formatPrice(amount: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
@@ -87,7 +84,7 @@ export default function ProductGrid({
           while (!cancelled) {
             const res = await medusa.store.product.list({
               fields:
-                "id,handle,title,thumbnail,*variants,*variants.calculated_price,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder",
+                "id,handle,title,thumbnail,metadata,tags.value,*categories,*variants,*variants.calculated_price,variants.metadata,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder",
               region_id: regionId,
               tag_id: tagIds,
               limit: pageSize,
@@ -125,7 +122,7 @@ export default function ProductGrid({
         while (!cancelled) {
           const params: Record<string, any> = {
             fields:
-              "id,handle,title,thumbnail,*variants,*variants.calculated_price,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder",
+              "id,handle,title,thumbnail,metadata,tags.value,*categories,*variants,*variants.calculated_price,variants.metadata,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder",
             region_id: regionId,
             limit: pageSize,
             offset,
@@ -188,8 +185,8 @@ export default function ProductGrid({
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
       {products.map((product) => {
-        const price = product.variants?.[0]?.calculated_price;
-        const outOfStock = isProductOutOfStock(product);
+        const price = getStartingPrice(product.variants);
+        const outOfStock = allVariantsUnavailable(product.variants);
         return (
           <Link key={product.id} href={`/products/${product.handle}`} className="group">
             <div className="rounded-lg border border-white/10 group-hover:border-white/30 overflow-hidden transition-all duration-300 glow-purple">
@@ -210,7 +207,8 @@ export default function ProductGrid({
                 )}
                 <ProductBadges
                   outOfStock={outOfStock}
-                  priceAmount={price?.calculated_amount}
+                  priceAmount={price?.amount}
+                  freeShippingEligible={isFreeShippingEligible(product)}
                 />
               </div>
               <div className="p-3 bg-ocean-900">
@@ -219,7 +217,8 @@ export default function ProductGrid({
                 </p>
                 {price && (
                   <p className="text-sm text-white font-semibold">
-                    {formatPrice(price.calculated_amount, price.currency_code)}
+                    {price.isFrom ? "From " : ""}
+                    {formatPrice(price.amount, price.currency)}
                   </p>
                 )}
               </div>

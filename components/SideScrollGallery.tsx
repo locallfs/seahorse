@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getAllStoreProducts } from "@/lib/catalog";
+import { allVariantsUnavailable, getStartingPrice } from "@/lib/sizes";
+import { isFreeShippingEligible } from "@/lib/freeShipping";
 import ProductBadges from "./ProductBadges";
 
 type StoreProduct = {
@@ -11,9 +13,12 @@ type StoreProduct = {
   handle: string;
   title: string;
   thumbnail: string | null;
+  metadata?: Record<string, unknown> | null;
   images?: Array<{ id?: string; url: string; rank?: number }> | null;
   categories?: Array<{ id: string; handle: string }> | null;
+  tags?: Array<{ value?: string | null }> | null;
   variants: Array<{
+    metadata?: Record<string, unknown> | null;
     calculated_price?: {
       calculated_amount: number;
       currency_code: string;
@@ -23,16 +28,6 @@ type StoreProduct = {
     allow_backorder?: boolean | null;
   }>;
 };
-
-function isProductOutOfStock(product: StoreProduct): boolean {
-  const variants = product.variants ?? [];
-  if (variants.length === 0) return false;
-  return variants.every((v) => {
-    if (!v?.manage_inventory) return false;
-    if (v.allow_backorder) return false;
-    return (v.inventory_quantity ?? 0) <= 0;
-  });
-}
 
 interface SideScrollGalleryProps {
   title: string;
@@ -57,8 +52,8 @@ function formatPrice(amount: number, currency: string) {
 }
 
 function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) {
-  const price = product.variants?.[0]?.calculated_price;
-  const outOfStock = isProductOutOfStock(product);
+  const price = getStartingPrice(product.variants);
+  const outOfStock = allVariantsUnavailable(product.variants);
 
   const images = useMemo(() => {
     const imgs = (product.images || [])
@@ -119,7 +114,8 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
           )}
           <ProductBadges
             outOfStock={outOfStock}
-            priceAmount={price?.calculated_amount}
+            priceAmount={price?.amount}
+            freeShippingEligible={isFreeShippingEligible(product)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
           <div className="absolute bottom-4 left-4 right-4 z-10">
@@ -128,7 +124,8 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
             </p>
             {price && (
               <p className="text-white text-sm font-semibold mt-1">
-                {formatPrice(price.calculated_amount, price.currency_code)}
+                {price.isFrom ? "From " : ""}
+                {formatPrice(price.amount, price.currency)}
               </p>
             )}
           </div>

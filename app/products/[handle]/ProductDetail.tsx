@@ -6,6 +6,15 @@ import AddToCartButton from "@/components/AddToCartButton";
 import ShippingNotice from "@/components/ShippingNotice";
 import ProductImageZoom from "@/components/ProductImageZoom";
 import { isLiveAnimal, isCoral, CORAL_WATER_CONDITIONS } from "@/lib/liveAnimal";
+import {
+  allVariantsUnavailable,
+  getSizeSystem,
+  getStartingPrice,
+  isVariantUnavailable,
+  sortVariantsBySize,
+  visibleVariants,
+} from "@/lib/sizes";
+import { qualifiesForFreeShippingBadge } from "@/lib/freeShipping";
 import type { StoreProduct } from "@/lib/products-server";
 import OutOfStockBanner from "@/components/OutOfStockBanner";
 
@@ -66,28 +75,48 @@ function formatPrice(amount: number, currency: string) {
 export default function ProductDetail({ product }: { product: StoreProduct }) {
   const firstImage: string | null =
     product.images?.[0]?.url ?? product.thumbnail ?? null;
+
+  // Enabled sizes, in size-system order (fish/coral fixed lists, supply staff
+  // order). Products without a size system keep their existing variant order.
+  const enabledVariants = useMemo(() => {
+    const sizeSystem = getSizeSystem(
+      product.metadata as Record<string, unknown> | null,
+    );
+    return sortVariantsBySize(
+      visibleVariants(product.variants),
+      sizeSystem,
+      product.metadata?.size_order,
+    );
+  }, [product]);
+
+  const hasVariantChoice = enabledVariants.length > 1;
+
+  // Multiple sizes → the customer must pick one before price locks in and
+  // Add to Cart activates. Single-size products stay auto-selected.
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    product.variants?.[0]?.id ?? null
+    hasVariantChoice ? null : enabledVariants[0]?.id ?? null
   );
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(
     firstImage
   );
 
   const variant = useMemo(() => {
-    return (
-      product.variants.find((v) => v.id === selectedVariantId) ??
-      product.variants[0] ??
-      null
-    );
-  }, [product, selectedVariantId]);
+    return enabledVariants.find((v) => v.id === selectedVariantId) ?? null;
+  }, [enabledVariants, selectedVariantId]);
 
   const price = variant?.calculated_price;
+  const startingPrice = getStartingPrice(enabledVariants);
+  const onSale =
+    !!price &&
+    typeof price.original_amount === "number" &&
+    price.original_amount > price.calculated_amount;
+  const displayedAmount = price?.calculated_amount ?? startingPrice?.amount ?? null;
   const live = isLiveAnimal(product);
   const coral = isCoral(product);
-  const outOfStock =
-    !!variant?.manage_inventory &&
-    !variant?.allow_backorder &&
-    (variant?.inventory_quantity ?? 0) <= 0;
+  const selectedOutOfStock = !!variant && isVariantUnavailable(variant);
+  // The whole product is Out of Stock only when EVERY enabled size is gone.
+  const allOutOfStock = allVariantsUnavailable(product.variants);
+  const freeShipping = qualifiesForFreeShippingBadge(product, displayedAmount);
   const pads = (product.metadata?.pads ?? {}) as Record<string, unknown>;
   const padEntries = PAD_ORDER.filter(({ key }) => {
     return padDisplayValue(pads[key]) !== null;
@@ -103,8 +132,6 @@ export default function ProductDetail({ product }: { product: StoreProduct }) {
     return imgs;
   }, [product]);
 
-  const hasVariantChoice = (product.variants?.length ?? 0) > 1;
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
       <div className="flex flex-col gap-3">
@@ -116,7 +143,7 @@ export default function ProductDetail({ product }: { product: StoreProduct }) {
               No image
             </div>
           )}
-          {outOfStock && <OutOfStockBanner />}
+          {allOutOfStock && <OutOfStockBanner />}
         </div>
         {gallery.length > 1 && (
           <div className="flex gap-2 flex-wrap">
@@ -152,12 +179,24 @@ export default function ProductDetail({ product }: { product: StoreProduct }) {
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">
           {product.title}
         </h1>
-        {price && (
+        {(price || startingPrice) && (
           <div className="flex items-center gap-3 mb-6 flex-wrap">
-            <p className="text-3xl font-bold text-white">
-              {formatPrice(price.calculated_amount, price.currency_code)}
-            </p>
-            {price.calculated_amount >= 500 && (
+            {price ? (
+              <p className="text-3xl font-bold text-white">
+                {formatPrice(price.calculated_amount, price.currency_code)}
+                {onSale && (
+                  <span className="ml-3 text-lg font-medium text-white/50 line-through align-middle">
+                    {formatPrice(price.original_amount!, price.currency_code)}
+                  </span>
+                )}
+              </p>
+            ) : (
+              <p className="text-3xl font-bold text-white">
+                {startingPrice!.isFrom ? "From " : ""}
+                {formatPrice(startingPrice!.amount, startingPrice!.currency)}
+              </p>
+            )}
+            {freeShipping && (
               <span className="px-3 py-1.5 rounded-md bg-[#FFD700] text-black text-xs font-bold tracking-wider uppercase">
                 ★ Free Shipping ★
               </span>
@@ -229,25 +268,46 @@ export default function ProductDetail({ product }: { product: StoreProduct }) {
             <select
               id="variant-select"
               value={selectedVariantId ?? ""}
-              onChange={(e) => setSelectedVariantId(e.target.value)}
+              onChange={(e) => setSelectedVariantId(e.target.value || null)}
               className="w-full bg-ocean-800 text-white text-sm border border-white/20 rounded px-4 py-3 focus:outline-none focus:border-[#FFD700] transition-colors appearance-none"
             >
-              {product.variants.map((v) => (
-                <option key={v.id} value={v.id} className="bg-ocean-800">
-                  {v.title}
-                </option>
-              ))}
+              <option value="" className="bg-ocean-800">
+                Select a size…
+              </option>
+              {enabledVariants.map((v) => {
+                const unavailable = isVariantUnavailable(v);
+                return (
+                  <option
+                    key={v.id}
+                    value={v.id}
+                    disabled={unavailable}
+                    className="bg-ocean-800"
+                  >
+                    {v.title}
+                    {v.calculated_price
+                      ? ` — ${formatPrice(v.calculated_price.calculated_amount, v.calculated_price.currency_code)}`
+                      : ""}
+                    {unavailable ? " (Out of Stock)" : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
         )}
 
-        {variant && price && (
+        {hasVariantChoice && !variant ? (
+          <AddToCartButton
+            variantId=""
+            disabled
+            disabledLabel={allOutOfStock ? "Out of Stock" : "Select a Size"}
+          />
+        ) : variant && price ? (
           <AddToCartButton
             variantId={variant.id}
-            disabled={outOfStock}
-            disabledLabel={outOfStock ? "Out of Stock" : undefined}
+            disabled={selectedOutOfStock}
+            disabledLabel={selectedOutOfStock ? "Out of Stock" : undefined}
           />
-        )}
+        ) : null}
       </div>
     </div>
   );

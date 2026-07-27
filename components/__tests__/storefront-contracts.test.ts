@@ -101,9 +101,18 @@ describe("badge layout — one shared stack, no overlaps possible", () => {
   it("badges are informational only (no pointer capture over the card)", () => {
     expect(badges).toMatch(/pointer-events-none/);
   });
-  it("eligibility rules unchanged: Free Shipping at $500+, availability passed in from existing logic", () => {
-    expect(badges).toMatch(/>= 500/);
+  it("eligibility: Free Shipping gated on live Fish/Coral eligibility AND the shared $500 threshold", () => {
+    // The threshold lives in ONE place (lib/freeShipping) and the badge can
+    // only show for products the eligibility rule approves — Supplies default
+    // to NOT eligible, so they can never badge.
+    expect(badges).toMatch(/FREE_SHIPPING_THRESHOLD/);
+    expect(badges).toMatch(/freeShippingEligible = false/);
+    expect(badges).toMatch(/freeShippingEligible &&/);
     expect(badges).toMatch(/outOfStock/);
+    const lib = read("lib", "freeShipping.ts");
+    expect(lib).toMatch(/FREE_SHIPPING_THRESHOLD = 500/);
+    // Eligibility comes from stable data only — never the product title.
+    expect(lib).not.toMatch(/\.title|isLiveAnimalByTitle|LIVE_KEYWORDS/);
   });
   it("all product cards use the shared stack — no separate absolute badge positions remain", () => {
     for (const file of [
@@ -127,6 +136,34 @@ describe("badge layout — one shared stack, no overlaps possible", () => {
     const detail = read("app", "products", "[handle]", "ProductDetail.tsx");
     expect(detail).toMatch(/OutOfStockBanner/);
     expect(detail).toMatch(/ShippingNotice/); // in normal page flow, not floating
-    expect(detail).not.toMatch(/FreeShippingBadge/);
+    // the deleted FreeShippingBadge COMPONENT must not come back (the
+    // qualifiesForFreeShippingBadge helper from lib/freeShipping is fine)
+    expect(detail).not.toMatch(/<FreeShippingBadge|components\/FreeShippingBadge/);
+  });
+});
+
+describe("size variants wiring", () => {
+  const detail = read("app", "products", "[handle]", "ProductDetail.tsx");
+  it("multi-size products require an explicit size selection before add-to-cart", () => {
+    expect(detail).toMatch(/Select a size…/);
+    expect(detail).toMatch(/Select a Size/); // add-to-cart placeholder label
+  });
+  it("sizes render in size-system order; unavailable sizes disable instead of hiding the product", () => {
+    expect(detail).toMatch(/sortVariantsBySize/);
+    expect(detail).toMatch(/disabled=\{unavailable\}/);
+    expect(detail).toMatch(/\(Out of Stock\)/);
+    expect(detail).toMatch(/allVariantsUnavailable/); // banner only when ALL sizes gone
+  });
+  it("every listing card shows starting prices through the ONE shared helper", () => {
+    for (const file of [
+      ["components", "ProductGrid.tsx"],
+      ["components", "SearchResults.tsx"],
+      ["components", "SideScrollGallery.tsx"],
+    ] as const) {
+      const src = read(...file);
+      expect(src, file.join("/")).toMatch(/getStartingPrice/);
+      expect(src, file.join("/")).toMatch(/isFrom \? "From " : ""/);
+      expect(src, file.join("/")).toMatch(/isFreeShippingEligible/);
+    }
   });
 });

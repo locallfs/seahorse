@@ -3,6 +3,10 @@ const {
   AbstractFulfillmentProviderService,
   MedusaError,
 } = require("@medusajs/framework/utils");
+const {
+  summarizeCart,
+  decideShippingCharge,
+} = require("./free-shipping");
 
 const SHIPPO_BASE = "https://api.goshippo.com";
 
@@ -50,7 +54,7 @@ function hasLiveAnimals(items) {
 class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
   static identifier = "shippo";
 
-  constructor({ logger }, options) {
+  constructor(container, options) {
     super();
     if (!options?.api_key) {
       throw new MedusaError(
@@ -59,7 +63,74 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
       );
     }
     this.apiKey = options.api_key;
-    this.logger = logger;
+    this.logger = container.logger;
+    // Shared PG connection — used to classify cart items by category/tags/
+    // metadata for free-shipping eligibility (titles are NEVER used for
+    // eligibility). If unavailable, free shipping simply never applies.
+    this.pg = container.__pg_connection__ ?? null;
+  }
+
+  // Classifies each product in the cart from stable data: explicit
+  // metadata.free_shipping_eligible override, category handles, and tag
+  // values. Returns a Map keyed by product_id.
+  async classifyCartItems(items) {
+    const productIds = [
+      ...new Set(
+        (items || []).map((i) => i?.product_id).filter((id) => !!id)
+      ),
+    ];
+    if (productIds.length === 0 || !this.pg) return new Map();
+    const marks = productIds.map(() => "?").join(",");
+    const res = await this.pg.raw(
+      `select p.id,
+              p.metadata->>'free_shipping_eligible' as fse,
+              coalesce(array_agg(distinct pc.handle)
+                       filter (where pc.handle is not null), '{}') as handles,
+              coalesce(array_agg(distinct pt.value)
+                       filter (where pt.value is not null), '{}') as tags
+         from product p
+         left join product_category_product pcp on pcp.product_id = p.id
+         left join product_category pc on pc.id = pcp.product_category_id
+          and pc.deleted_at is null
+         left join product_tags ptj on ptj.product_id = p.id
+         left join product_tag pt on pt.id = ptj.product_tag_id
+          and pt.deleted_at is null
+        where p.deleted_at is null and p.id in (${marks})
+        group by p.id`,
+      productIds
+    );
+    const map = new Map();
+    for (const row of res?.rows || []) {
+      map.set(String(row.id), {
+        metadata_override:
+          row.fse === "true" ? true : row.fse === "false" ? false : null,
+        category_handles: row.handles || [],
+        tag_values: row.tags || [],
+      });
+    }
+    return map;
+  }
+
+  // Live Fish/Coral subtotal vs the threshold. Any failure returns null,
+  // which downstream means "charge full price" — never accidental free.
+  async freeShippingSummary(items) {
+    try {
+      if (!this.pg) return null;
+      const classifications = await this.classifyCartItems(items);
+      return summarizeCart(
+        (items || []).map((i) => ({
+          product_id: i?.product_id,
+          unit_price: Number(i?.unit_price ?? 0),
+          quantity: Number(i?.quantity ?? 1),
+        })),
+        classifications
+      );
+    } catch (err) {
+      this.logger.warn(
+        `Shippo free-shipping classification failed (charging full price): ${err?.message || err}`
+      );
+      return null;
+    }
   }
 
   async shippoRequest(endpoint, method = "GET", body = null) {
@@ -138,6 +209,19 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
       };
     }
 
+    // Free-shipping check first: a qualifying live-only cart needs no carrier
+    // rate at all. Classification failures leave summary null → full price.
+    const summary = await this.freeShippingSummary(context?.items);
+    if (summary?.qualifies && !summary.hasOtherItems) {
+      this.logger.info(
+        `Shippo: live fish/coral subtotal $${summary.liveSubtotal} meets the free-shipping threshold and the cart is live-only — shipping is free`
+      );
+      return {
+        calculated_amount: 0,
+        is_calculated_price_tax_inclusive: false,
+      };
+    }
+
     try {
       const shipment = await this.shippoRequest("/shipments/", "POST", {
         address_from: FROM_ADDRESS,
@@ -198,13 +282,20 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
       }
 
       const carrierAmount = parseFloat(selectedRate.amount);
-      const handlingFee = hasLiveAnimals(context?.items)
-        ? HANDLING_FEE_LIVE
-        : HANDLING_FEE_SUPPLIES;
-      const totalAmount = carrierAmount + handlingFee;
+      const { amount: totalAmount, freeLivePortion } = decideShippingCharge({
+        carrierAmount,
+        handlingLive: HANDLING_FEE_LIVE,
+        handlingSupplies: HANDLING_FEE_SUPPLIES,
+        cartHasLiveAnimals: hasLiveAnimals(context?.items),
+        summary,
+      });
 
       this.logger.info(
-        `Shippo rate: ${selectedRate.servicelevel?.name} — $${carrierAmount} carrier + $${handlingFee} handling = $${totalAmount} (${selectedRate.provider})`
+        `Shippo rate: ${selectedRate.servicelevel?.name} — $${carrierAmount} carrier → $${totalAmount} charged${
+          freeLivePortion
+            ? " (live fish/coral portion is free; supplies charged as a supplies-only shipment)"
+            : ""
+        } (${selectedRate.provider})`
       );
 
       return {

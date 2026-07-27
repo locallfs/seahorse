@@ -9,14 +9,19 @@
 //   3. Free Shipping
 //   4. Other informational labels
 //
-// Eligibility rules are unchanged: Free Shipping still appears at $500+, and
-// Out of Stock still comes from the exact same inventory logic as before —
-// this component only lays them out.
+// Free Shipping eligibility: the badge is a live Fish & Coral perk. Callers
+// pass `freeShippingEligible` from lib/freeShipping's category/tag/metadata
+// rule (NEVER title-based); the badge then shows only at the shared
+// FREE_SHIPPING_THRESHOLD. Supplies are never eligible, so they never badge.
+
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/freeShipping";
 
 export type ProductBadgesProps = {
   outOfStock?: boolean;
-  /** First variant's calculated price — Free Shipping shows at $500+. */
+  /** Displayed (lowest enabled-size) price — badge shows at the threshold. */
   priceAmount?: number | null;
+  /** From lib/freeShipping isFreeShippingEligible — defaults to NOT eligible. */
+  freeShippingEligible?: boolean;
   /** Priority-4 informational labels (rendered last). */
   extraLabels?: string[];
 };
@@ -24,9 +29,13 @@ export type ProductBadgesProps = {
 export default function ProductBadges({
   outOfStock = false,
   priceAmount,
+  freeShippingEligible = false,
   extraLabels = [],
 }: ProductBadgesProps) {
-  const freeShipping = typeof priceAmount === "number" && priceAmount >= 500;
+  const freeShipping =
+    freeShippingEligible &&
+    typeof priceAmount === "number" &&
+    priceAmount >= FREE_SHIPPING_THRESHOLD;
   if (!outOfStock && !freeShipping && extraLabels.length === 0) return null;
 
   return (

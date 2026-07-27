@@ -18,7 +18,7 @@ async function fetchAllProducts(): Promise<any[]> {
   while (true) {
     const res = await medusa.store.product.list({
       fields:
-        "id,handle,title,thumbnail,tags.value,*images,*categories,*variants,*variants.calculated_price,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder",
+        "id,handle,title,thumbnail,metadata,tags.value,*images,*categories,*variants,*variants.calculated_price,variants.metadata,variants.manage_inventory,variants.inventory_quantity,variants.allow_backorder",
       region_id: regionId,
       limit: pageSize,
       offset,

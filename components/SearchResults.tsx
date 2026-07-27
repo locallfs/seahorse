@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { medusa } from "@/lib/medusa";
 import { sortProductsAlpha } from "@/lib/alphaSort";
+import { getStartingPrice } from "@/lib/sizes";
+import { isFreeShippingEligible } from "@/lib/freeShipping";
 import ProductBadges from "./ProductBadges";
 
 type StoreProduct = {
@@ -12,7 +14,11 @@ type StoreProduct = {
   handle: string;
   title: string;
   thumbnail: string | null;
+  metadata?: Record<string, unknown> | null;
+  categories?: Array<{ handle?: string | null }> | null;
+  tags?: Array<{ value?: string | null }> | null;
   variants: Array<{
+    metadata?: Record<string, unknown> | null;
     calculated_price?: {
       calculated_amount: number;
       currency_code: string;
@@ -50,7 +56,8 @@ export default function SearchResults({ query }: { query: string }) {
 
         const res = await medusa.store.product.list({
           q: query,
-          fields: "id,handle,title,thumbnail,*variants.calculated_price",
+          fields:
+            "id,handle,title,thumbnail,metadata,tags.value,*categories,*variants.calculated_price,variants.metadata",
           region_id: regionId,
           limit: 48,
         } as any);
@@ -115,12 +122,15 @@ export default function SearchResults({ query }: { query: string }) {
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {products.map((product) => {
-          const price = product.variants?.[0]?.calculated_price;
+          const price = getStartingPrice(product.variants);
           return (
             <Link key={product.id} href={`/products/${product.handle}`} className="group">
               <div className="rounded-lg border border-white/10 group-hover:border-white/30 overflow-hidden transition-all duration-300 glow-purple">
                 <div className="w-full aspect-square relative bg-black">
-                  <ProductBadges priceAmount={price?.calculated_amount} />
+                  <ProductBadges
+                    priceAmount={price?.amount}
+                    freeShippingEligible={isFreeShippingEligible(product)}
+                  />
                   {product.thumbnail ? (
                     <Image
                       src={product.thumbnail}
@@ -142,7 +152,8 @@ export default function SearchResults({ query }: { query: string }) {
                   </p>
                   {price && (
                     <p className="text-sm text-white font-semibold">
-                      {formatPrice(price.calculated_amount, price.currency_code)}
+                      {price.isFrom ? "From " : ""}
+                      {formatPrice(price.amount, price.currency)}
                     </p>
                   )}
                 </div>

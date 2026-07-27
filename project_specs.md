@@ -635,3 +635,37 @@ Free tiers have daily / per-minute limits. Fine for the store's volume; a big tr
 2. Google Merchant Center: create free account, add feed URL → supplies appear in Google Shopping free listings.
 
 **Done means:** feed URL validates in Merchant Center with 0 errors; a supply product appears in the Shopping tab; Search Console shows the sitemap accepted; product pages pass Google's Rich Results test with correct availability.
+
+## Structured Size Variants + Free-Shipping Eligibility (Phase 7)
+
+Full design: `docs/superpowers/specs/2026-07-26-size-variants-free-shipping-design.md`
+
+**Goal:** One product page per fish/coral/supply with a Size dropdown — each size
+is a Medusa variant with its own price, optional sale price, SKU, UPC/barcode,
+stock, and its own QuickBooks item. Free shipping applies only to live Fish and
+Coral; Supplies never qualify, never count toward the $500 threshold, and never
+show the badge.
+
+**Key points**
+- Size system chosen per product (`metadata.size_system`: fish | coral | supply).
+  Fish: Tiny → Show (7 fixed, ordered). Coral: ½" → 6" then Colony (13 fixed,
+  ordered). Supply: Small/Medium/Large + custom sizes (`100 ml`, `25 count`, …),
+  staff-reorderable. Never alphabetized.
+- Admin: new "Size Variants" widget on the product page backed by
+  `POST /admin/size-variants/:productId` (core workflows, so QuickBooks
+  auto-create still fires per variant; duplicate sizes/SKUs rejected visibly).
+- Storefront: `Select size…` required before add-to-cart, `From $X` pricing,
+  out-of-stock sizes disabled (product hidden only when ALL sizes are out),
+  sale price shown struck-through.
+- Free shipping enforced at checkout in the Shippo provider: live Fish/Coral
+  subtotal ≥ $500 → live portion free; mixed carts still charge the supplies
+  shipment; classification by category/tags/metadata — never product title.
+- Migration safety: nothing auto-converted; read-only report script
+  (`backend/src/scripts/size-variant-report.ts`) lists multi-variant products,
+  likely duplicate size listings, and SKU/UPC/QBO conflicts before any manual
+  consolidation is approved.
+
+**Done means:** vitest suites pass on both packages (size ordering, planning
+core, free-shipping decisions, QBO per-variant mapping, storefront contracts);
+`npm run build` + `medusa build` pass; deliverables include the changed-file
+diff, affected-page list, and a worked mixed-cart shipping example.
