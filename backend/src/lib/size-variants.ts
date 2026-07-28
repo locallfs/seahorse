@@ -73,6 +73,37 @@ export type PlanArgs = {
 // place so its inventory and QuickBooks mapping survive.
 const PLACEHOLDER_TITLES = ["default variant", "default", "one size"]
 
+// Medusa requires a value for EVERY product option when a variant is created
+// or updated. Products imported from QuickBooks carry a placeholder option
+// (e.g. "Default": ["Default"]) alongside the Size option we manage. A
+// single-value leftover option is auto-filled onto every variant we write; a
+// real second axis (multiple values, like Color) is a visible rejection —
+// the Size editor must not guess which combination staff meant.
+export function resolveOtherOptionFills(
+  options: Array<{ id: string; title: string; values: string[] }>,
+  sizeOptionId: string | null
+): { fills: Record<string, string>; errors: string[] } {
+  const fills: Record<string, string> = {}
+  const errors: string[] = []
+  for (const option of options) {
+    if (option.id === sizeOptionId) continue
+    if (norm(option.title) === "size") continue
+    const distinct = [...new Set(option.values.filter((v) => !!v))]
+    if (distinct.length === 1) {
+      fills[option.title] = distinct[0]
+    } else if (distinct.length === 0) {
+      errors.push(
+        `This product has an option "${option.title}" with no values — remove it in the core Variants section before managing sizes.`
+      )
+    } else {
+      errors.push(
+        `This product has another option "${option.title}" with multiple values (${distinct.join(", ")}) — sizes can't be managed here. Edit its variants from the core Variants section instead.`
+      )
+    }
+  }
+  return { fills, errors }
+}
+
 const norm = (s: string | null | undefined) =>
   normalizeSizeValue(s ?? "").toLowerCase()
 

@@ -26,6 +26,7 @@ import {
   ExistingVariantState,
   RequestedSize,
   planSizeVariants,
+  resolveOtherOptionFills,
 } from "../../../../lib/size-variants"
 
 // One shared sale price list; per-size sale prices live as its usd prices.
@@ -231,6 +232,23 @@ export async function POST(req: any, res: any) {
       return res.status(400).json({ errors: plan.errors })
     }
 
+    // Medusa demands a value for EVERY product option on each variant write.
+    // Auto-fill single-value leftover options (QBO imports carry
+    // "Default": ["Default"]); reject real multi-value second axes visibly.
+    const { fills: otherOptionFills, errors: optionErrors } =
+      resolveOtherOptionFills(
+        (product.options ?? []).map((o: any) => ({
+          id: o.id,
+          title: String(o.title ?? ""),
+          values: (o.values ?? []).map((v: any) => String(v.value ?? "")),
+        })),
+        sizeOption?.id ?? null
+      )
+    if (optionErrors.length > 0) {
+      console.log(`[size-variants] POST rejected: ${optionErrors.join(" | ")}`)
+      return res.status(400).json({ errors: optionErrors })
+    }
+
     // Preview mode: return exactly what WOULD happen — including every SKU
     // that would be minted — without executing anything. The widget shows
     // this to staff for confirmation before the real save; on confirm it
@@ -296,7 +314,7 @@ export async function POST(req: any, res: any) {
             title: p.title,
             sku: p.sku || undefined,
             ...(p.barcode ? { barcode: p.barcode, upc: p.barcode } : {}),
-            options: { [SIZE_OPTION_TITLE]: p.value },
+            options: { ...otherOptionFills, [SIZE_OPTION_TITLE]: p.value },
             metadata: metaFor(p.variant_id, p.disabled),
             prices: [{ currency_code: "usd", amount: p.price }],
           })),
@@ -315,7 +333,7 @@ export async function POST(req: any, res: any) {
             title: p.title,
             sku: p.sku,
             ...(p.barcode ? { barcode: p.barcode, upc: p.barcode } : {}),
-            options: { [SIZE_OPTION_TITLE]: p.value },
+            options: { ...otherOptionFills, [SIZE_OPTION_TITLE]: p.value },
             metadata: { size_disabled: p.disabled },
             prices: [{ currency_code: "usd", amount: p.price }],
           })),

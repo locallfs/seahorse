@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest"
-import { planSizeVariants, PlanArgs } from "../size-variants"
+import {
+  planSizeVariants,
+  resolveOtherOptionFills,
+  PlanArgs,
+} from "../size-variants"
 
 const base = (over: Partial<PlanArgs> = {}): PlanArgs => ({
   size_system: "fish",
@@ -218,6 +222,50 @@ describe("updating sizes", () => {
     expect(plan.ok).toBe(true)
     if (!plan.ok) return
     expect(plan.update[0].disabled).toBe(true)
+  })
+})
+
+describe("leftover product options (Medusa needs a value for every option)", () => {
+  it("a single-value placeholder option (QBO's Default) is auto-filled onto every variant write", () => {
+    const { fills, errors } = resolveOtherOptionFills(
+      [
+        { id: "opt_default", title: "Default", values: ["Default"] },
+        { id: "opt_size", title: "Size", values: ["Tiny", "Medium"] },
+      ],
+      "opt_size"
+    )
+    expect(errors).toEqual([])
+    expect(fills).toEqual({ Default: "Default" })
+  })
+
+  it("a real second axis (multi-value Color) is rejected visibly — never guessed", () => {
+    const { fills, errors } = resolveOtherOptionFills(
+      [
+        { id: "opt_color", title: "Color", values: ["Red", "Blue"] },
+        { id: "opt_size", title: "Size", values: ["Small"] },
+      ],
+      "opt_size"
+    )
+    expect(fills).toEqual({})
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toMatch(/Color/)
+  })
+
+  it("an option with no values is rejected with a fix-it message", () => {
+    const { errors } = resolveOtherOptionFills(
+      [{ id: "opt_x", title: "Style", values: [] }],
+      null
+    )
+    expect(errors[0]).toMatch(/Style/)
+  })
+
+  it("a Size-titled option is never treated as a leftover, even without an id match", () => {
+    const { fills, errors } = resolveOtherOptionFills(
+      [{ id: "opt_size2", title: "Size", values: ["Small", "Large"] }],
+      null
+    )
+    expect(fills).toEqual({})
+    expect(errors).toEqual([])
   })
 })
 
