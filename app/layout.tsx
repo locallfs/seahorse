@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CartProvider } from "@/components/CartContext";
 import { AuthProvider } from "@/components/AuthContext";
 import SplashScreen from "@/components/SplashScreen";
@@ -74,6 +75,7 @@ export default function RootLayout({
         </AuthProvider>
         <GoogleAnalytics />
         <Analytics />
+        <SpeedInsights />
         <CookieConsent />
       </body>
     </html>
