@@ -151,7 +151,11 @@ export default function ProductListScreen() {
                 {item.title}
               </Text>
               <View style={styles.metaRow}>
-                <Text style={styles.price}>{formatPrice(item.price, item.currency)}</Text>
+                <Text style={styles.price}>
+                  {item.priceIsFrom ? 'From ' : ''}
+                  {formatPrice(item.price, item.currency)}
+                  {item.variantCount > 1 ? `  ·  ${item.variantCount} sizes` : ''}
+                </Text>
                 <StatusBadge status={item.status} />
                 <StockBadge stock={item.stock} manageInventory={item.manageInventory} />
               </View>

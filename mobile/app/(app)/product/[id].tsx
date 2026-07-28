@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,8 +21,6 @@ import {
   COUNTRY_OF_ORIGIN,
   deriveTypeKeyFromCategories,
   EMPTY_PADS,
-  ensureVariantInventory,
-  getStoreDefaults,
   hasNewArrivalCategory,
   isLiveType,
   listOrganizeOptions,
@@ -35,6 +33,7 @@ import {
   type ProductTypeKey,
   type SpeciesPads,
 } from '@/lib/products';
+import { baseVariantPrice, isSizeDisabled, variantLabel } from '@/lib/product-view';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
 import {
@@ -47,9 +46,13 @@ import {
 
 type VariantShape = {
   id: string;
+  title?: string | null;
+  sku?: string | null;
+  barcode?: string | null;
   manage_inventory?: boolean;
   upc?: string | null;
-  prices?: { id?: string; amount: number; currency_code: string }[];
+  metadata?: Record<string, unknown> | null;
+  prices?: { id?: string; amount: number; currency_code: string; price_list_id?: string | null }[];
   inventory_items?: {
     inventory?: {
       id: string;
@@ -62,6 +65,26 @@ type VariantShape = {
     };
   }[];
 };
+
+function variantStockedQty(v: VariantShape | null): number {
+  let sum = 0;
+  for (const link of v?.inventory_items || []) {
+    for (const lvl of link.inventory?.location_levels || []) {
+      sum += Number(lvl.stocked_quantity ?? 0);
+    }
+  }
+  return sum;
+}
+
+function variantReservedQty(v: VariantShape | null): number {
+  let sum = 0;
+  for (const link of v?.inventory_items || []) {
+    for (const lvl of link.inventory?.location_levels || []) {
+      sum += Number(lvl.reserved_quantity ?? 0);
+    }
+  }
+  return sum;
+}
 
 export default function ProductEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -87,7 +110,10 @@ export default function ProductEditScreen() {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [newThumbnailFile, setNewThumbnailFile] = useState<{ uri: string; name: string; type: string } | null>(null);
 
-  const [variant, setVariant] = useState<VariantShape | null>(null);
+  // Every size variant on the product; edits apply to the SELECTED one only.
+  const [variants, setVariants] = useState<VariantShape[]>([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const variant = variants.find((v) => v.id === selectedVariantId) ?? null;
   const [reservedQty, setReservedQty] = useState<number>(0);
   const [releasingReservations, setReleasingReservations] = useState(false);
 
@@ -118,13 +144,32 @@ export default function ProductEditScreen() {
     listOrganizeOptions().then(setOrganizeOptions).catch(() => setOrganizeOptions(null));
   }, []);
 
+  // Ref mirror so load() can preserve the selection without re-running on
+  // every size switch.
+  const selectedVariantIdRef = useRef<string | null>(null);
+
+  const syncVariantFields = (v: VariantShape | null) => {
+    setManageInventory(v?.manage_inventory ?? true);
+    setUpc(v?.upc || v?.barcode || '');
+    const base = baseVariantPrice(v);
+    setPrice(base != null ? String(base.amount) : '');
+    setStock(String(variantStockedQty(v)));
+    setReservedQty(variantReservedQty(v));
+  };
+
+  const selectVariant = (v: VariantShape) => {
+    selectedVariantIdRef.current = v.id;
+    setSelectedVariantId(v.id);
+    syncVariantFields(v);
+  };
+
   const load = useCallback(async () => {
     if (!id) return;
     setError(null);
     try {
       const { product } = await sdk.admin.product.retrieve(id, {
         fields:
-          'id,title,description,status,thumbnail,height,width,length,weight,origin_country,metadata,*tags,*type,*collection,categories.id,categories.name,categories.handle,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels',
+          'id,title,description,status,thumbnail,height,width,length,weight,origin_country,metadata,*tags,*type,*collection,categories.id,categories.name,categories.handle,*variants,*variants.prices,variants.metadata,*variants.inventory_items.inventory.location_levels',
       } as any);
       const p: any = product;
       const categories = (p.categories || []) as Array<{
@@ -151,26 +196,21 @@ export default function ProductEditScreen() {
       setDescription(p.description || '');
       setPublished(p.status === 'published');
       setThumbnail(p.thumbnail || null);
-      const v: VariantShape | null = p.variants?.[0] || null;
-      setVariant(v);
-      setManageInventory(v?.manage_inventory ?? true);
-      setUpc(v?.upc || '');
-      const usd = v?.prices?.find((x) => x.currency_code === 'usd') || v?.prices?.[0];
-      setPrice(usd ? usd.amount.toString() : '');
-      const qty = (v?.inventory_items || []).reduce((sum, link) => {
-        for (const lvl of link.inventory?.location_levels || []) {
-          sum += Number(lvl.stocked_quantity ?? 0);
-        }
-        return sum;
-      }, 0);
-      setStock(String(qty));
-      const reserved = (v?.inventory_items || []).reduce((sum, link) => {
-        for (const lvl of link.inventory?.location_levels || []) {
-          sum += Number(lvl.reserved_quantity ?? 0);
-        }
-        return sum;
-      }, 0);
-      setReservedQty(reserved);
+      const loadedVariants: VariantShape[] = p.variants || [];
+      setVariants(loadedVariants);
+      // Keep the current selection across reloads; otherwise start on the
+      // first visible (non-hidden) size.
+      const keep = loadedVariants.find(
+        (v) => v.id === selectedVariantIdRef.current,
+      );
+      const initial =
+        keep ??
+        loadedVariants.find((v) => !isSizeDisabled(v)) ??
+        loadedVariants[0] ??
+        null;
+      selectedVariantIdRef.current = initial?.id ?? null;
+      setSelectedVariantId(initial?.id ?? null);
+      syncVariantFields(initial);
       setOrganize({
         tagIds: (p.tags || []).map((t: any) => t.id),
         typeId: p.type?.id || null,
@@ -244,20 +284,27 @@ export default function ProductEditScreen() {
       };
       if (uploadedUrl) payload.thumbnail = uploadedUrl;
 
+      // NEVER include `variants` in a product update: Medusa treats that
+      // array as the COMPLETE variant list and deletes every size not in it.
+      // The selected size is updated on its own endpoint instead, which
+      // leaves the product's other sizes completely untouched.
+      await sdk.admin.product.update(id, payload);
+
       if (variant) {
-        const amount = Number(price);
+        const code = upc.trim();
         const variantPayload: any = {
-          id: variant.id,
           manage_inventory: manageInventory,
-          upc: upc.trim() || null,
+          // One field feeds both columns, matching the web Size editor —
+          // the QuickBooks join key checks upc first, then barcode.
+          upc: code || null,
+          barcode: code || null,
         };
-        if (!Number.isNaN(amount)) {
+        const amount = Number(price);
+        if (price.trim() !== '' && !Number.isNaN(amount)) {
           variantPayload.prices = [{ amount, currency_code: 'usd' }];
         }
-        payload.variants = [variantPayload];
+        await sdk.admin.product.updateVariant(id, variant.id, variantPayload);
       }
-
-      await sdk.admin.product.update(id, payload);
 
       await updateProductCategorization({
         productId: id,
@@ -273,33 +320,13 @@ export default function ProductEditScreen() {
       const nextStock = Math.max(0, Math.floor(Number(stock)));
 
       if (manageInventory && !Number.isNaN(nextStock) && variant) {
-        const link = variant.inventory_items?.[0];
-        // Heal instead of silently skipping: a product born without a stock
-        // record gets one created here, so the number always sticks.
-        const inventoryId =
-          link?.inventory?.id ??
-          (await ensureVariantInventory(id, variant.id, null));
-        const existingLevel = link?.inventory?.location_levels?.[0];
-        if (existingLevel?.location_id) {
-          await sdk.admin.inventoryItem.updateLevel(inventoryId, existingLevel.location_id, {
-            stocked_quantity: nextStock,
-          });
-        } else {
-          const defaults = await getStoreDefaults();
-          if (!defaults.stockLocationId) {
-            throw new Error(
-              'No stock location exists. Open Medusa admin → Settings → Locations and add one.'
-            );
-          }
-          await sdk.admin.inventoryItem.batchUpdateLevels(inventoryId, {
-            create: [
-              {
-                location_id: defaults.stockLocationId,
-                stocked_quantity: nextStock,
-              },
-            ],
-          });
-        }
+        // The hardened backend route: bootstraps a missing inventory record,
+        // mints a SKU if the variant has none, and cleans up duplicate
+        // inventory items — same path the web admin widgets use.
+        await sdk.client.fetch(`/admin/variant-inventory/${variant.id}`, {
+          method: 'POST',
+          body: { stocked_quantity: nextStock },
+        });
       }
 
       setNewThumbnailFile(null);
@@ -462,7 +489,42 @@ export default function ProductEditScreen() {
           placeholderTextColor={theme.color.textDim}
         />
 
-        <Text style={styles.label}>Price (USD)</Text>
+        {variants.length > 1 ? (
+          <>
+            <Text style={styles.label}>Size</Text>
+            <Text style={styles.sizeHint}>
+              Price, stock, and UPC below apply to the selected size only.
+              Switching sizes reloads that size&apos;s saved values.
+            </Text>
+            <View style={styles.sizeChips}>
+              {variants.map((v) => {
+                const active = v.id === selectedVariantId;
+                return (
+                  <Pressable
+                    key={v.id}
+                    onPress={() => selectVariant(v)}
+                    style={[styles.sizeChip, active && styles.sizeChipActive]}
+                  >
+                    <Text
+                      style={[
+                        styles.sizeChipText,
+                        active && styles.sizeChipTextActive,
+                      ]}
+                    >
+                      {variantLabel(v)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+
+        <Text style={styles.label}>
+          {variants.length > 1 && variant
+            ? `Price (USD) — ${variantLabel(variant)}`
+            : 'Price (USD)'}
+        </Text>
         <TextInput
           value={price}
           onChangeText={setPrice}
@@ -474,7 +536,11 @@ export default function ProductEditScreen() {
 
         <View style={styles.switchRow}>
           <View style={styles.switchText}>
-            <Text style={styles.label}>Manage Inventory</Text>
+            <Text style={styles.label}>
+              {variants.length > 1 && variant
+                ? `Manage Inventory — ${variantLabel(variant)}`
+                : 'Manage Inventory'}
+            </Text>
             <Text style={styles.switchHint}>
               {manageInventory ? 'Track stock; can sell out.' : 'Always in stock.'}
             </Text>
@@ -679,6 +745,19 @@ const styles = StyleSheet.create({
   },
   switchText: { flex: 1 },
   switchHint: { color: theme.color.textDim, fontSize: theme.font.xs, marginBottom: theme.space.xs },
+  sizeHint: { color: theme.color.textDim, fontSize: theme.font.xs, marginBottom: theme.space.sm },
+  sizeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm },
+  sizeChip: {
+    paddingHorizontal: theme.space.md,
+    paddingVertical: theme.space.sm,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    backgroundColor: theme.color.card,
+  },
+  sizeChipActive: { borderColor: theme.color.gold, backgroundColor: 'rgba(255,215,0,0.12)' },
+  sizeChipText: { color: theme.color.textMuted, fontSize: theme.font.sm, fontWeight: '600' },
+  sizeChipTextActive: { color: theme.color.gold },
   error: { color: theme.color.danger, marginTop: theme.space.md },
   saveBtn: {
     marginTop: theme.space.xl,

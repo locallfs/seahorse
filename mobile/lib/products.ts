@@ -1,5 +1,6 @@
 import { sdk } from './medusa';
 import { uploadImage } from './uploads';
+import { productPriceSummary, productStockSummary } from './product-view';
 
 export type ProductSummary = {
   id: string;
@@ -7,41 +8,20 @@ export type ProductSummary = {
   status: 'draft' | 'proposed' | 'published' | 'rejected';
   thumbnail: string | null;
   price: number | null;
+  /** True when sizes have different prices → render as "From $X". */
+  priceIsFrom: boolean;
   currency: string;
+  /** Available stock summed across every tracked, non-hidden size. */
   stock: number;
   manageInventory: boolean;
-  variantId: string | null;
+  variantCount: number;
 };
 
 export const LOW_STOCK_THRESHOLD = 3;
 
-function firstVariantPrice(variant: any): { amount: number | null; currency: string } {
-  const prices = variant?.prices || variant?.calculated_price ? [variant.calculated_price] : variant?.prices || [];
-  if (variant?.calculated_price?.calculated_amount != null) {
-    return {
-      amount: variant.calculated_price.calculated_amount,
-      currency: variant.calculated_price.currency_code || 'usd',
-    };
-  }
-  const usd = prices.find((p: any) => p?.currency_code === 'usd') || prices[0];
-  return { amount: usd?.amount ?? null, currency: usd?.currency_code || 'usd' };
-}
-
-function sumVariantStock(variant: any): number {
-  const items = variant?.inventory_items || [];
-  let total = 0;
-  for (const link of items) {
-    const levels = link?.inventory?.location_levels || [];
-    for (const lvl of levels) {
-      total += Number(lvl.stocked_quantity ?? 0) - Number(lvl.reserved_quantity ?? 0);
-    }
-  }
-  return total;
-}
-
 export async function listProducts(search?: string): Promise<ProductSummary[]> {
   const fields =
-    'id,title,status,thumbnail,*variants,*variants.prices,*variants.inventory_items.inventory.location_levels';
+    'id,title,status,thumbnail,*variants,*variants.prices,variants.metadata,*variants.inventory_items.inventory.location_levels';
   const pageSize = 200;
   const all: any[] = [];
   let offset = 0;
@@ -62,19 +42,21 @@ export async function listProducts(search?: string): Promise<ProductSummary[]> {
   const products = all;
 
   const mapped: ProductSummary[] = (products || []).map((p: any) => {
-    const variant = p.variants?.[0];
-    const { amount, currency } = firstVariantPrice(variant || {});
-    const manageInventory = variant?.manage_inventory ?? true;
+    const variants = p.variants || [];
+    const priceInfo = productPriceSummary(variants);
+    const stockInfo = productStockSummary(variants);
     return {
       id: p.id,
       title: p.title,
       status: p.status,
       thumbnail: p.thumbnail || null,
-      price: amount,
-      currency,
-      stock: variant && manageInventory ? sumVariantStock(variant) : 0,
-      manageInventory,
-      variantId: variant?.id || null,
+      price: priceInfo?.amount ?? null,
+      priceIsFrom: priceInfo?.isFrom ?? false,
+      currency: priceInfo?.currency ?? 'usd',
+      stock: stockInfo.stock,
+      // "Unlimited" only when NO size tracks inventory.
+      manageInventory: !stockInfo.allUnlimited,
+      variantCount: variants.length,
     };
   });
 
@@ -631,13 +613,11 @@ export async function requestDeleteProduct(
 }
 
 export async function rejectDeleteProduct(productId: string): Promise<void> {
-  const { product } = await sdk.admin.product.retrieve(productId, {
-    fields: 'id,metadata',
-  } as any);
-  const current = { ...((product as any).metadata || {}) };
-  delete current.delete_request;
+  // Medusa MERGES metadata on update — omitting a key keeps it, so the old
+  // "load, delete key, write back" approach never cleared anything. An empty
+  // string is the documented way to delete a metadata key.
   await sdk.admin.product.update(productId, {
-    metadata: current,
+    metadata: { delete_request: '' },
   } as any);
 }
 

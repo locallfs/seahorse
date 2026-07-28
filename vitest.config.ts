@@ -6,6 +6,11 @@ export default defineConfig({
     alias: { "@": path.resolve(__dirname) },
   },
   test: {
-    include: ["lib/__tests__/**/*.test.ts", "components/__tests__/**/*.test.ts"],
+    include: [
+      "lib/__tests__/**/*.test.ts",
+      "components/__tests__/**/*.test.ts",
+      // Pure view-model logic for the ReefNerds app (no RN imports).
+      "mobile/lib/__tests__/**/*.test.ts",
+    ],
   },
 });
