@@ -1,13 +1,19 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
 import { KeyboardDoneButton } from '@/lib/KeyboardDoneButton';
+import { IntroSplash } from '@/lib/IntroSplash';
+
+// Keep the native splash up until the intro video's first frame is ready —
+// IntroSplash hides it (with its own timeout failsafe).
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const navTheme = {
   ...DarkTheme,
@@ -50,6 +56,7 @@ function RootGate() {
 }
 
 export default function RootLayout() {
+  const [introDone, setIntroDone] = useState(false);
   return (
     <ThemeProvider value={navTheme}>
       <AuthProvider>
@@ -57,6 +64,7 @@ export default function RootLayout() {
       </AuthProvider>
       <KeyboardDoneButton />
       <StatusBar style="light" />
+      {!introDone && <IntroSplash onDone={() => setIntroDone(true)} />}
     </ThemeProvider>
   );
 }

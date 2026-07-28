@@ -66,7 +66,8 @@
           "cameraPermission": "ReefNerds uses the camera to scan product barcodes.",
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true
