@@ -2,7 +2,7 @@
   "expo": {
     "name": "ReefNerds",
     "slug": "reefnerds",
-    "version": "0.0.12",
+    "version": "0.0.13",
     "orientation": "portrait",
     "icon": "./assets/images/ReefNerds.png",
     "scheme": "reefnerds",
@@ -16,7 +16,7 @@
         "NSPhotoLibraryUsageDescription": "ReefNerds uses your photo library to attach product images.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "7"
+      "buildNumber": "8"
     },
     "android": {
       "package": "com.pwnership.reefnerds",
@@ -32,7 +32,7 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
       ],
-      "versionCode": 6
+      "versionCode": 7
     },
     "web": {
       "output": "static",
