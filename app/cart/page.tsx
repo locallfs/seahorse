@@ -268,6 +268,12 @@ export default function CartPage() {
                         {formatPrice(subtotal)}
                       </span>
                     </div>
+                    {(cart?.discount_total ?? 0) > 0 && (
+                      <div className="flex justify-between text-[#FFD700]">
+                        <span>$20 Next-Order Credit</span>
+                        <span>-{formatPrice(cart?.discount_total ?? 0)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-white">
                       <span>Shipping</span>
                       <span className="text-white">
@@ -277,7 +283,11 @@ export default function CartPage() {
                   </div>
                   <div className="border-t border-white/10 pt-4 mb-6 flex justify-between font-bold text-white">
                     <span>Total</span>
-                    <span className="text-white">{formatPrice(subtotal)}</span>
+                    <span className="text-white">
+                      {formatPrice(
+                        Math.max(subtotal - (cart?.discount_total ?? 0), 0)
+                      )}
+                    </span>
                   </div>
 
                   <div className="mb-6 space-y-3">

@@ -20,6 +20,7 @@ const SHIPPING = `Shipping methods:
 - Live animals (fish, corals, inverts): UPS or FedEx Priority Overnight only — we do not ship livestock ground or two-day.
 - Dry goods (equipment, supplies, salt mix): USPS, UPS, or FedEx ground, two-day, or overnight.
 - Free shipping when the live fish and coral in an order total $500 or more, applied automatically at checkout. Supplies never qualify for free shipping and do not count toward the $500 — a mixed order still pays normal shipping on the supplies portion.
+- $20 off your next order if you spend $250 or more: when a signed-in customer's order totals $250+ in merchandise (after discounts, before shipping and tax), a one-time $20 credit is attached to their account and applies automatically at checkout on their next order. It cannot be shared, requires no code, and only one credit is held at a time.
 - Free local pickup at 106 NE Russet St., Portland, OR 97211 during open hours.
 Handling and ship dates:
 - Live animal orders ship Monday–Wednesday; orders placed after 12:00 PM PT Wednesday ship the following Monday.

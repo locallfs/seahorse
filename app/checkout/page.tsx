@@ -803,6 +803,12 @@ export default function CheckoutPage() {
                       {formatPrice(cart?.item_subtotal ?? cart?.subtotal ?? 0)}
                     </span>
                   </div>
+                  {(cart?.discount_total ?? 0) > 0 && (
+                    <div className="flex justify-between text-[#FFD700]">
+                      <span>$20 Next-Order Credit</span>
+                      <span>-{formatPrice(cart.discount_total)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-white">
                     <span>Shipping</span>
                     <span className="text-white">
