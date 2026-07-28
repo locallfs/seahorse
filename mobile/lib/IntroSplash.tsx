@@ -26,7 +26,8 @@ export function IntroSplash({ onDone }: { onDone: () => void }) {
 
   const player = useVideoPlayer(VIDEO_SOURCE, (p) => {
     p.loop = false;
-    p.muted = true;
+    // The animation plays WITH its audio track.
+    p.muted = false;
   });
 
   // The native splash hides once the first frame is ready (or on timeout).
