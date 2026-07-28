@@ -60,3 +60,4 @@ defunct/
 # TypeScript incremental build file
 tsconfig.tsbuildinfo
 next-env.d.ts
+.originals/
