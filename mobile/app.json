@@ -23,7 +23,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#0b1220",
         "foregroundImage": "./assets/images/ReefNerds.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "monochromeImage": "./assets/images/ReefNerds.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -32,7 +32,7 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
       ],
-      "versionCode": 7
+      "versionCode": 8
     },
     "web": {
       "output": "static",
