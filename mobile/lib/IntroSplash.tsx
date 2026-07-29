@@ -80,7 +80,7 @@ export function IntroSplash({ onDone }: { onDone: () => void }) {
         <VideoView
           player={player}
           style={StyleSheet.absoluteFill}
-          contentFit="cover"
+          contentFit="contain"
           nativeControls={false}
         />
       ) : (
