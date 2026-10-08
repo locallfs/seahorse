@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -19,8 +19,11 @@ import {
   sortProducts,
   type SortMode,
 } from '@/lib/products';
+import { BarcodeScanner } from '@/lib/BarcodeScanner';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 const SORT_OPTIONS: { id: SortMode; label: string }[] = [
   { id: 'priority', label: 'Priority' },
@@ -37,36 +40,63 @@ export default function ProductListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>('priority');
+  const [searching, setSearching] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const sorted = useMemo(() => sortProducts(items, sortMode), [items, sortMode]);
 
+  // Every load gets a ticket number. Searches finish out of order — a broad
+  // early query takes far longer than the narrow final one — so only the newest
+  // ticket is allowed to write to the list. Without this, a stale response for
+  // "g" lands after the response for "gem tang" and wipes out the right answer.
+  const latestRequest = useRef(0);
+  // Lets the focus refresh read the current query without re-subscribing on
+  // every keystroke (see useFocusEffect below).
+  const queryRef = useRef(query);
+  queryRef.current = query;
+
   const load = useCallback(async (q?: string) => {
+    const ticket = ++latestRequest.current;
+    setSearching(true);
     setError(null);
     try {
       const products = await listProducts(q);
+      if (ticket !== latestRequest.current) return;
       setItems(products);
     } catch (e: any) {
+      if (ticket !== latestRequest.current) return;
       setError(e?.message || 'Could not load products.');
+    } finally {
+      if (ticket === latestRequest.current) setSearching(false);
     }
   }, []);
 
+  // The only search trigger. Typing waits out the debounce; the first render
+  // loads immediately so the catalog is not held back by it.
   useEffect(() => {
-    (async () => {
-      await load();
-      setLoading(false);
-    })();
-  }, [load]);
-
-  useFocusEffect(
-    useCallback(() => {
-      load(query);
-    }, [load, query])
-  );
-
-  useEffect(() => {
-    const t = setTimeout(() => load(query), 300);
+    const t = setTimeout(
+      () => {
+        load(query).finally(() => setLoading(false));
+      },
+      query ? SEARCH_DEBOUNCE_MS : 0,
+    );
     return () => clearTimeout(t);
   }, [query, load]);
+
+  // Refresh when coming back to this tab (e.g. after editing a product).
+  // `query` is deliberately NOT a dependency: useFocusEffect re-runs whenever
+  // its callback identity changes, so depending on `query` fired an immediate,
+  // un-debounced full load on every single keystroke.
+  const skipFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (skipFirstFocus.current) {
+        skipFirstFocus.current = false;
+        return;
+      }
+      load(queryRef.current);
+    }, [load])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -85,18 +115,42 @@ export default function ProductListScreen() {
   return (
     <View style={styles.root}>
       <View style={styles.searchRow}>
-        <TextInput
-          style={styles.search}
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search products…"
-          placeholderTextColor={theme.color.textDim}
-          autoCapitalize="none"
-        />
+        <View style={styles.searchBox}>
+          <TextInput
+            style={styles.search}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search name, barcode or SKU…"
+            placeholderTextColor={theme.color.textDim}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+          />
+          {searching ? (
+            <ActivityIndicator
+              style={styles.searchSpinner}
+              color={theme.color.textDim}
+              size="small"
+            />
+          ) : null}
+        </View>
+        <Pressable onPress={() => setScanning(true)} style={styles.scanBtn}>
+          <Text style={styles.scanBtnText}>Scan</Text>
+        </Pressable>
         <Pressable onPress={logout} style={styles.logout}>
           <Text style={styles.logoutText}>Sign Out</Text>
         </Pressable>
       </View>
+
+      <BarcodeScanner
+        visible={scanning}
+        onClose={() => setScanning(false)}
+        onScanned={(code) => {
+          setQuery(code);
+          setScanning(false);
+        }}
+      />
 
       <View style={styles.sortRow}>
         <Text style={styles.sortLabel}>Sort</Text>
@@ -131,7 +185,11 @@ export default function ProductListScreen() {
         contentContainerStyle={sorted.length ? undefined : styles.empty}
         ListEmptyComponent={
           <Text style={styles.emptyText}>
-            {query ? 'No products match that search.' : 'No products yet. Tap New to add one.'}
+            {searching
+              ? 'Searching…'
+              : query
+              ? 'No products match that search.'
+              : 'No products yet. Tap New to add one.'}
           </Text>
         }
         renderItem={({ item }) => (
@@ -225,15 +283,33 @@ const styles = StyleSheet.create({
     gap: theme.space.sm,
     alignItems: 'center',
   },
+  searchBox: { flex: 1, justifyContent: 'center' },
   search: {
-    flex: 1,
     backgroundColor: theme.color.card,
     borderWidth: 1,
     borderColor: theme.color.border,
     borderRadius: theme.radius.md,
-    paddingHorizontal: theme.space.md,
+    paddingLeft: theme.space.md,
+    // Room for the in-progress spinner so it never sits on top of the text.
+    paddingRight: theme.space.xl,
     paddingVertical: theme.space.sm,
     color: theme.color.text,
+  },
+  searchSpinner: {
+    position: 'absolute',
+    right: theme.space.sm,
+  },
+  scanBtn: {
+    paddingHorizontal: theme.space.md,
+    paddingVertical: theme.space.sm,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.color.gold,
+  },
+  scanBtnText: {
+    color: theme.color.gold,
+    fontSize: theme.font.sm,
+    fontWeight: '600',
   },
   logout: {
     paddingHorizontal: theme.space.md,

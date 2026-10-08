@@ -669,3 +669,98 @@ show the badge.
 core, free-shipping decisions, QBO per-variant mapping, storefront contracts);
 `npm run build` + `medusa build` pass; deliverables include the changed-file
 diff, affected-page list, and a worked mixed-cart shipping example.
+
+---
+
+## ReefNerds Product Search Fix + Barcode Search (Phase 8)
+
+### What it does and who uses it
+Staff use the ReefNerds mobile app's product list to find an item fast. Today typing a
+product's name often returns "No products match that search" (or silently shows the whole
+catalog) even though the product exists. This phase makes the search box reliable and lets
+staff find a product by scanning or typing its barcode/UPC/SKU.
+
+### Root cause (investigated, evidence-backed — do not re-diagnose)
+
+Three separate confirmed defects, all in `mobile/`:
+
+**1. Stale responses overwrite fresh ones (the main cause of "nothing shows").**
+`mobile/app/(app)/(tabs)/index.tsx` fires `load()` from three independent places with no
+cancellation and no last-request-wins guard:
+  - the mount effect: `load()` with no query
+  - `useFocusEffect(useCallback(() => load(query), [load, query]))`
+  - a 300ms debounce effect
+Because `query` is in that `useCallback` dep list, `@react-navigation/core`'s inner
+`useEffect(..., [effect, navigation])` re-runs on **every keystroke** and calls the effect
+immediately (verified in `@react-navigation/core/src/useFocusEffect.tsx`), so the debounce
+is bypassed. Each `listProducts()` call then sequentially pages the *entire* result set
+(`limit: 200` loop) with heavy relation expansion
+(`*variants.inventory_items.inventory.location_levels`). Broad early queries are far slower
+than the narrow final one, so they resolve last and clobber the correct result — which is
+why the full 1203-product catalog is left on screen and the item is findable by scrolling.
+
+**2. Medusa's `q` is a single contiguous `ILIKE '%whole phrase%'`.**
+Verified in `@medusajs/utils/dist/dal/mikro-orm/mikro-orm-free-text-search-filter.js`. On
+`GET /admin/products` it covers only the Product model's own searchable scalars —
+`title`, `subtitle`, `description` — because **no relation on the Product model is marked
+`.searchable()`** (`@medusajs/product/dist/models/product.js`). Measured against production:
+  - `"tang gem"` → 0 results; `"gem tang"` → 1
+  - `"clownfish snowflake"` → 0 results; `"black snowflake clownfish"` → 1
+  - 9 live products have a double space inside the title (e.g. `"Aquatop 100 Watt Titanium  Heater"`),
+    so typing the name as it appears returns nothing
+  - 1 live product has a curly apostrophe (`"Sally’s Frozen Krill 3.5oz"`), so an
+    iOS-typed or straight `'` returns nothing
+  - 3 live products have a trailing space (harmless for substring match, still worth cleaning)
+  - variant `sku` / `upc` / `barcode` / `ean` are **never searched** by this endpoint
+
+**3. Barcode search does not exist.** Production has 250 variant UPCs, 165 barcodes and
+1287 SKUs that the search box cannot reach. `GET /admin/product-variants?q=` *does* search
+variant `upc`, `barcode`, `ean` and `sku`, and its `product` relation is `.searchable()`.
+
+### What gets built
+
+**Fix 1 — one in-flight search wins (`index.tsx`)**
+- Delete the `useFocusEffect` keystroke path; refocus should refresh the *current* query once,
+  not re-fire per character. Keep a single 300ms debounced effect as the only search trigger.
+- Give `load()` a monotonically increasing request id; ignore any response whose id is not
+  the latest. Same guard for the error path.
+- Show a search-in-progress indicator so an empty list is never ambiguous.
+
+**Fix 2 — search that matches what people type (`mobile/lib/products.ts`)**
+- Normalize the typed query: trim, collapse internal whitespace, and fold curly quotes
+  (`’ ‘ “ ”`) to their ASCII equivalents.
+- Split the query into words and send only the **longest word** as `q` to the server (keeps
+  one cheap server round-trip and a small result set), then apply an **all-words AND** filter
+  client-side across the product's title plus its variants' sku/upc/barcode — with the same
+  normalization applied to the stored text, so double spaces and curly quotes stop mattering.
+- Word order no longer matters; skipped middle words no longer matter.
+
+**Fix 3 — barcode / UPC / SKU search**
+- When the normalized query looks like a code (all digits, length 8/12/13/14, or it matches no
+  product by name), also query `GET /admin/product-variants?q=<code>` with
+  `fields: 'id,sku,upc,barcode,ean,product.id'` and merge the owning products into the results.
+- Add a scan button to the search row that opens the existing
+  `mobile/lib/BarcodeScanner.tsx` and drops the scanned value into the search box.
+  No new scanner component — reuse what `ProductFormFields.tsx` already uses.
+
+**Fix 4 — stop crawling the whole catalog on every keystroke**
+- When a search term is present, fetch a single page (cap ~100) instead of looping every page.
+- Keep the full paged crawl only for the unfiltered list, where the client-side sort needs it.
+
+### Data models
+No schema changes. No new Medusa module. Reads only.
+
+### Out of scope for this phase
+- Cleaning the 10 dirty product titles in production (double space / curly apostrophe). The
+  client-side normalization makes them findable; renaming them is a separate data-cleanup task.
+- Postgres full-text search, trigram indexes, or a search service.
+- Changing storefront (Next.js) search.
+
+### Done means
+- Typing a product's visible name finds it, including `"Aquatop 100 Watt Titanium Heater"`
+  and `"Sally's Frozen Krill"` typed with a straight apostrophe.
+- Word order does not matter: `"tang gem"` finds "Gem Tang".
+- Typing or scanning a UPC/barcode/SKU finds the owning product.
+- Fast typing never leaves stale results on screen; the empty state only appears when the
+  finished search genuinely has no match.
+- `npx tsc --noEmit` clean in `mobile/`, and the search verified on a real device/simulator.

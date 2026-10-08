@@ -1,6 +1,13 @@
 import { sdk } from './medusa';
 import { uploadImage } from './uploads';
 import { productPriceSummary, productStockSummary } from './product-view';
+import {
+  filterTokens,
+  isBarcodeLike,
+  matchesAllTokens,
+  normalizeSearchText,
+  serverProbe,
+} from './product-search';
 
 export type ProductSummary = {
   id: string;
@@ -19,28 +26,102 @@ export type ProductSummary = {
 
 export const LOW_STOCK_THRESHOLD = 3;
 
-export async function listProducts(search?: string): Promise<ProductSummary[]> {
-  const fields =
-    'id,title,status,thumbnail,*variants,*variants.prices,variants.metadata,*variants.inventory_items.inventory.location_levels';
-  const pageSize = 200;
+const PRODUCT_FIELDS =
+  'id,title,status,thumbnail,*variants,*variants.prices,variants.metadata,*variants.inventory_items.inventory.location_levels';
+const PAGE_SIZE = 200;
+// A search only ever needs the matches, not the catalog. Caps the worst case
+// when someone types a very common word like "coral".
+const SEARCH_MAX_PRODUCTS = 600;
+
+function dedupeById(products: any[]): any[] {
+  const seen = new Set<string>();
+  const out: any[] = [];
+  for (const p of products) {
+    if (!p?.id || seen.has(p.id)) continue;
+    seen.add(p.id);
+    out.push(p);
+  }
+  return out;
+}
+
+async function fetchProductPages(
+  params: Record<string, unknown>,
+  maxProducts: number,
+): Promise<any[]> {
   const all: any[] = [];
   let offset = 0;
-  // Pull every page so client-side sort sees the whole catalog, not just page 1.
   while (true) {
     const res = (await sdk.admin.product.list({
-      q: search || undefined,
-      limit: pageSize,
+      ...params,
+      limit: PAGE_SIZE,
       offset,
-      fields,
+      fields: PRODUCT_FIELDS,
     } as any)) as any;
     const batch: any[] = res.products || [];
     all.push(...batch);
     const total = typeof res.count === 'number' ? res.count : all.length;
     offset += batch.length;
-    if (batch.length === 0 || offset >= total) break;
+    if (batch.length === 0 || offset >= total || all.length >= maxProducts) break;
   }
-  const products = all;
+  return all;
+}
 
+/**
+ * Finds products by a code on one of their sizes. `GET /admin/products?q=` never
+ * looks at variants, so a barcode typed into the product search can never match
+ * there — the variant endpoint is the only route to sku/upc/barcode/ean.
+ */
+async function fetchProductsByCode(code: string): Promise<any[]> {
+  const res = (await sdk.admin.productVariant.list({
+    q: code,
+    limit: 100,
+    fields: 'id,sku,upc,barcode,ean,product_id',
+  } as any)) as any;
+  const ids = Array.from(
+    new Set(
+      ((res.variants || []) as any[])
+        .map((v) => v.product_id)
+        .filter((id): id is string => typeof id === 'string' && !!id),
+    ),
+  );
+  if (!ids.length) return [];
+  return await fetchProductPages({ id: ids }, ids.length);
+}
+
+export async function listProducts(search?: string): Promise<ProductSummary[]> {
+  const normalized = normalizeSearchText(search || '');
+
+  // No search: pull every page so the client-side sort sees the whole catalog.
+  if (!normalized) {
+    return mapProducts(await fetchProductPages({}, Number.POSITIVE_INFINITY));
+  }
+
+  const tokens = filterTokens(normalized);
+
+  const [byName, byCode] = await Promise.all([
+    fetchProductPages({ q: serverProbe(normalized) }, SEARCH_MAX_PRODUCTS),
+    isBarcodeLike(normalized)
+      ? fetchProductsByCode(normalized)
+      : Promise.resolve([] as any[]),
+  ]);
+
+  // One term: the server's own ILIKE is already the right answer (and it also
+  // covers description, which we deliberately don't download). Two or more:
+  // every term has to appear somewhere in the product, in any order.
+  const matched =
+    tokens.length > 1
+      ? byName.filter((p) => matchesAllTokens(p, tokens))
+      : byName;
+
+  // Nothing by name and it wasn't an obvious barcode — try it as a SKU.
+  if (!matched.length && !byCode.length && normalized.length >= 3) {
+    return mapProducts(await fetchProductsByCode(normalized));
+  }
+
+  return mapProducts(dedupeById([...matched, ...byCode]));
+}
+
+function mapProducts(products: any[]): ProductSummary[] {
   const mapped: ProductSummary[] = (products || []).map((p: any) => {
     const variants = p.variants || [];
     const priceInfo = productPriceSummary(variants);
