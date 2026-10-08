@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import {
   listProducts,
   formatPrice,
@@ -20,6 +20,7 @@ import {
   type SortMode,
 } from '@/lib/products';
 import { BarcodeScanner } from '@/lib/BarcodeScanner';
+import { useOpenProduct } from '@/lib/useOpenProduct';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
 
@@ -32,8 +33,8 @@ const SORT_OPTIONS: { id: SortMode; label: string }[] = [
 ];
 
 export default function ProductListScreen() {
-  const router = useRouter();
   const { logout } = useAuth();
+  const openProduct = useOpenProduct();
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<ProductSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,7 +195,7 @@ export default function ProductListScreen() {
         }
         renderItem={({ item }) => (
           <Pressable
-            onPress={() => router.push({ pathname: '/(app)/product/[id]', params: { id: item.id } })}
+            onPress={() => openProduct(item.id)}
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
           >
             {item.thumbnail ? (

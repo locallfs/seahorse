@@ -787,6 +787,38 @@ No schema changes. No new Medusa module. Reads only.
 - `npx tsc --noEmit` clean in `mobile/`, `npx vitest run` green, and the search verified
   against the live catalog.
 
+### Follow-up: Back button unresponsive in the product editor (Phase 8b)
+
+**Symptom reported:** in the edit screen the Back button sometimes does nothing —
+intermittent, fine most of the time.
+
+**Root cause.** `router.push` always pushes a new screen; it never deduplicates.
+Both routes into the editor were unguarded —
+`app/(app)/(tabs)/index.tsx` and `app/(app)/(tabs)/delete-requests.tsx` — so two
+taps on one row stacked **two identical editor screens**. The first Back popped
+onto the twin: same product, same fields, no visible change, which reads exactly
+as a dead Back button. A second Back then worked, matching "sometimes it's fine".
+
+The enabling condition is list latency: the product list downloads ~0.45 MB of
+products and variants (over a megabyte once prices and nested inventory levels
+are included) across 7 sequential requests on every load, so a row tap can feel
+dead long enough to invite the second tap.
+
+**Fix.** `mobile/lib/tap-guard.ts` — a pure, time-injected tap guard (unit
+tested) that swallows a repeat tap inside an 800 ms window, re-arms on screen
+focus, and expires on its own so a tap can never be permanently swallowed.
+`mobile/lib/useOpenProduct.ts` wraps it as the single way to open the editor;
+both list screens now call it instead of `router.push` directly.
+
+**Not changed.** The editor's Back button itself is the stock native header back
+— there was never a custom handler to fix. The list payload size is the
+underlying latency problem and is deliberately left alone here; trimming it means
+changing how stock badges are sourced, which is its own task.
+
+**If it recurs after this build:** the next suspect is the JS thread stalling on
+that payload, which would make the header back press queue rather than ignore.
+That needs the list request slimmed down, not another navigation guard.
+
 ### Verified against production (1203 products)
 Measured before/after for the reported failures — each left column is what the shipped
 app did at the time of the report:

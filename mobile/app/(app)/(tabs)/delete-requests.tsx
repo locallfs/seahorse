@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/lib/auth';
+import { useOpenProduct } from '@/lib/useOpenProduct';
 import { theme } from '@/lib/theme';
 import {
   approveDeleteProduct,
@@ -23,6 +24,7 @@ import {
 export default function DeleteRequestsScreen() {
   const { isAdmin, loading: authLoading } = useAuth();
   const router = useRouter();
+  const openProduct = useOpenProduct();
   const [rows, setRows] = useState<DeleteRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -143,7 +145,7 @@ export default function DeleteRequestsScreen() {
             <View style={styles.row}>
               <Pressable
                 style={styles.rowMain}
-                onPress={() => router.push(`/(app)/product/${item.productId}`)}
+                onPress={() => openProduct(item.productId)}
               >
                 <View style={styles.thumbWrap}>
                   {item.thumbnail ? (
