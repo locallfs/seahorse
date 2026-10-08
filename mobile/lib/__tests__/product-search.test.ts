@@ -2,12 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   filterTokens,
   isBarcodeLike,
+  matchScore,
   matchesAllTokens,
   normalizeSearchText,
   productHaystack,
   searchTokens,
   serverProbe,
 } from '../product-search';
+
+/** Mirrors how listProducts scores a row. */
+function score(p: { title: string; variants?: any[] }, typed: string): number {
+  const normalized = normalizeSearchText(typed);
+  return matchScore(p, normalized, filterTokens(normalized));
+}
 
 // Titles below are real production rows, including their defects.
 const GEM_TANG = { title: 'Gem Tang', variants: [{ title: 'Default' }] };
@@ -193,5 +200,69 @@ describe('matchesAllTokens', () => {
 
   it('still rejects a product that is missing one of the words', () => {
     expect(matchesAllTokens(GEM_TANG, searchTokens('gem wrasse'))).toBe(false);
+  });
+});
+
+describe('matchScore', () => {
+  // The products that outranked the real answer before ranking existed.
+  const DESCRIPTION_ONLY = {
+    title: 'Orange Ocellaris Clownfish (Captive Bred)',
+    variants: [{ title: 'Default' }],
+  };
+
+  it('ranks a title that starts with the typed text highest', () => {
+    expect(score(GEM_TANG, 'gem')).toBe(5);
+    expect(score(GEM_TANG, 'gem ta')).toBe(5);
+  });
+
+  it('ranks the phrase inside the title above a word-by-word match', () => {
+    // "snowflake clown" appears verbatim inside the title.
+    expect(score(SNOWFLAKE, 'snowflake clown')).toBe(4);
+    // Reordered, so no longer verbatim — but each word still starts a title word.
+    expect(score(SNOWFLAKE, 'clownfish snowflake')).toBe(3);
+    expect(score(SNOWFLAKE, 'snowflake clown')).toBeGreaterThan(
+      score(SNOWFLAKE, 'clownfish snowflake'),
+    );
+  });
+
+  it('scores any contiguous run of the title as a phrase match', () => {
+    // Both sit inside the title verbatim, mid-word or not.
+    expect(score(SNOWFLAKE, 'clown')).toBe(4);
+    expect(score(SNOWFLAKE, 'ownfish')).toBe(4);
+  });
+
+  it('ranks gapped word prefixes at 3', () => {
+    // "snowfl clown" is not a contiguous run, but each part starts a word.
+    expect(score(SNOWFLAKE, 'snowfl clown')).toBe(3);
+  });
+
+  it('ranks words that only sit mid-word at 2', () => {
+    // Neither part starts a title word, and together they are not contiguous.
+    expect(score(SNOWFLAKE, 'ownfish nowflake')).toBe(2);
+  });
+
+  it('ranks a prefix of each title word above a loose substring match', () => {
+    const leopard = { title: 'Black Leopard Wrasse', variants: [] };
+    expect(score(leopard, 'leop wras')).toBe(3);
+  });
+
+  it('ranks a code-only match below any title match', () => {
+    expect(score(WITH_CODES, '812345678901')).toBe(1);
+  });
+
+  it('ranks a description-only match last', () => {
+    // "snowfl" is nowhere in this product's title or codes.
+    expect(score(DESCRIPTION_ONLY, 'snowfl')).toBe(0);
+  });
+
+  it('puts the real product above the description noise', () => {
+    expect(score(SNOWFLAKE, 'snowfl')).toBeGreaterThan(
+      score(DESCRIPTION_ONLY, 'snowfl'),
+    );
+  });
+
+  it('scores every row 0 when nothing is typed', () => {
+    expect(matchScore(GEM_TANG, '', [])).toBe(0);
+    expect(matchScore(DESCRIPTION_ONLY, '', [])).toBe(0);
   });
 });

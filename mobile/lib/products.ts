@@ -4,6 +4,7 @@ import { productPriceSummary, productStockSummary } from './product-view';
 import {
   filterTokens,
   isBarcodeLike,
+  matchScore,
   matchesAllTokens,
   normalizeSearchText,
   serverProbe,
@@ -22,6 +23,8 @@ export type ProductSummary = {
   stock: number;
   manageInventory: boolean;
   variantCount: number;
+  /** Search relevance, higher first. 0 for every row when not searching. */
+  relevance: number;
 };
 
 export const LOW_STOCK_THRESHOLD = 3;
@@ -29,9 +32,6 @@ export const LOW_STOCK_THRESHOLD = 3;
 const PRODUCT_FIELDS =
   'id,title,status,thumbnail,*variants,*variants.prices,variants.metadata,*variants.inventory_items.inventory.location_levels';
 const PAGE_SIZE = 200;
-// A search only ever needs the matches, not the catalog. Caps the worst case
-// when someone types a very common word like "coral".
-const SEARCH_MAX_PRODUCTS = 600;
 
 function dedupeById(products: any[]): any[] {
   const seen = new Set<string>();
@@ -99,29 +99,36 @@ export async function listProducts(search?: string): Promise<ProductSummary[]> {
   const tokens = filterTokens(normalized);
 
   const [byName, byCode] = await Promise.all([
-    fetchProductPages({ q: serverProbe(normalized) }, SEARCH_MAX_PRODUCTS),
+    // No cap: the title filter runs on the client, so any page we skipped
+    // could be hiding the product. Silently truncating is the exact failure
+    // this whole change exists to remove. A real search term matches a handful
+    // of rows; only a one-letter query costs several pages, and the debounce
+    // means that fires once rather than per keystroke.
+    fetchProductPages({ q: serverProbe(normalized) }, Number.POSITIVE_INFINITY),
     isBarcodeLike(normalized)
       ? fetchProductsByCode(normalized)
       : Promise.resolve([] as any[]),
   ]);
 
-  // One term: the server's own ILIKE is already the right answer (and it also
-  // covers description, which we deliberately don't download). Two or more:
-  // every term has to appear somewhere in the product, in any order.
-  const matched =
-    tokens.length > 1
-      ? byName.filter((p) => matchesAllTokens(p, tokens))
-      : byName;
+  // Titles only, never descriptions. The server's `q` also searches
+  // description, so "gem" drags in 16 products whose write-up happens to
+  // mention a gem. Filtering against the title (plus size names and codes)
+  // drops those, and every term may appear in any order.
+  const matched = byName.filter((p) => matchesAllTokens(p, tokens));
 
   // Nothing by name and it wasn't an obvious barcode — try it as a SKU.
   if (!matched.length && !byCode.length && normalized.length >= 3) {
-    return mapProducts(await fetchProductsByCode(normalized));
+    return mapProducts(await fetchProductsByCode(normalized), normalized, tokens);
   }
 
-  return mapProducts(dedupeById([...matched, ...byCode]));
+  return mapProducts(dedupeById([...matched, ...byCode]), normalized, tokens);
 }
 
-function mapProducts(products: any[]): ProductSummary[] {
+function mapProducts(
+  products: any[],
+  normalized = '',
+  tokens: string[] = [],
+): ProductSummary[] {
   const mapped: ProductSummary[] = (products || []).map((p: any) => {
     const variants = p.variants || [];
     const priceInfo = productPriceSummary(variants);
@@ -138,6 +145,7 @@ function mapProducts(products: any[]): ProductSummary[] {
       // "Unlimited" only when NO size tracks inventory.
       manageInventory: !stockInfo.allUnlimited,
       variantCount: variants.length,
+      relevance: matchScore(p, normalized, tokens),
     };
   });
 
@@ -166,14 +174,16 @@ function stockBucket(p: ProductSummary): number {
 
 export function sortProducts(items: ProductSummary[], mode: SortMode): ProductSummary[] {
   const copy = [...items];
-  if (mode === 'alpha') {
-    copy.sort((a, b) => a.title.localeCompare(b.title));
-    return copy;
-  }
   const bucket = mode === 'stock' ? stockBucket : priorityBucket;
   copy.sort((a, b) => {
-    const diff = bucket(a) - bucket(b);
-    if (diff !== 0) return diff;
+    // Search relevance always wins. Outside a search every row scores 0, so
+    // this term drops out and the chosen sort behaves exactly as before.
+    const byRelevance = b.relevance - a.relevance;
+    if (byRelevance !== 0) return byRelevance;
+    if (mode !== 'alpha') {
+      const diff = bucket(a) - bucket(b);
+      if (diff !== 0) return diff;
+    }
     return a.title.localeCompare(b.title);
   });
   return copy;

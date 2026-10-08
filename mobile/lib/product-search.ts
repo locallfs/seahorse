@@ -64,9 +64,7 @@ export function searchTokens(normalized: string): string[] {
  * sent to the server is "centrifugal" and every product whose description
  * mentions a centrifugal pump comes back alongside the real match.
  *
- * A query that yields a single term is left unfiltered on purpose: the server
- * also matches on description, which the list deliberately does not download,
- * so filtering a one-word search would throw away legitimate hits.
+ * Results are always filtered against the title, never the description.
  */
 export function filterTokens(normalized: string): string[] {
   const words = searchTokens(normalized);
@@ -109,4 +107,34 @@ export function productHaystack(p: SearchableProduct): string {
 export function matchesAllTokens(p: SearchableProduct, tokens: string[]): boolean {
   const hay = productHaystack(p);
   return tokens.every((t) => hay.includes(t));
+}
+
+/**
+ * How well a product answers the query — higher is a better answer.
+ *
+ * Partial typing works because every match is a substring match, so ordering is
+ * what decides whether a search feels right: typing "leop" should put "Leopard
+ * Wrasse" above a product that only contains those letters mid-word.
+ *
+ *   5  the title starts with everything that was typed  ("gem ta" -> "Gem Tang")
+ *   4  the full typed phrase appears inside the title
+ *   3  every typed word starts a word in the title      ("leop wras")
+ *   2  every typed word appears somewhere in the title
+ *   1  matched on a size name, SKU, UPC or barcode
+ *   0  no title or code match — filtered out before it reaches the list
+ */
+export function matchScore(
+  p: SearchableProduct,
+  normalized: string,
+  tokens: string[],
+): number {
+  if (!normalized) return 0;
+  const title = normalizeSearchText(p.title || '');
+  if (title.startsWith(normalized)) return 5;
+  if (title.includes(normalized)) return 4;
+  const titleWords = title.split(' ').filter(Boolean);
+  if (tokens.every((t) => titleWords.some((w) => w.startsWith(t)))) return 3;
+  if (tokens.every((t) => title.includes(t))) return 2;
+  if (matchesAllTokens(p, tokens)) return 1;
+  return 0;
 }

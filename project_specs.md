@@ -743,9 +743,27 @@ variant `upc`, `barcode`, `ean` and `sku`, and its `product` relation is `.searc
   `mobile/lib/BarcodeScanner.tsx` and drops the scanned value into the search box.
   No new scanner component — reuse what `ProductFormFields.tsx` already uses.
 
-**Fix 4 — stop crawling the whole catalog on every keystroke**
-- When a search term is present, fetch a single page (cap ~100) instead of looping every page.
-- Keep the full paged crawl only for the unfiltered list, where the client-side sort needs it.
+**Fix 4 — title-only matching, never descriptions** (added after review)
+- The server's `q` also matches `description`, so "gem" returned 16 products whose
+  write-up mentions a gem and the real "Gem Tang" sat below them. The client-side
+  filter is therefore applied to **every** query, not only multi-word ones, and it
+  matches against the title plus size names and codes — never the description.
+
+**Fix 5 — relevance ordering** (added after review)
+- Partial typing already worked (every match is a substring match); the results were
+  simply in a useless order. Each row now carries a `relevance` score and
+  `sortProducts` ranks on it first, with the Sort chips breaking ties. Outside a
+  search every row scores 0, so the existing sort behaviour is untouched.
+  Scores: 5 title starts with the query · 4 query appears verbatim in the title ·
+  3 every word prefixes a title word · 2 every word sits somewhere in the title ·
+  1 matched on a size name/SKU/UPC/barcode · 0 no match (filtered out).
+
+**Fix 6 — no silent truncation**
+- Searches page through every server match. An earlier 600-product cap was removed:
+  because the title filter runs on the client, a skipped page can hide the product,
+  which is the exact failure this phase exists to eliminate. Real search terms match
+  a handful of rows; only a one-or-two-letter query costs several pages, and the
+  debounce means that fires once rather than per keystroke.
 
 ### Data models
 No schema changes. No new Medusa module. Reads only.
@@ -760,7 +778,28 @@ No schema changes. No new Medusa module. Reads only.
 - Typing a product's visible name finds it, including `"Aquatop 100 Watt Titanium Heater"`
   and `"Sally's Frozen Krill"` typed with a straight apostrophe.
 - Word order does not matter: `"tang gem"` finds "Gem Tang".
+- Partial words work and rank sensibly: `"gem"` puts Gem Tang first, `"leop wras"`
+  returns the leopard wrasses, `"snowfl"` returns only the snowflake clownfish.
+- Nothing matches on description alone.
 - Typing or scanning a UPC/barcode/SKU finds the owning product.
 - Fast typing never leaves stale results on screen; the empty state only appears when the
   finished search genuinely has no match.
-- `npx tsc --noEmit` clean in `mobile/`, and the search verified on a real device/simulator.
+- `npx tsc --noEmit` clean in `mobile/`, `npx vitest run` green, and the search verified
+  against the live catalog.
+
+### Verified against production (1203 products)
+Measured before/after for the reported failures — each left column is what the shipped
+app did at the time of the report:
+
+| Typed | Before | After |
+|---|---|---|
+| `tang gem` | 0 | Gem Tang |
+| `clownfish snowflake` | 0 | Black Snowflake Clownfish |
+| `Sally's Frozen Krill` | 0 | Sally's Frozen Krill 3.5oz |
+| `Jawbreaker Mushroom - WYSIWYG 2` | 0 | found |
+| `TLF Sea Veggies Purple` | 0 | found |
+| `704335295116` (UPC) | 0 | AI Axis 20 Centrifugal Pump |
+| `WS-AI-AXIS-20-CENTRIFUGAL-PUMP` | 0 | AI Axis 20 Centrifugal Pump |
+| `gem` | 16 rows, Gem Tang buried | 1 row, Gem Tang |
+| `snowfl` | 3 rows, wrong one first | 1 row, correct |
+| `leop wras` | — | 4 leopard wrasses |
