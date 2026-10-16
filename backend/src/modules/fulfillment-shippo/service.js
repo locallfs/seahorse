@@ -123,9 +123,21 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
 
   #resolveCache(container) {
     for (const key of ["cacheService", "cache"]) {
-      const candidate = container?.[key];
-      if (candidate && typeof candidate.get === "function" && typeof candidate.set === "function") {
-        return candidate;
+      try {
+        // Awilix THROWS on an unregistered key rather than returning
+        // undefined, and the fulfillment module's container does not carry the
+        // app-level cache module. Without this guard the constructor dies and
+        // takes the whole Shippo provider — dry goods included — with it.
+        const candidate = container?.[key];
+        if (
+          candidate &&
+          typeof candidate.get === "function" &&
+          typeof candidate.set === "function"
+        ) {
+          return candidate;
+        }
+      } catch {
+        /* not registered in this container — fall through */
       }
     }
     // Fallback: per-process map with expiry. Same async shape as Medusa's.
