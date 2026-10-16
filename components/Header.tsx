@@ -94,6 +94,10 @@ export default function Header() {
                 $50 off your next order on live fish &amp; coral orders over $500!
               </span>
               <span aria-hidden="true">&#9733;</span>
+              <span>Live Arrival Guarantee on every fish &amp; coral</span>
+              <span aria-hidden="true">&#9733;</span>
+              <span>Free local pickup within 100 miles of Portland</span>
+              <span aria-hidden="true">&#9733;</span>
             </span>
           ))}
         </div>

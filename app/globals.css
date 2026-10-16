@@ -70,8 +70,14 @@ body {
   100% { transform: translateX(-50%); }
 }
 
+/* Duration is tied to how much text is in the bar.
+   trust-scroll translates a fixed -50% of the track, so the pixels covered
+   grow with the content while the duration does not. Add a message and the
+   bar speeds up unless you lengthen this to match, which makes it harder to
+   read. Four messages at ~190 characters reads comfortably at 60s; adjust
+   proportionally if you add or remove one. */
 .trust-bar-scroll {
-  animation: trust-scroll 30s linear infinite;
+  animation: trust-scroll 60s linear infinite;
 }
 
 .gallery-auto-scroll {
