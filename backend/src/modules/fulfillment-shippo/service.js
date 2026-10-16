@@ -8,6 +8,27 @@ const {
   buildSuppliesOnlyShipment,
   decideShippingCharge,
 } = require("./free-shipping");
+const {
+  LIVESTOCK_SHIPPING_RULES,
+  LIVESTOCK_FULFILLMENT_OPTION,
+  LIVESTOCK_FULFILLMENT_OPTION_ID,
+  LIVESTOCK_RATE_CACHE_TTL_SECONDS,
+  LIVESTOCK_ERRORS,
+  getAutoThermalResolver,
+} = require("./livestock-config");
+const {
+  mergeShippingMeta,
+  expandLivestockItems,
+  packLivestock,
+  toShippoParcels,
+  selectUpsNextDayAirRate,
+  describeOfferedServiceLevels,
+  nextSafeShipDate,
+  rateFingerprint,
+  buildLivestockShipmentPlan,
+  sumUnits,
+} = require("./livestock-packing");
+const { createWeatherService } = require("./livestock-weather");
 
 // One shared mapping from a Medusa shipping address to a Shippo address_to.
 function buildShippoAddressTo(shippingAddress) {
@@ -85,7 +106,139 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
     // Shared PG connection — used to classify cart items by category/tags/
     // metadata for free-shipping eligibility (titles are NEVER used for
     // eligibility). If unavailable, free shipping simply never applies.
+    // Medusa 2.13 does not include product/variant metadata in the
+    // calculatePrice context either, so the livestock path reads it here too.
     this.pg = container.__pg_connection__ ?? null;
+
+    // Medusa's Redis cache when the module container exposes it, otherwise a
+    // tiny in-process TTL map. Used for Shippo rate dedup and weather lookups
+    // so a checkout that recalculates five times hits Shippo once.
+    this.cache = this.#resolveCache(container);
+
+    this.weather = createWeatherService({
+      logger: this.logger,
+      cache: this.cache,
+    });
+  }
+
+  #resolveCache(container) {
+    for (const key of ["cacheService", "cache"]) {
+      const candidate = container?.[key];
+      if (candidate && typeof candidate.get === "function" && typeof candidate.set === "function") {
+        return candidate;
+      }
+    }
+    // Fallback: per-process map with expiry. Same async shape as Medusa's.
+    const store = new Map();
+    return {
+      async get(key) {
+        const hit = store.get(key);
+        if (!hit) return null;
+        if (hit.expires <= Date.now()) {
+          store.delete(key);
+          return null;
+        }
+        return hit.value;
+      },
+      async set(key, value, ttlSeconds) {
+        store.set(key, { value, expires: Date.now() + (ttlSeconds || 60) * 1000 });
+      },
+    };
+  }
+
+  /**
+   * Shipping metadata for every product and variant in the cart, merged with
+   * variant taking precedence. Medusa does not pass metadata into
+   * calculatePrice, so it is fetched here — same approach as
+   * classifyCartItems above.
+   *
+   * Returns a Map keyed by `${product_id}:${variant_id}`.
+   */
+  async fetchShippingMeta(items) {
+    const out = new Map();
+    if (!this.pg) return out;
+
+    const productIds = [...new Set((items || []).map((i) => i?.product_id).filter(Boolean))];
+    const variantIds = [...new Set((items || []).map((i) => i?.variant_id).filter(Boolean))];
+    if (productIds.length === 0) return out;
+
+    const pMarks = productIds.map(() => "?").join(",");
+    const products = await this.pg.raw(
+      `select id, metadata from product where deleted_at is null and id in (${pMarks})`,
+      productIds,
+    );
+    const productMeta = new Map(
+      (products?.rows || []).map((r) => [String(r.id), r.metadata || {}]),
+    );
+
+    const variantMeta = new Map();
+    if (variantIds.length) {
+      const vMarks = variantIds.map(() => "?").join(",");
+      const variants = await this.pg.raw(
+        `select id, metadata from product_variant where deleted_at is null and id in (${vMarks})`,
+        variantIds,
+      );
+      for (const r of variants?.rows || []) {
+        variantMeta.set(String(r.id), r.metadata || {});
+      }
+    }
+
+    for (const item of items || []) {
+      const key = `${item?.product_id ?? ""}:${item?.variant_id ?? ""}`;
+      out.set(
+        key,
+        mergeShippingMeta(
+          productMeta.get(String(item?.product_id)) || {},
+          variantMeta.get(String(item?.variant_id)) || {},
+        ),
+      );
+    }
+    return out;
+  }
+
+  /** Cart lines reshaped for the pure packing logic, metadata attached. */
+  async buildShippingLines(items) {
+    const metaByKey = await this.fetchShippingMeta(items);
+    return (items || []).map((item) => ({
+      id: item?.id ?? null,
+      product_id: item?.product_id ?? null,
+      variant_id: item?.variant_id ?? null,
+      quantity: Number(item?.quantity ?? 1),
+      title: item?.product_title || item?.title || null,
+      meta: metaByKey.get(`${item?.product_id ?? ""}:${item?.variant_id ?? ""}`) || {},
+    }));
+  }
+
+  /**
+   * Resolve the thermal mode for a shipment.
+   *
+   * Explicit wins over everything: a `temperature_control` of none/heat/cold on
+   * the shipping method data or the option data is an operator decision.
+   * `auto` uses the live weather service (or a registered custom resolver).
+   */
+  async resolveThermalMode({ optionConfig, methodData, origin, destination, shipDate }) {
+    const explicit = String(
+      methodData?.temperature_control ?? optionConfig?.temperature_control ?? "auto",
+    )
+      .trim()
+      .toLowerCase();
+
+    if (["none", "heat", "cold"].includes(explicit)) {
+      return { mode: explicit, reason: "explicit override", source: "override", weatherHold: false };
+    }
+
+    const custom = getAutoThermalResolver();
+    if (custom) {
+      const r = await custom({ origin, destination, shipDate });
+      return {
+        mode: r?.mode ?? "none",
+        reason: r?.reason ?? "custom resolver",
+        source: "custom",
+        weatherHold: r?.weatherHold === true,
+      };
+    }
+
+    return this.weather.resolveAutoThermal({ origin, destination, shipDate });
   }
 
   // Classifies each product in the cart from stable data: explicit
@@ -233,12 +386,238 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
         name: "Overnight Shipping",
         is_return: false,
       },
+      // Livestock. Picking this in Medusa Admin stores the whole object as
+      // shipping_option.data, which Medusa hands back as `optionData` on every
+      // rate calculation — the only route by which this configuration is
+      // readable at calculation time in 2.13.x.
+      { ...LIVESTOCK_FULFILLMENT_OPTION },
     ];
   }
 
+  /** True when the shipping option is the livestock one. */
+  #isLivestockOption(optionData) {
+    return (
+      optionData?.id === LIVESTOCK_FULFILLMENT_OPTION_ID ||
+      String(optionData?.shipping_type || "").toLowerCase() === "livestock"
+    );
+  }
+
+  /**
+   * Build the livestock shipment, quote it with Shippo and return the UPS Next
+   * Day Air rate plus everything fulfillment needs to repack it identically.
+   *
+   * Throws a MedusaError with customer-safe wording on configuration problems
+   * or when UPS Next Day Air is not offered — never silently downgrades.
+   */
+  async quoteLivestockShipment({ optionConfig, methodData, shippingAddress, items, cartId }) {
+    const lines = await this.buildShippingLines(items);
+    const { items: livestock, dry, invalid } = expandLivestockItems(lines);
+
+    if (invalid.length) {
+      // Server-side detail identifies the offending product; the customer sees
+      // only the clean sentence.
+      for (const bad of invalid) {
+        this.logger.error(
+          `[livestock] misconfigured product — product_id=${bad.productId} ` +
+            `variant_id=${bad.variantId} title="${bad.title}" reason=${bad.reason}`,
+        );
+      }
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, LIVESTOCK_ERRORS.configuration);
+    }
+
+    if (livestock.length === 0) return null; // dry-only cart: caller keeps existing behaviour
+
+    const { parcels, unpackable } = packLivestock(livestock);
+    if (unpackable.length || parcels.length === 0) {
+      for (const bad of unpackable) {
+        this.logger.error(
+          `[livestock] item does not fit any configured box — product_id=${bad.productId} ` +
+            `variant_id=${bad.variantId} packUnits=${bad.packUnits}`,
+        );
+      }
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, LIVESTOCK_ERRORS.configuration);
+    }
+
+    const shipPlan = nextSafeShipDate(new Date());
+    const destination = {
+      postal_code: shippingAddress?.postal_code,
+      country_code: shippingAddress?.country_code || "US",
+    };
+    const origin = { postal_code: FROM_ADDRESS.zip, country_code: FROM_ADDRESS.country };
+
+    const thermal = await this.resolveThermalMode({
+      optionConfig,
+      methodData,
+      origin,
+      destination,
+      shipDate: shipPlan.shipDate,
+    });
+
+    const shippoParcels = toShippoParcels(parcels, thermal.mode);
+
+    this.logger.info(
+      `[livestock] ${livestock.length} live item(s), ${sumUnits(livestock)} pack units -> ` +
+        `${parcels.length} parcel(s): ` +
+        parcels
+          .map(
+            (p, i) =>
+              `${p.box.id} ${p.box.lengthIn}x${p.box.widthIn}x${p.box.heightIn}in ` +
+              `${shippoParcels[i].weight}oz (${p.packUnits}u)`,
+          )
+          .join(", ") +
+        ` | thermal=${thermal.mode} (${thermal.reason})` +
+        ` | ship date ${shipPlan.shipDate}${shipPlan.shipsSameDay ? "" : ` (held ${shipPlan.heldDays}d)`}`,
+    );
+
+    const serviceLevel = String(
+      optionConfig?.service_level_token || LIVESTOCK_SHIPPING_RULES.primaryServiceLevel,
+    );
+
+    // Dedup identical quotes across the several recalculations a checkout does.
+    const fingerprint = rateFingerprint({
+      cartId,
+      address: shippingAddress,
+      parcels: shippoParcels,
+      serviceLevel,
+    });
+    const cacheKey = `livestock:rate:${fingerprint}`;
+
+    let amount = null;
+    try {
+      const hit = await this.cache.get(cacheKey);
+      if (typeof hit === "number" && Number.isFinite(hit)) {
+        amount = hit;
+        this.logger.info(`[livestock] reusing cached ${serviceLevel} rate $${amount}`);
+      }
+    } catch {
+      /* a cache miss must never block a quote */
+    }
+
+    let selectedRate = null;
+    if (amount === null) {
+      let shipment;
+      try {
+        shipment = await this.shippoRequest("/shipments/", "POST", {
+          address_from: FROM_ADDRESS,
+          address_to: buildShippoAddressTo(shippingAddress),
+          parcels: shippoParcels,
+          async: false,
+        });
+      } catch (err) {
+        // Log the detail, show the customer the clean sentence. Never surface
+        // a carrier API body or a stack trace at checkout.
+        this.logger.error(`[livestock] Shippo shipment request failed: ${err?.message || err}`);
+        throw new MedusaError(
+          MedusaError.Types.UNEXPECTED_STATE,
+          LIVESTOCK_ERRORS.serviceUnavailable,
+        );
+      }
+
+      const rates = shipment?.rates || [];
+      this.logger.info(
+        `[livestock] Shippo offered ${rates.length} rate(s): ${describeOfferedServiceLevels(rates).join(", ") || "none"}`,
+      );
+
+      selectedRate = selectUpsNextDayAirRate(rates, {
+        ...LIVESTOCK_SHIPPING_RULES,
+        primaryServiceLevel: serviceLevel,
+      });
+
+      if (!selectedRate) {
+        this.logger.error(
+          `[livestock] ${serviceLevel} not offered for ${destination.postal_code} — refusing to substitute a slower service`,
+        );
+        throw new MedusaError(
+          MedusaError.Types.NOT_ALLOWED,
+          LIVESTOCK_ERRORS.serviceUnavailable,
+        );
+      }
+
+      amount = parseFloat(selectedRate.amount);
+      if (!Number.isFinite(amount)) {
+        this.logger.error(`[livestock] unparseable rate amount: ${selectedRate.amount}`);
+        throw new MedusaError(
+          MedusaError.Types.UNEXPECTED_STATE,
+          LIVESTOCK_ERRORS.serviceUnavailable,
+        );
+      }
+
+      this.logger.info(
+        `[livestock] selected ${selectedRate.provider} ${selectedRate.servicelevel?.token} $${amount}` +
+          ` across ${shippoParcels.length} parcel(s)`,
+      );
+
+      try {
+        await this.cache.set(cacheKey, amount, LIVESTOCK_RATE_CACHE_TTL_SECONDS);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const plan = buildLivestockShipmentPlan({
+      parcels,
+      thermalMode: thermal.mode,
+      shippoParcels,
+      dryItemsIncluded: [],
+    });
+
+    return {
+      carrierAmount: amount,
+      parcelCount: shippoParcels.length,
+      dryLines: dry,
+      // Everything fulfillment needs so it packs what checkout quoted.
+      methodData: {
+        ...plan,
+        weather_hold: thermal.weatherHold === true,
+        weather_hold_reason: thermal.weatherHoldReason ?? null,
+        hold_at_location: optionConfig?.hold_at_location === true,
+        thermal_source: thermal.source,
+        thermal_reason: thermal.reason,
+        order_date: new Date().toISOString().slice(0, 10),
+        safe_ship_date: shipPlan.shipDate,
+        safe_ship_weekday: shipPlan.weekday,
+        ships_same_day: shipPlan.shipsSameDay,
+        rate_fingerprint: fingerprint,
+        shippo_rate_id: selectedRate?.object_id ?? null,
+        shippo_shipment_id: selectedRate?.shipment ?? null,
+      },
+    };
+  }
+
   async validateFulfillmentData(optionData, data, context) {
-    // Enforce: live animals can only use overnight shipping
     const optionId = optionData?.id || "";
+
+    // Livestock option: recompute the shipment and persist the plan. Medusa
+    // stores whatever this returns as shipping_method.data, which is what
+    // carries through to the order — so fulfillment packs exactly the parcels
+    // checkout quoted instead of guessing again later.
+    if (this.#isLivestockOption(optionData)) {
+      const shippingAddress = context?.shipping_address;
+      if (
+        LIVESTOCK_SHIPPING_RULES.requireCompleteShippingAddress &&
+        (!shippingAddress?.address_1 || !shippingAddress?.city || !shippingAddress?.postal_code)
+      ) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          "A complete shipping address is required for livestock shipping.",
+        );
+      }
+
+      const quote = await this.quoteLivestockShipment({
+        optionConfig: optionData,
+        methodData: data,
+        shippingAddress,
+        items: context?.items,
+        cartId: context?.id,
+      });
+
+      if (quote) return { ...data, ...quote.methodData };
+      // No livestock in the cart — nothing livestock-specific to record.
+      return { ...data };
+    }
+
+    // Pre-existing rule, unchanged: live animals may not use the slower
+    // options. The livestock option is handled above and is also acceptable.
     if (optionId !== "shippo-overnight" && hasLiveAnimals(context?.items)) {
       throw new MedusaError(
         MedusaError.Types.NOT_ALLOWED,
@@ -265,6 +644,57 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
         calculated_amount: 0,
         is_calculated_price_tax_inclusive: false,
       };
+    }
+
+    // Livestock option: build real parcels and quote UPS Next Day Air.
+    // Configuration and service-availability errors propagate so checkout
+    // shows the clean message instead of a silently wrong price.
+    if (this.#isLivestockOption(optionData)) {
+      const quote = await this.quoteLivestockShipment({
+        optionConfig: optionData,
+        methodData: data,
+        shippingAddress,
+        items: context?.items,
+        cartId: context?.id,
+      });
+
+      if (quote) {
+        // The existing live/supplies free-shipping policy still applies on top
+        // of the livestock rate — same helper, same handling fees.
+        const summary = await this.freeShippingSummary(context?.items);
+        let suppliesOnlyCarrierAmount = null;
+        if (summary?.qualifies && summary.hasOtherItems) {
+          suppliesOnlyCarrierAmount = await this.quoteSuppliesOnlyCarrierRate(
+            shippingAddress,
+            context?.items,
+          );
+        }
+
+        const { amount, waived, reason } = decideShippingCharge({
+          carrierAmount: quote.carrierAmount,
+          suppliesOnlyCarrierAmount,
+          handlingLive: HANDLING_FEE_LIVE,
+          handlingSupplies: HANDLING_FEE_SUPPLIES,
+          cartHasLiveAnimals: true,
+          summary,
+        });
+
+        this.logger.info(
+          `[livestock] carrier $${quote.carrierAmount} + handling -> charged $${amount}` +
+            (waived ? ` ($${waived} waived: ${reason})` : ""),
+        );
+
+        return {
+          calculated_amount: amount,
+          is_calculated_price_tax_inclusive: false,
+        };
+      }
+
+      // Livestock option on a cart with no livestock in it. Fall through to the
+      // existing dry-goods calculation rather than forcing Next Day Air.
+      this.logger.info(
+        "[livestock] livestock option selected but cart has no livestock — using standard dry-goods calculation",
+      );
     }
 
     // Free-shipping check first: a qualifying live-only cart needs no carrier

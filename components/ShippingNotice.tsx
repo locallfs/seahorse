@@ -1,9 +1,13 @@
+import LiveShippingConditions from "@/components/LiveShippingConditions";
+
 type Props = {
   hasLive: boolean;
   className?: string;
+  /** Destination postal code once known, so conditions use the real address. */
+  postalCode?: string | null;
 };
 
-export default function ShippingNotice({ hasLive, className }: Props) {
+export default function ShippingNotice({ hasLive, className, postalCode }: Props) {
   return (
     <div
       className={`rounded-xl border-2 p-5 bg-ocean-900/70 ${className ?? ""}`}
@@ -24,6 +28,8 @@ export default function ShippingNotice({ hasLive, className }: Props) {
           <p className="text-white/85 text-sm leading-relaxed">
             Local Pickup available at checkout if within 100 miles of our Portland store.
           </p>
+          {/* Live conditions for the visitor's own area; silent if unavailable. */}
+          <LiveShippingConditions postalCode={postalCode} />
         </>
       ) : (
         <>

@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { CartProvider } from "@/components/CartContext";
 import { AuthProvider } from "@/components/AuthContext";
+import { ShippingConditionsProvider } from "@/components/ShippingConditionsContext";
 import SplashScreen from "@/components/SplashScreen";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import StructuredData from "@/components/StructuredData";
@@ -67,9 +68,12 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-black text-white antialiased">
         <AuthProvider>
           <CartProvider>
-            <SplashScreen />
-            {children}
-            <ChatWidget />
+            {/* Checks the visitor's location once, on load. */}
+            <ShippingConditionsProvider>
+              <SplashScreen />
+              {children}
+              <ChatWidget />
+            </ShippingConditionsProvider>
           </CartProvider>
         </AuthProvider>
         <GoogleAnalytics />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import LiveShippingConditions from "@/components/LiveShippingConditions";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import { loadStripe } from "@stripe/stripe-js";
@@ -605,11 +606,18 @@ export default function CheckoutPage() {
                     Shipping Method
                   </h2>
                   {hasLiveItems && (
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4 text-xs text-amber-200">
-                      Your cart contains live animals. For the safety of your livestock,
-                      only Overnight shipping or Local Pickup is available. We will
-                      contact you to confirm your ship or pickup date.
-                    </div>
+                    <>
+                      <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4 text-xs text-amber-200">
+                        Your cart contains live animals. For the safety of your livestock,
+                        only Overnight shipping or Local Pickup is available. We will
+                        contact you to confirm your ship or pickup date.
+                      </div>
+                      {/* Conditions for the address they actually entered. */}
+                      <LiveShippingConditions
+                        postalCode={form.postal_code || null}
+                        className="mt-0 mb-4"
+                      />
+                    </>
                   )}
                   {distanceMiles !== null && distanceMiles > PICKUP_RADIUS_MILES && (
                     <div className="bg-blue-accent/10 border border-blue-accent/30 rounded-lg p-3 mb-4 text-xs text-white">
