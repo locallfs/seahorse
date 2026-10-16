@@ -74,11 +74,11 @@ body {
    trust-scroll translates a fixed -50% of the track, so the pixels covered
    grow with the content while the duration does not. Add a message and the
    bar speeds up unless you lengthen this to match, which makes it harder to
-   read. Five messages at ~250 characters reads comfortably at 80s; adjust
-   proportionally if you add or remove one. Past five, a visitor is unlikely to
-   still be on the page when the last message comes round. */
+   read. Five messages at ~250 characters sit at 70s; scale this proportionally
+   if you add or remove one. Past five, a visitor is unlikely to still be on the
+   page when the last message comes round. */
 .trust-bar-scroll {
-  animation: trust-scroll 80s linear infinite;
+  animation: trust-scroll 70s linear infinite;
 }
 
 .gallery-auto-scroll {
