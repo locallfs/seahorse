@@ -19,8 +19,10 @@ second Shippo client.
 | Provider wiring | `service.js` |
 | Tests | `__tests__/livestock-packing.test.ts` |
 
-Dry-goods shipping, the $500 live free-shipping rule, the supplies-only
-mixed-cart quote and the handling fees are all untouched and still used.
+Dry-goods shipping and the handling fees are untouched and still used. Free
+shipping has been removed: shipping is always carrier rate + handling. The
+$500 live perk is now "$50 off your next order", granted after checkout by
+the next-order-credit subscriber, and it never alters a shipping quote.
 
 ### Why the config lives in `shipping_option.data`
 
@@ -151,8 +153,7 @@ animal.
 6. One Shippo shipment is created with **all** parcels.
 7. The `ups_next_day_air` rate is located explicitly — never `rates[0]`, never
    a fallback to Ground or the Saver service.
-8. That amount (plus the existing live handling fee, minus any qualifying free
-   shipping) is returned to Medusa.
+8. That amount plus the $8 live handling fee is returned to Medusa.
 
 If UPS Next Day Air is not offered for the address, the customer sees:
 

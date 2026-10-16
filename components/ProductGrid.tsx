@@ -7,7 +7,7 @@ import { medusa } from "@/lib/medusa";
 import { storeFetch } from "@/lib/storeFetch";
 import { sortProductsAlpha } from "@/lib/alphaSort";
 import { allVariantsUnavailable, getStartingPrice } from "@/lib/sizes";
-import { isFreeShippingEligible } from "@/lib/freeShipping";
+import { isLiveProduct } from "@/lib/liveReward";
 import ProductBadges from "./ProductBadges";
 
 type StoreProduct = {
@@ -208,7 +208,7 @@ export default function ProductGrid({
                 <ProductBadges
                   outOfStock={outOfStock}
                   priceAmount={price?.amount}
-                  freeShippingEligible={isFreeShippingEligible(product)}
+                  earnsRewardEligible={isLiveProduct(product)}
                 />
               </div>
               <div className="p-3 bg-ocean-900">

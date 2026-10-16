@@ -4,11 +4,6 @@ const {
   MedusaError,
 } = require("@medusajs/framework/utils");
 const {
-  summarizeCart,
-  buildSuppliesOnlyShipment,
-  decideShippingCharge,
-} = require("./free-shipping");
-const {
   LIVESTOCK_SHIPPING_RULES,
   LIVESTOCK_FULFILLMENT_OPTION,
   LIVESTOCK_FULFILLMENT_OPTION_ID,
@@ -80,7 +75,7 @@ const LIVE_ANIMAL_KEYWORDS = [
 
 // Handling fees in dollars — covers boxes, insulation, heat packs, bags, labor.
 const HANDLING_FEE_SUPPLIES = 7;
-const HANDLING_FEE_LIVE = 12;
+const HANDLING_FEE_LIVE = 8;
 
 function hasLiveAnimals(items) {
   if (!Array.isArray(items)) return false;
@@ -103,11 +98,10 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
     }
     this.apiKey = options.api_key;
     this.logger = container.logger;
-    // Shared PG connection — used to classify cart items by category/tags/
-    // metadata for free-shipping eligibility (titles are NEVER used for
-    // eligibility). If unavailable, free shipping simply never applies.
-    // Medusa 2.13 does not include product/variant metadata in the
-    // calculatePrice context either, so the livestock path reads it here too.
+    // Shared PG connection. Medusa 2.13 does not include product or variant
+    // metadata in the calculatePrice context, so the livestock path reads it
+    // from here. Without a connection, livestock items cannot be classified
+    // and the shipment is refused rather than silently mispriced.
     this.pg = container.__pg_connection__ ?? null;
 
     // Medusa's Redis cache when the module container exposes it, otherwise a
@@ -161,8 +155,7 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
   /**
    * Shipping metadata for every product and variant in the cart, merged with
    * variant taking precedence. Medusa does not pass metadata into
-   * calculatePrice, so it is fetched here — same approach as
-   * classifyCartItems above.
+   * calculatePrice, so it is fetched directly.
    *
    * Returns a Map keyed by `${product_id}:${variant_id}`.
    */
@@ -251,109 +244,6 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
     }
 
     return this.weather.resolveAutoThermal({ origin, destination, shipDate });
-  }
-
-  // Classifies each product in the cart from stable data: explicit
-  // metadata.free_shipping_eligible override, category handles, and tag
-  // values. Returns a Map keyed by product_id.
-  async classifyCartItems(items) {
-    const productIds = [
-      ...new Set(
-        (items || []).map((i) => i?.product_id).filter((id) => !!id)
-      ),
-    ];
-    if (productIds.length === 0 || !this.pg) return new Map();
-    const marks = productIds.map(() => "?").join(",");
-    const res = await this.pg.raw(
-      `select p.id,
-              p.metadata->>'free_shipping_eligible' as fse,
-              coalesce(array_agg(distinct pc.handle)
-                       filter (where pc.handle is not null), '{}') as handles,
-              coalesce(array_agg(distinct pt.value)
-                       filter (where pt.value is not null), '{}') as tags
-         from product p
-         left join product_category_product pcp on pcp.product_id = p.id
-         left join product_category pc on pc.id = pcp.product_category_id
-          and pc.deleted_at is null
-         left join product_tags ptj on ptj.product_id = p.id
-         left join product_tag pt on pt.id = ptj.product_tag_id
-          and pt.deleted_at is null
-        where p.deleted_at is null and p.id in (${marks})
-        group by p.id`,
-      productIds
-    );
-    const map = new Map();
-    for (const row of res?.rows || []) {
-      map.set(String(row.id), {
-        metadata_override:
-          row.fse === "true" ? true : row.fse === "false" ? false : null,
-        category_handles: row.handles || [],
-        tag_values: row.tags || [],
-      });
-    }
-    return map;
-  }
-
-  // Genuine supplies-only carrier quote for a qualifying mixed cart: a
-  // separate Shippo shipment holding ONLY the supply items, packed under the
-  // supplies packaging rule, to the customer's actual destination. The
-  // supplies' default service is Standard, i.e. the cheapest rate OF THIS
-  // supplies-only shipment. Returns null on any failure — the caller then
-  // charges the normal undiscounted price and logs a diagnostic. We never
-  // guess and never reuse a rate from the mixed/livestock shipment.
-  async quoteSuppliesOnlyCarrierRate(shippingAddress, items) {
-    try {
-      const classifications = await this.classifyCartItems(items);
-      if (classifications.size === 0) return null;
-      const built = buildSuppliesOnlyShipment({
-        addressFrom: FROM_ADDRESS,
-        addressTo: buildShippoAddressTo(shippingAddress),
-        items: (items || []).map((i) => ({ product_id: i?.product_id })),
-        classifications,
-        suppliesParcel: DEFAULT_PARCEL,
-      });
-      if (!built) return null;
-      const shipment = await this.shippoRequest(
-        "/shipments/",
-        "POST",
-        built.request
-      );
-      const amounts = (shipment.rates || [])
-        .map((r) => parseFloat(r.amount))
-        .filter(Number.isFinite);
-      if (amounts.length === 0) {
-        this.logger.warn("Shippo: supplies-only quote returned no rates");
-        return null;
-      }
-      return Math.min(...amounts);
-    } catch (err) {
-      this.logger.warn(
-        `Shippo: supplies-only quote failed: ${err?.message || err}`
-      );
-      return null;
-    }
-  }
-
-  // Live Fish/Coral subtotal vs the threshold. Any failure returns null,
-  // which downstream means "charge full price" — never accidental free.
-  async freeShippingSummary(items) {
-    try {
-      if (!this.pg) return null;
-      const classifications = await this.classifyCartItems(items);
-      return summarizeCart(
-        (items || []).map((i) => ({
-          product_id: i?.product_id,
-          unit_price: Number(i?.unit_price ?? 0),
-          quantity: Number(i?.quantity ?? 1),
-        })),
-        classifications
-      );
-    } catch (err) {
-      this.logger.warn(
-        `Shippo free-shipping classification failed (charging full price): ${err?.message || err}`
-      );
-      return null;
-    }
   }
 
   async shippoRequest(endpoint, method = "GET", body = null) {
@@ -690,29 +580,14 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
       });
 
       if (quote) {
-        // The existing live/supplies free-shipping policy still applies on top
-        // of the livestock rate — same helper, same handling fees.
-        const summary = await this.freeShippingSummary(context?.items);
-        let suppliesOnlyCarrierAmount = null;
-        if (summary?.qualifies && summary.hasOtherItems) {
-          suppliesOnlyCarrierAmount = await this.quoteSuppliesOnlyCarrierRate(
-            shippingAddress,
-            context?.items,
-          );
-        }
-
-        const { amount, waived, reason } = decideShippingCharge({
-          carrierAmount: quote.carrierAmount,
-          suppliesOnlyCarrierAmount,
-          handlingLive: HANDLING_FEE_LIVE,
-          handlingSupplies: HANDLING_FEE_SUPPLIES,
-          cartHasLiveAnimals: true,
-          summary,
-        });
+        // Carrier rate plus the live handling fee. There is no shipping
+        // discount any more: the reward for a live order over $500 is a $50
+        // credit toward the NEXT order, granted after checkout by the
+        // next-order-credit subscriber. It never changes this quote.
+        const amount = quote.carrierAmount + HANDLING_FEE_LIVE;
 
         this.logger.info(
-          `[livestock] carrier $${quote.carrierAmount} + handling -> charged $${amount}` +
-            (waived ? ` ($${waived} waived: ${reason})` : ""),
+          `[livestock] carrier $${quote.carrierAmount} + $${HANDLING_FEE_LIVE} handling -> charged $${amount}`,
         );
 
         return {
@@ -726,19 +601,6 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
       this.logger.info(
         "[livestock] livestock option selected but cart has no livestock — using standard dry-goods calculation",
       );
-    }
-
-    // Free-shipping check first: a qualifying live-only cart needs no carrier
-    // rate at all. Classification failures leave summary null → full price.
-    const summary = await this.freeShippingSummary(context?.items);
-    if (summary?.qualifies && !summary.hasOtherItems) {
-      this.logger.info(
-        `Shippo: live fish/coral subtotal $${summary.liveSubtotal} meets the free-shipping threshold and the cart is live-only — shipping is free`
-      );
-      return {
-        calculated_amount: 0,
-        is_calculated_price_tax_inclusive: false,
-      };
     }
 
     try {
@@ -791,40 +653,15 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
 
       const carrierAmount = parseFloat(selectedRate.amount);
 
-      // Qualifying mixed cart: fetch a GENUINE supplies-only quote — a second
-      // Shippo shipment built from the supply items alone. Never a rate
-      // borrowed from this mixed/livestock shipment's response.
-      let suppliesOnlyCarrierAmount = null;
-      if (summary?.qualifies && summary.hasOtherItems) {
-        suppliesOnlyCarrierAmount = await this.quoteSuppliesOnlyCarrierRate(
-          shippingAddress,
-          context?.items
-        );
-      }
+      // Carrier rate plus handling. No shipping discount — the reward for a
+      // live order over $500 is a $50 credit toward the next order.
+      const cartIsLive = hasLiveAnimals(context?.items);
+      const handling = cartIsLive ? HANDLING_FEE_LIVE : HANDLING_FEE_SUPPLIES;
+      const totalAmount = carrierAmount + handling;
 
-      const { amount: totalAmount, waived, freeLivePortion, reason } =
-        decideShippingCharge({
-          carrierAmount,
-          suppliesOnlyCarrierAmount,
-          handlingLive: HANDLING_FEE_LIVE,
-          handlingSupplies: HANDLING_FEE_SUPPLIES,
-          cartHasLiveAnimals: hasLiveAnimals(context?.items),
-          summary,
-        });
-
-      if (reason === "supplies_quote_unavailable") {
-        this.logger.error(
-          "Shippo: supplies-only quote unavailable for a qualifying mixed cart — charging the normal undiscounted rate; NOT substituting a mixed/livestock rate"
-        );
-      }
       this.logger.info(
-        `Shippo rate: ${selectedRate.servicelevel?.name} — $${carrierAmount} carrier → $${totalAmount} charged${
-          freeLivePortion && summary?.hasOtherItems
-            ? ` ($${waived} live-portion shipping waived; supplies pay their own quoted rate $${suppliesOnlyCarrierAmount} + $${HANDLING_FEE_SUPPLIES} handling)`
-            : freeLivePortion
-              ? ` ($${waived} waived — qualifying live-only cart)`
-              : ""
-        } (${selectedRate.provider})`
+        `Shippo rate: ${selectedRate.servicelevel?.name} — $${carrierAmount} carrier ` +
+          `+ $${handling} handling → $${totalAmount} charged (${selectedRate.provider})`
       );
 
       return {

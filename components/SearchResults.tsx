@@ -6,7 +6,7 @@ import Image from "next/image";
 import { medusa } from "@/lib/medusa";
 import { sortProductsAlpha } from "@/lib/alphaSort";
 import { getStartingPrice } from "@/lib/sizes";
-import { isFreeShippingEligible } from "@/lib/freeShipping";
+import { isLiveProduct } from "@/lib/liveReward";
 import ProductBadges from "./ProductBadges";
 
 type StoreProduct = {
@@ -129,7 +129,7 @@ export default function SearchResults({ query }: { query: string }) {
                 <div className="w-full aspect-square relative bg-black">
                   <ProductBadges
                     priceAmount={price?.amount}
-                    freeShippingEligible={isFreeShippingEligible(product)}
+                    earnsRewardEligible={isLiveProduct(product)}
                   />
                   {product.thumbnail ? (
                     <Image

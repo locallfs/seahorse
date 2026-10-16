@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getAllStoreProducts } from "@/lib/catalog";
 import { allVariantsUnavailable, getStartingPrice } from "@/lib/sizes";
-import { isFreeShippingEligible } from "@/lib/freeShipping";
+import { isLiveProduct } from "@/lib/liveReward";
 import ProductBadges from "./ProductBadges";
 
 type StoreProduct = {
@@ -115,7 +115,7 @@ function ProductCard({ product, tag }: { product: StoreProduct; tag?: string }) 
           <ProductBadges
             outOfStock={outOfStock}
             priceAmount={price?.amount}
-            freeShippingEligible={isFreeShippingEligible(product)}
+            earnsRewardEligible={isLiveProduct(product)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
           <div className="absolute bottom-4 left-4 right-4 z-10">

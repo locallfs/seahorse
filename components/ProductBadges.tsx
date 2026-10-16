@@ -6,22 +6,22 @@
 // visible):
 //   1. Out of Stock / availability
 //   2. Sale / price promotion (slot reserved — none exist today)
-//   3. Free Shipping
+//   3. Earns next-order credit
 //   4. Other informational labels
 //
-// Free Shipping eligibility: the badge is a live Fish & Coral perk. Callers
-// pass `freeShippingEligible` from lib/freeShipping's category/tag/metadata
+// Reward eligibility: the badge is a live Fish & Coral perk. Callers
+// pass `earnsRewardEligible` from lib/liveReward's category/tag/metadata
 // rule (NEVER title-based); the badge then shows only at the shared
-// FREE_SHIPPING_THRESHOLD. Supplies are never eligible, so they never badge.
+// LIVE_REWARD_THRESHOLD. Supplies are never eligible, so they never badge.
 
-import { FREE_SHIPPING_THRESHOLD } from "@/lib/freeShipping";
+import { LIVE_REWARD_AMOUNT, LIVE_REWARD_THRESHOLD } from "@/lib/liveReward";
 
 export type ProductBadgesProps = {
   outOfStock?: boolean;
   /** Displayed (lowest enabled-size) price — badge shows at the threshold. */
   priceAmount?: number | null;
-  /** From lib/freeShipping isFreeShippingEligible — defaults to NOT eligible. */
-  freeShippingEligible?: boolean;
+  /** From lib/liveReward isLiveProduct - defaults to NOT eligible. */
+  earnsRewardEligible?: boolean;
   /** Priority-4 informational labels (rendered last). */
   extraLabels?: string[];
 };
@@ -29,14 +29,14 @@ export type ProductBadgesProps = {
 export default function ProductBadges({
   outOfStock = false,
   priceAmount,
-  freeShippingEligible = false,
+  earnsRewardEligible = false,
   extraLabels = [],
 }: ProductBadgesProps) {
-  const freeShipping =
-    freeShippingEligible &&
+  const earnsReward =
+    earnsRewardEligible &&
     typeof priceAmount === "number" &&
-    priceAmount >= FREE_SHIPPING_THRESHOLD;
-  if (!outOfStock && !freeShipping && extraLabels.length === 0) return null;
+    priceAmount > LIVE_REWARD_THRESHOLD;
+  if (!outOfStock && !earnsReward && extraLabels.length === 0) return null;
 
   return (
     <div
@@ -48,9 +48,9 @@ export default function ProductBadges({
           Out of Stock
         </span>
       )}
-      {freeShipping && (
+      {earnsReward && (
         <span className="px-2.5 py-1 rounded-md bg-[#FFD700] text-black text-[10px] font-bold tracking-wider uppercase shadow-lg text-right leading-tight">
-          ★ Free Shipping ★
+          ★ Earns ${LIVE_REWARD_AMOUNT} Credit ★
         </span>
       )}
       {extraLabels.map((label) => (

@@ -91,26 +91,26 @@ describe("badge layout — one shared stack, no overlaps possible", () => {
     expect(badges).toMatch(/max-w-\[calc\(100%-1rem\)\]/);
     expect(badges).toMatch(/data-badge-stack/);
   });
-  it("priority order in the stack: Out of Stock renders above Free Shipping", () => {
+  it("priority order in the stack: Out of Stock renders above the reward badge", () => {
     const stock = badges.indexOf("Out of Stock");
-    const shipping = badges.indexOf("Free Shipping");
+    const reward = badges.indexOf("Earns $");
     expect(stock).toBeGreaterThan(-1);
-    expect(shipping).toBeGreaterThan(-1);
-    expect(stock).toBeLessThan(shipping);
+    expect(reward).toBeGreaterThan(-1);
+    expect(stock).toBeLessThan(reward);
   });
   it("badges are informational only (no pointer capture over the card)", () => {
     expect(badges).toMatch(/pointer-events-none/);
   });
   it("eligibility: Free Shipping gated on live Fish/Coral eligibility AND the shared $500 threshold", () => {
-    // The threshold lives in ONE place (lib/freeShipping) and the badge can
+    // The threshold lives in ONE place (lib/liveReward) and the badge can
     // only show for products the eligibility rule approves — Supplies default
     // to NOT eligible, so they can never badge.
-    expect(badges).toMatch(/FREE_SHIPPING_THRESHOLD/);
-    expect(badges).toMatch(/freeShippingEligible = false/);
-    expect(badges).toMatch(/freeShippingEligible &&/);
+    expect(badges).toMatch(/LIVE_REWARD_THRESHOLD/);
+    expect(badges).toMatch(/earnsRewardEligible = false/);
+    expect(badges).toMatch(/earnsRewardEligible &&/);
     expect(badges).toMatch(/outOfStock/);
-    const lib = read("lib", "freeShipping.ts");
-    expect(lib).toMatch(/FREE_SHIPPING_THRESHOLD = 500/);
+    const lib = read("lib", "liveReward.ts");
+    expect(lib).toMatch(/LIVE_REWARD_THRESHOLD = 500/);
     // Eligibility comes from stable data only — never the product title.
     expect(lib).not.toMatch(/\.title|isLiveAnimalByTitle|LIVE_KEYWORDS/);
   });
@@ -130,14 +130,14 @@ describe("badge layout — one shared stack, no overlaps possible", () => {
     // The component's own logic: null render when nothing applies; otherwise
     // stacked children in priority order. Verified structurally above; the
     // combination matrix is exercised in the screenshot pass.
-    expect(badges).toMatch(/if \(!outOfStock && !freeShipping && extraLabels\.length === 0\) return null/);
+    expect(badges).toMatch(/if \(!outOfStock && !earnsReward && extraLabels\.length === 0\) return null/);
   });
   it("product detail page keeps its ribbon in-flow banners (no overlapping pair)", () => {
     const detail = read("app", "products", "[handle]", "ProductDetail.tsx");
     expect(detail).toMatch(/OutOfStockBanner/);
     expect(detail).toMatch(/ShippingNotice/); // in normal page flow, not floating
     // the deleted FreeShippingBadge COMPONENT must not come back (the
-    // qualifiesForFreeShippingBadge helper from lib/freeShipping is fine)
+    // earnsLiveReward helper from lib/liveReward is fine)
     expect(detail).not.toMatch(/<FreeShippingBadge|components\/FreeShippingBadge/);
   });
 });
@@ -163,7 +163,7 @@ describe("size variants wiring", () => {
       const src = read(...file);
       expect(src, file.join("/")).toMatch(/getStartingPrice/);
       expect(src, file.join("/")).toMatch(/isFrom \? "From " : ""/);
-      expect(src, file.join("/")).toMatch(/isFreeShippingEligible/);
+      expect(src, file.join("/")).toMatch(/isLiveProduct/);
     }
   });
 });

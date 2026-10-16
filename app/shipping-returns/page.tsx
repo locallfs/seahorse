@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 export const metadata = {
   title: "Shipping & Returns — Live Arrival Guarantee",
   description:
-    "Shipping, returns, and the Woody's Seahorse live arrival guarantee. Priority overnight shipping for live animals, DOA refund process, and free shipping on live fish & coral orders over $500.",
+    "Shipping, returns, and the Woody's Seahorse live arrival guarantee. Priority overnight shipping for live animals, DOA refund process, and $50 off your next order on live fish & coral orders over $500.",
   alternates: { canonical: "/shipping-returns" },
 };
 
@@ -46,11 +46,11 @@ export default function ShippingReturnsPage() {
                 on carrier pricing.
               </li>
               <li>
-                <strong>Free shipping</strong> when the live fish and coral in
-                your order total $500 or more, applied automatically at
-                checkout. Supplies never qualify and don&apos;t count toward
-                the $500 — a mixed order still pays normal shipping on the
-                supplies portion.
+                <strong>$50 off your next order</strong> when the live fish
+                and coral in your order total more than $500. The credit is
+                tied to your account, applies itself automatically to your
+                next order, and can be used once. Supplies never count toward
+                the $500.
               </li>
               <li>
                 <strong>Local pickup</strong> is available at 106 NE Russet

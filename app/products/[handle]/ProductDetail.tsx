@@ -14,7 +14,7 @@ import {
   sortVariantsBySize,
   visibleVariants,
 } from "@/lib/sizes";
-import { qualifiesForFreeShippingBadge } from "@/lib/freeShipping";
+import { earnsLiveReward, LIVE_REWARD_AMOUNT } from "@/lib/liveReward";
 import type { StoreProduct } from "@/lib/products-server";
 import OutOfStockBanner from "@/components/OutOfStockBanner";
 
@@ -116,7 +116,7 @@ export default function ProductDetail({ product }: { product: StoreProduct }) {
   const selectedOutOfStock = !!variant && isVariantUnavailable(variant);
   // The whole product is Out of Stock only when EVERY enabled size is gone.
   const allOutOfStock = allVariantsUnavailable(product.variants);
-  const freeShipping = qualifiesForFreeShippingBadge(product, displayedAmount);
+  const earnsReward = earnsLiveReward(product, displayedAmount);
   const pads = (product.metadata?.pads ?? {}) as Record<string, unknown>;
   const padEntries = PAD_ORDER.filter(({ key }) => {
     return padDisplayValue(pads[key]) !== null;
@@ -196,9 +196,9 @@ export default function ProductDetail({ product }: { product: StoreProduct }) {
                 {formatPrice(startingPrice!.amount, startingPrice!.currency)}
               </p>
             )}
-            {freeShipping && (
+            {earnsReward && (
               <span className="px-3 py-1.5 rounded-md bg-[#FFD700] text-black text-xs font-bold tracking-wider uppercase">
-                ★ Free Shipping ★
+                ★ Earns ${LIVE_REWARD_AMOUNT} Credit ★
               </span>
             )}
           </div>

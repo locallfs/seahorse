@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// "$20 off your next order if you spend $250 or more."
+// "$50 off your next order on live orders over $500."
 // On every placed order:
 //   1. Any credit promotion this order redeemed is revoked (one-time use).
-//   2. If the order's item total (after discounts, before shipping/tax) is
-//      $250+, the customer earns a fresh credit — a customer-locked,
-//      auto-applying $20 promotion that attaches itself to their next cart.
-//      No shared code exists, so nobody can use it without ordering first.
+//   2. If the order's LIVE fish & coral subtotal (after discounts, before
+//      shipping/tax) is over $500, the customer earns a fresh credit — a
+//      customer-locked, auto-applying $50 promotion that attaches itself to
+//      their next cart. No shared code exists, so nobody can use it without
+//      ordering first.
+// Supplies never count toward the threshold; live classification comes from
+// category/tag/metadata, never product titles.
 
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
@@ -19,6 +22,12 @@ import {
   creditPromotionPayload,
   decideNextOrderCredit,
 } from "../lib/next-order-credit"
+import {
+  liveClassificationSql,
+  liveSubtotal,
+  rowToClassification,
+  type LiveClassification,
+} from "../lib/live-items"
 
 export default async function nextOrderCreditHandler({
   event,
@@ -33,12 +42,12 @@ export default async function nextOrderCreditHandler({
     })
     const customerId: string | null = order?.customer_id ?? null
 
-    // Item total after discounts: gross line totals minus all adjustments.
-    let gross = 0
-    let discounts = 0
+    // Per-line gross and discounts, so the live subtotal can be computed from
+    // only the live lines rather than the whole order.
+    const lines: Array<{ product_id: string | null; gross: number; discounts: number }> = []
     const usedCreditIds: string[] = []
     for (const item of order?.items ?? []) {
-      gross += Number(item?.unit_price ?? 0) * Number(item?.quantity ?? 0)
+      let discounts = 0
       for (const adj of item?.adjustments ?? []) {
         discounts += Number(adj?.amount ?? 0)
         if (
@@ -49,11 +58,31 @@ export default async function nextOrderCreditHandler({
           usedCreditIds.push(String(adj.promotion_id))
         }
       }
+      lines.push({
+        product_id: item?.product_id ? String(item.product_id) : null,
+        gross: Number(item?.unit_price ?? 0) * Number(item?.quantity ?? 0),
+        discounts,
+      })
     }
-    const itemTotal = gross - discounts
 
-    // The customer's still-active credits (customer-locked by rule value).
     const pg: any = container.resolve(ContainerRegistrationKeys.PG_CONNECTION)
+
+    // Classify each product as live fish/coral from stable data.
+    const productIds = [...new Set(lines.map((l) => l.product_id).filter(Boolean))] as string[]
+    const classifications = new Map<string, LiveClassification>()
+    if (productIds.length) {
+      const res = await pg.raw(liveClassificationSql(productIds.length), productIds)
+      for (const row of res?.rows || []) {
+        classifications.set(String(row.id), rowToClassification(row))
+      }
+    }
+    const { liveSubtotal: liveTotal, otherSubtotal, hasLive } = liveSubtotal(
+      lines,
+      classifications,
+    )
+    console.log(
+      `[next-order-credit] live=$${liveTotal} other=$${otherSubtotal} hasLive=${hasLive}`
+    )
     let activeCreditIds: string[] = []
     if (customerId) {
       const res = await pg.raw(
@@ -71,7 +100,7 @@ export default async function nextOrderCreditHandler({
 
     const decision = decideNextOrderCredit({
       customer_id: customerId,
-      item_total: itemTotal,
+      live_total: liveTotal,
       used_credit_promotion_ids: usedCreditIds,
       active_credit_promotion_ids: activeCreditIds,
     })
@@ -96,7 +125,7 @@ export default async function nextOrderCreditHandler({
         input: { promotionsData: [creditPromotionPayload(customerId, code)] },
       })
       console.log(
-        `[next-order-credit] granted $20 next-order credit ${code} to customer=${customerId} (${decision.reason})`
+        `[next-order-credit] granted $50 next-order credit ${code} to customer=${customerId} (${decision.reason})`
       )
     } else {
       console.log(`[next-order-credit] no grant: ${decision.reason}`)
