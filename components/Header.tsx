@@ -98,6 +98,10 @@ export default function Header() {
               <span aria-hidden="true">&#9733;</span>
               <span>Free local pickup within 100 miles of Portland</span>
               <span aria-hidden="true">&#9733;</span>
+              <span>
+                We check your local forecast — heat &amp; cold packs included free
+              </span>
+              <span aria-hidden="true">&#9733;</span>
             </span>
           ))}
         </div>
