@@ -495,10 +495,19 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
     const cacheKey = `livestock:rate:${fingerprint}`;
 
     let amount = null;
+    let cachedRateId = null;
+    let cachedShipmentId = null;
     try {
       const hit = await this.cache.get(cacheKey);
+      // Older entries cached a bare number; accept both shapes.
       if (typeof hit === "number" && Number.isFinite(hit)) {
         amount = hit;
+      } else if (hit && typeof hit === "object" && Number.isFinite(Number(hit.amount))) {
+        amount = Number(hit.amount);
+        cachedRateId = hit.rateId ?? null;
+        cachedShipmentId = hit.shipmentId ?? null;
+      }
+      if (amount !== null) {
         this.logger.info(`[livestock] reusing cached ${serviceLevel} rate $${amount}`);
       }
     } catch {
@@ -560,7 +569,15 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
       );
 
       try {
-        await this.cache.set(cacheKey, amount, LIVESTOCK_RATE_CACHE_TTL_SECONDS);
+        await this.cache.set(
+          cacheKey,
+          {
+            amount,
+            rateId: selectedRate.object_id ?? null,
+            shipmentId: selectedRate.shipment ?? null,
+          },
+          LIVESTOCK_RATE_CACHE_TTL_SECONDS,
+        );
       } catch {
         /* ignore */
       }
@@ -590,8 +607,10 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
         safe_ship_weekday: shipPlan.weekday,
         ships_same_day: shipPlan.shipsSameDay,
         rate_fingerprint: fingerprint,
-        shippo_rate_id: selectedRate?.object_id ?? null,
-        shippo_shipment_id: selectedRate?.shipment ?? null,
+        // Kept so fulfillment can buy the label against the exact rate that
+        // was quoted. Survives a cache hit, when selectedRate is not in hand.
+        shippo_rate_id: selectedRate?.object_id ?? cachedRateId,
+        shippo_shipment_id: selectedRate?.shipment ?? cachedShipmentId,
       },
     };
   }
