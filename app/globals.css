@@ -245,12 +245,18 @@ body {
   }
 }
 
+/* Stay inside 0%-100%.
+   Percentage background-position offsets the image by p% x (box - image)
+   width. The gradient is 220% of the box, so any p in [0,100] still covers the
+   glyphs completely, while the bright band travels right-to-left across them.
+   Going outside that range (e.g. -150%) slides the gradient off the text
+   entirely and, because the fill is transparent, the letters disappear. */
 @keyframes text-shimmer {
   0% {
-    background-position: 150% 0;
+    background-position: 100% 0;
   }
   100% {
-    background-position: -150% 0;
+    background-position: 0% 0;
   }
 }
 

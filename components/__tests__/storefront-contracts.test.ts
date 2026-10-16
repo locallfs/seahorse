@@ -167,3 +167,77 @@ describe("size variants wiring", () => {
     }
   });
 });
+
+describe("gold shimmer on the hero tagline", () => {
+  it("the tagline uses the shimmer class", () => {
+    const hero = read("components", "HeroVideo.tsx");
+    expect(hero).toMatch(/text-shimmer-gold/);
+    expect(hero).toMatch(/Est\. 1996/);
+  });
+
+  it("declares a solid gold colour before clipping, so unsupported browsers still show text", () => {
+    const css = read("app", "globals.css");
+    const block = css.slice(css.indexOf(".text-shimmer-gold"));
+    // The plain colour must come BEFORE the @supports block that makes the
+    // fill transparent — otherwise a browser without background-clip:text
+    // renders the hero tagline invisible.
+    const plainColour = block.indexOf("color: #ffd700");
+    const supportsGuard = block.indexOf("@supports");
+    expect(plainColour).toBeGreaterThan(-1);
+    expect(supportsGuard).toBeGreaterThan(-1);
+    expect(plainColour).toBeLessThan(supportsGuard);
+  });
+
+  it("never sweeps the gradient off the glyphs — that makes the text vanish", () => {
+    // Percentage background-position offsets by p% x (box - image) width, so
+    // anything outside 0%-100% slides a no-repeat gradient clear of the text
+    // and, with a transparent fill, the letters disappear mid-animation.
+    const css = read("app", "globals.css");
+    const start = css.indexOf("@keyframes text-shimmer");
+    expect(start).toBeGreaterThan(-1);
+    const frames = css.slice(start, css.indexOf("}", css.indexOf("100%", start)) + 1);
+    const positions = [...frames.matchAll(/background-position:\s*(-?[\d.]+)%/g)].map((m) =>
+      Number(m[1]),
+    );
+    expect(positions.length).toBeGreaterThan(0);
+    for (const pos of positions) {
+      expect(pos, `background-position ${pos}% leaves the glyphs unpainted`).toBeGreaterThanOrEqual(0);
+      expect(pos, `background-position ${pos}% leaves the glyphs unpainted`).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("stops animating but stays gold when motion is reduced", () => {
+    const css = read("app", "globals.css");
+    const reduced = css.slice(css.indexOf("prefers-reduced-motion"));
+    expect(reduced).toMatch(/text-shimmer-gold/);
+    expect(reduced).toMatch(/animation:\s*none/);
+  });
+});
+
+describe("heartbeat cues", () => {
+  it("one shared keyframe definition, not a copy per use", () => {
+    const css = read("app", "globals.css");
+    // `\b` would also match "heartbeat-y", since a hyphen is a word boundary.
+    expect(css.match(/@keyframes heartbeat\s*\{/g)?.length ?? 0).toBe(1);
+    expect(css.match(/@keyframes heartbeat-y\s*\{/g)?.length ?? 0).toBe(1);
+  });
+
+  it("the header promo and the hero scroll cue both beat", () => {
+    expect(read("components", "Header.tsx")).toMatch(/className="heartbeat"/);
+    expect(read("components", "HeroVideo.tsx")).toMatch(/heartbeat-y/);
+  });
+
+  it("the scroll cue is gold, not low-contrast white", () => {
+    const hero = read("components", "HeroVideo.tsx");
+    const cue = hero.slice(hero.indexOf("Scroll cue"));
+    expect(cue).toMatch(/#FFD700/i);
+    expect(cue).not.toMatch(/text-white\/60/);
+  });
+
+  it("both cue animations respect reduced motion", () => {
+    const css = read("app", "globals.css");
+    const reduced = css.slice(css.indexOf("@media (prefers-reduced-motion"));
+    expect(reduced).toMatch(/\.heartbeat/);
+    expect(reduced).toMatch(/\.heartbeat-y/);
+  });
+});
