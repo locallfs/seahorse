@@ -90,7 +90,9 @@ export default function Header() {
             <span key={i} className="inline-flex items-center gap-8 px-8 text-sm font-semibold tracking-wide" style={{ color: "#FFD700" }}>
               <span>Follow our socials for Daily Deals!</span>
               <span aria-hidden="true">&#9733;</span>
-              <span>$50 off your next order on live fish &amp; coral orders over $500!</span>
+              <span className="promo-heartbeat">
+                $50 off your next order on live fish &amp; coral orders over $500!
+              </span>
               <span aria-hidden="true">&#9733;</span>
             </span>
           ))}

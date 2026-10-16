@@ -125,6 +125,40 @@ body {
   animation: nav-spin-grow 5s ease-in-out infinite;
 }
 
+/* Two quick beats then a long rest, so the promo draws the eye without
+   fidgeting. Kept small on purpose: it rides on top of the marquee scroll,
+   and anything larger reads as a wobble. */
+@keyframes promo-heartbeat {
+  0%,
+  32%,
+  100% {
+    transform: scale(1);
+  }
+  8% {
+    transform: scale(1.06);
+  }
+  16% {
+    transform: scale(1);
+  }
+  24% {
+    transform: scale(1.04);
+  }
+}
+
+.promo-heartbeat {
+  /* transform needs a block-ish box; inline spans ignore scale. */
+  display: inline-block;
+  transform-origin: center;
+  animation: promo-heartbeat 2.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-heartbeat {
+    animation: none;
+  }
+}
+
 .gallery-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;
