@@ -125,10 +125,10 @@ body {
   animation: nav-spin-grow 5s ease-in-out infinite;
 }
 
-/* Two quick beats then a long rest, so the promo draws the eye without
-   fidgeting. Kept small on purpose: it rides on top of the marquee scroll,
-   and anything larger reads as a wobble. */
-@keyframes promo-heartbeat {
+/* Two quick beats then a long rest, so a thing draws the eye without
+   fidgeting. Kept small on purpose — anything larger reads as a wobble.
+   Shared by the header promo and the hero scroll cue. */
+@keyframes heartbeat {
   0%,
   32%,
   100% {
@@ -145,16 +145,46 @@ body {
   }
 }
 
-.promo-heartbeat {
+.heartbeat {
   /* transform needs a block-ish box; inline spans ignore scale. */
   display: inline-block;
   transform-origin: center;
-  animation: promo-heartbeat 2.4s ease-in-out infinite;
+  animation: heartbeat 2.4s ease-in-out infinite;
   will-change: transform;
 }
 
+/* The hero scroll cue beats vertically — a horizontal squeeze on a 2px line
+   is invisible, so it scales down the Y axis instead. */
+.heartbeat-y {
+  transform-origin: top center;
+  animation: heartbeat-y 2.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes heartbeat-y {
+  0%,
+  32%,
+  100% {
+    transform: scaleY(1);
+    opacity: 0.85;
+  }
+  8% {
+    transform: scaleY(1.18);
+    opacity: 1;
+  }
+  16% {
+    transform: scaleY(1);
+    opacity: 0.85;
+  }
+  24% {
+    transform: scaleY(1.12);
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .promo-heartbeat {
+  .heartbeat,
+  .heartbeat-y {
     animation: none;
   }
 }
@@ -182,4 +212,52 @@ body {
 
 .text-glow-gold {
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.65);
+}
+
+/* Gold with a shine rolling across the letters.
+   A wide gradient is clipped to the glyphs and its position animated, so the
+   highlight sweeps through the text rather than over a box.
+
+   The gold is declared as a normal colour FIRST and only turned transparent
+   where background-clip:text is actually supported — otherwise a browser
+   without it would render invisible hero text. */
+.text-shimmer-gold {
+  color: #ffd700;
+}
+
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  .text-shimmer-gold {
+    background-image: linear-gradient(
+      100deg,
+      #a9780b 0%,
+      #ffd700 40%,
+      #fffbe8 50%,
+      #ffd700 60%,
+      #a9780b 100%
+    );
+    background-size: 220% 100%;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: text-shimmer 5s linear infinite;
+  }
+}
+
+@keyframes text-shimmer {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -150% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-shimmer-gold {
+    animation: none;
+    /* Park the highlight mid-text so it still reads as gold, just still. */
+    background-position: 50% 0;
+  }
 }

@@ -7,7 +7,7 @@ export default function HeroVideo() {
   return (
     <section className="relative w-full h-[100dvh] min-h-[600px] flex items-center justify-center">
       <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-        <p className="text-white uppercase font-medium mb-6 text-sm md:text-base tracking-[0.25em] [filter:drop-shadow(0_0_4px_rgba(124,58,237,0.95))_drop-shadow(0_0_10px_rgba(91,33,182,0.7))]">
+        <p className="text-shimmer-gold uppercase font-semibold mb-6 text-sm md:text-base tracking-[0.25em] [filter:drop-shadow(0_0_6px_rgba(255,215,0,0.55))]">
           Est. 1996 — Pacific Northwest
         </p>
         <div className="mb-8 flex justify-center">
@@ -41,9 +41,27 @@ export default function HeroVideo() {
         </div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/60">
-        <span className="text-xs tracking-widest uppercase">Scroll</span>
-        <div className="w-px h-8 bg-gradient-to-b from-white/60 to-transparent animate-pulse" />
+      {/* Scroll cue. Gold with a glow so it survives a bright video frame —
+          at white/60 on a 1px line it was effectively invisible. */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[#FFD700]">
+        <span className="heartbeat text-xs font-semibold tracking-widest uppercase text-glow-gold">
+          Scroll
+        </span>
+        <div className="heartbeat-y flex flex-col items-center gap-1">
+          <div className="w-0.5 h-7 rounded-full bg-[#FFD700] [box-shadow:0_0_8px_rgba(255,215,0,0.8)]" />
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4 [filter:drop-shadow(0_0_6px_rgba(255,215,0,0.85))]"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
       </div>
     </section>
   );
