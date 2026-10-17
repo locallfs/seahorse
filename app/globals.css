@@ -221,6 +221,21 @@ body {
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.65);
 }
 
+/* Blue halo for the hero scroll cue.
+   Applied to the wrapper so one filter covers the label, the bar and the
+   chevron together — drop-shadow cascades over the rendered subtree.
+
+   Two layers doing different jobs: a tight, nearly opaque brand navy that
+   gives the gold a hard edge against a BRIGHT video frame, then a wider
+   violet-blue bloom that separates it from a DARK one. A gold-on-gold glow
+   only helped on dark frames, which is why the cue still washed out. */
+.scroll-cue-glow {
+  filter: drop-shadow(0 1px 1px rgba(0, 14, 84, 0.95))
+    drop-shadow(0 0 3px rgba(0, 14, 84, 0.9))
+    drop-shadow(0 0 12px rgba(59, 90, 246, 0.75))
+    drop-shadow(0 0 22px rgba(37, 56, 200, 0.5));
+}
+
 /* Gold with a shine rolling across the letters.
    A wide gradient is clipped to the glyphs and its position animated, so the
    highlight sweeps through the text rather than over a box.

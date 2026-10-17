@@ -41,14 +41,15 @@ export default function HeroVideo() {
         </div>
       </div>
 
-      {/* Scroll cue. Gold with a glow so it survives a bright video frame —
-          at white/60 on a 1px line it was effectively invisible. */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[#FFD700]">
-        <span className="heartbeat text-xs font-semibold tracking-widest uppercase text-glow-gold">
+      {/* Scroll cue. Gold on a blue halo (see .scroll-cue-glow) so it reads
+          over both bright and dark video frames — at white/60 on a 1px line it
+          was effectively invisible, and a gold glow only helped on dark ones. */}
+      <div className="scroll-cue-glow absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[#FFD700]">
+        <span className="heartbeat text-xs font-semibold tracking-widest uppercase">
           Scroll
         </span>
         <div className="heartbeat-y flex flex-col items-center gap-1">
-          <div className="w-0.5 h-7 rounded-full bg-[#FFD700] [box-shadow:0_0_8px_rgba(255,215,0,0.8)]" />
+          <div className="w-0.5 h-7 rounded-full bg-[#FFD700]" />
           <svg
             aria-hidden="true"
             viewBox="0 0 24 24"
@@ -57,7 +58,7 @@ export default function HeroVideo() {
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="h-4 w-4 [filter:drop-shadow(0_0_6px_rgba(255,215,0,0.85))]"
+            className="h-4 w-4"
           >
             <path d="M6 9l6 6 6-6" />
           </svg>
