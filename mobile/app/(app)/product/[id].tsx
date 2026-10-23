@@ -33,7 +33,12 @@ import {
   type ProductTypeKey,
   type SpeciesPads,
 } from '@/lib/products';
-import { baseVariantPrice, isSizeDisabled, variantLabel } from '@/lib/product-view';
+import {
+  baseVariantPrice,
+  isSizeDisabled,
+  toNumberOrNull,
+  variantLabel,
+} from '@/lib/product-view';
 import { useAuth } from '@/lib/auth';
 import { theme } from '@/lib/theme';
 import {
@@ -218,10 +223,12 @@ export default function ProductEditScreen() {
         categoryIds: categories.map((c) => c.id),
       });
       setAttributes({
-        height: p.height ?? null,
-        width: p.width ?? null,
-        length: p.length ?? null,
-        weight: p.weight ?? null,
+        // The API returns these as strings (TEXT columns); the write
+        // validator demands numbers. Coerce as they come in.
+        height: toNumberOrNull(p.height),
+        width: toNumberOrNull(p.width),
+        length: toNumberOrNull(p.length),
+        weight: toNumberOrNull(p.weight),
       });
     } catch (e: any) {
       setError(e?.message || 'Could not load product.');
@@ -277,10 +284,10 @@ export default function ProductEditScreen() {
         type_id: organize.typeId,
         collection_id: organize.collectionId,
         categories: organize.categoryIds.map((cid) => ({ id: cid })),
-        height: attributes.height,
-        width: attributes.width,
-        length: attributes.length,
-        weight: attributes.weight,
+        height: toNumberOrNull(attributes.height),
+        width: toNumberOrNull(attributes.width),
+        length: toNumberOrNull(attributes.length),
+        weight: toNumberOrNull(attributes.weight),
       };
       if (uploadedUrl) payload.thumbnail = uploadedUrl;
 

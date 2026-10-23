@@ -1,3 +1,18 @@
+/**
+ * Medusa stores height/width/length/weight as TEXT columns, but its admin API
+ * validator requires NUMBERS on write. A product loaded from the API therefore
+ * hands these back as strings, and sending them straight back fails with:
+ *   Invalid request: Expected type: 'number' for field 'weight', got: 'string'
+ *
+ * Coerce on the way in and on the way out so a string can never reach the API,
+ * whatever shape the backend returned.
+ */
+export function toNumberOrNull(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = typeof value === 'number' ? value : Number(String(value).trim());
+  return Number.isFinite(n) ? n : null;
+}
+
 // Pure product/variant view logic for the ReefNerds app — no imports, so the
 // repo's vitest suite can exercise it directly. Products may now carry
 // multiple size variants (backend size-variant system): every helper here is
